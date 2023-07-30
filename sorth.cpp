@@ -1,6 +1,8 @@
 
 #include <iostream>
 #include <sstream>
+#include <filesystem>
+#include <fstream>
 #include <functional>
 #include <list>
 #include <stack>
@@ -199,7 +201,7 @@ namespace
             {
                 char next = source.peek_next();
 
-                while (is_whitespace(next))
+                while (source && (is_whitespace(next)))
                 {
                     source.next();
                     next = source.peek_next();
@@ -209,6 +211,12 @@ namespace
         while (source)
         {
             skip_whitespace();
+
+            if (!source)
+            {
+                break;
+            }
+
             std::string text;
             Token::Type type = Token::Type::word;
             Location location = source.current_location();
@@ -572,6 +580,19 @@ namespace
     }
 
 
+    void process_source(const std::filesystem::path& path)
+    {
+        std::ifstream source_file(path);
+
+        auto begin = std::istreambuf_iterator<char>(source_file);
+        auto end = std::istreambuf_iterator<char>();
+
+        auto new_source = std::string(begin, end);
+
+        process_source(new_source);
+    }
+
+
     void process_repl()
     {
         std::cout << "Silly Forth REPL." << std::endl;
@@ -625,6 +646,9 @@ int main(int argc, char* argv[])
         add_word(":", word_start_function, true);
         add_word(";", word_end_function, true);
 
+        auto base_path = std::filesystem::canonical(argv[0]).remove_filename() / "std.sorth";
+
+        process_source(base_path);
         process_repl();
     }
     catch(const std::exception& e)
