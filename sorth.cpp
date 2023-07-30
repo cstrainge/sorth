@@ -250,7 +250,28 @@ namespace
     using ValueStack = std::stack<Value>;
     using ValueList = std::vector<Value>;
 
+
+    template <typename variant>
+    inline void word_print_if(std::ostream& stream, const Value& next)
+    {
+        if (const variant* value = std::get_if<variant>(&next))
+        {
+            std::cout << *value;
+        }
+    }
+
+
+    std::ostream& operator <<(std::ostream& stream, const Value& value)
+    {
+        word_print_if<double>(stream, value);
+        word_print_if<std::string>(stream, value);
+
+        return stream;
+    }
+
+
     using SubFunction = std::function<void()>;
+
 
     struct Word
     {
@@ -271,6 +292,7 @@ namespace
 
     TokenList input_tokens;
     size_t current_token = 0;
+
 
     struct OpCode
     {
@@ -377,31 +399,14 @@ namespace
 
 
     template <typename variant>
-    inline void word_print_if(const Value& next)
-    {
-        if (const variant* value = std::get_if<variant>(&next))
-        {
-            std::cout << *value;
-        }
-    }
-
-
-    void print_value(const Value& value)
-    {
-        word_print_if<double>(value);
-        word_print_if<std::string>(value);
-    }
-
-
-    template <typename variant>
     variant expect_value_type(Value& value)
     {
         if (std::holds_alternative<variant>(value) == false)
         {
-            std::cout << "Value: ";
-            print_value(value);
+            std::stringstream stream;
 
-            throw std::runtime_error("Unexpected type.");
+            stream << "Unexpected type with value, " << value << ".";
+            throw_error({}, stream.str());
         }
 
         return std::get<variant>(value);
@@ -411,9 +416,7 @@ namespace
     void word_print()
     {
         Value next = pop();
-        print_value(next);
-
-        std::cout << " ";
+        std::cout << next << " ";
     }
 
 
