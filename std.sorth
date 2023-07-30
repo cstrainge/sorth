@@ -1,2 +1,6 @@
 
+( The standard library of words for Sorth. )
+
+
+( Lets save some typing. )
 : .cr . cr ;
