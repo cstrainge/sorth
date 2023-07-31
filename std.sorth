@@ -4,3 +4,19 @@
 
 ( Lets save some typing. )
 : .cr . cr ;
+
+
+( Simple increment and decrements. )
+: ++ 1 + ;
+: -- 1 - ;
+
+
+( Values for true and false. )
+
+: true  1 ;
+: false 0 ;
+
+
+( For testing ifs... )
+
+: hello if "Hello world!" else "Goodbye all." then .cr ;

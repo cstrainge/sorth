@@ -724,7 +724,7 @@ namespace
                     break;
 
                 case OpCode::Id::jump:
-                    pc = (size_t)std::get<double>(op.value);
+                    pc = (size_t)std::get<double>(op.value) - 1;
                     break;
 
                 case OpCode::Id::jump_if_zero:
@@ -733,7 +733,7 @@ namespace
 
                         if (expect_value_type<double>(value) == 0.0)
                         {
-                            pc = (size_t)std::get<double>(op.value);
+                            pc = (size_t)std::get<double>(op.value) - 1;
                         }
                     }
                     break;
@@ -744,7 +744,7 @@ namespace
 
                         if (expect_value_type<double>(value) != 0.0)
                         {
-                            pc = (size_t)std::get<double>(op.value);
+                            pc = (size_t)std::get<double>(op.value) - 1;
                         }
                     }
                     break;
