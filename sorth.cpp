@@ -298,8 +298,12 @@ namespace
     {
         enum class Id
         {
+            nop,
             push_constant_value,
-            exec
+            exec,
+            jump,
+            jump_if_zero,
+            jump_if_not_zero
         };
 
         Id id;
@@ -307,6 +311,38 @@ namespace
     };
 
     using ByteCode = std::vector<OpCode>;
+
+    std::ostream& operator <<(std::ostream& stream, const OpCode::Id id)
+    {
+        switch (id)
+        {
+            case OpCode::Id::nop:                 stream << "nop                "; break;
+            case OpCode::Id::push_constant_value: stream << "push_constant_value"; break;
+            case OpCode::Id::exec:                stream << "exec               "; break;
+            case OpCode::Id::jump:                stream << "jump               "; break;
+            case OpCode::Id::jump_if_zero:        stream << "jump_if_zero       "; break;
+            case OpCode::Id::jump_if_not_zero:    stream << "jump_if_not_zero   "; break;
+        }
+
+        return stream;
+    }
+
+    std::ostream& operator <<(std::ostream& stream, const OpCode& op)
+    {
+        stream << op.id << " " << op.value;
+        return stream;
+    }
+
+    std::ostream& operator <<(std::ostream& stream, const ByteCode& code)
+    {
+        for (size_t i = 0; i < code.size(); ++i)
+        {
+            const auto& op = code[i];
+            stream << std::setw(4) << i << " " << op << std::endl;
+        }
+
+        return stream;
+    }
 
     struct Construction
     {
@@ -518,54 +554,152 @@ namespace
     }
 
 
-    void compile_bytecode(TokenList& input_tokens)
+    void compile_token(const Token& token);
+
+
+    void word_if()
+    {
+        Construction if_block;
+        Construction else_block;
+
+        bool found_else = false;
+        bool found_then = false;
+
+        auto if_location = input_tokens[current_token].location;
+
+        construction_stack.push({});
+        construction_stack.top().code.push_back({
+            .id = OpCode::Id::jump_if_zero,
+            .value = 0.0
+        });
+
+        for (++current_token; current_token < input_tokens.size(); ++current_token)
+        {
+            const Token& token = input_tokens[current_token];
+
+            if (token.text == "else")
+            {
+                if (found_else)
+                {
+                    throw_error(token.location, "Duplicate else for if word.");
+                }
+
+                found_else = true;
+
+                if_block = construction_stack.top();
+                construction_stack.pop();
+                construction_stack.push({});
+            }
+            else if (token.text == "then")
+            {
+                found_then = true;
+
+                if (found_else)
+                {
+                    else_block = construction_stack.top();
+                }
+                else
+                {
+                    if_block = construction_stack.top();
+                }
+
+                construction_stack.pop();
+                break;
+            }
+            else
+            {
+                compile_token(token);
+            }
+        }
+
+        if (!found_then)
+        {
+            throw_error(if_location, "Missing matching then word for starting if word.");
+        }
+
+        if_block.code[0].value = (double)if_block.code.size();
+
+        auto& base_code = construction_stack.top().code;
+
+        if (found_else)
+        {
+            else_block.code.push_back({
+                .id = OpCode::Id::nop,
+                .value = 0.0
+            });
+
+            if_block.code[0].value = std::get<double>(if_block.code[0].value) + 1.0;
+            if_block.code.push_back({
+                .id = OpCode::Id::jump,
+                .value = (double)(if_block.code.size() + else_block.code.size())
+            });
+        }
+        else
+        {
+            if_block.code.push_back({
+                .id = OpCode::Id::nop,
+                .value = 0.0
+            });
+        }
+
+        base_code.insert(base_code.end(), if_block.code.begin(), if_block.code.end());
+        base_code.insert(base_code.end(), else_block.code.begin(), else_block.code.end());
+    }
+
+
+    void compile_token(const Token& token)
+    {
+        switch (token.type)
+        {
+            case Token::Type::number:
+                construction_stack.top().code.push_back({
+                    .id = OpCode::Id::push_constant_value,
+                    .value = std::stod(token.text)
+                });
+                break;
+
+            case Token::Type::string:
+                construction_stack.top().code.push_back({
+                    .id = OpCode::Id::push_constant_value,
+                    .value = token.text
+                });
+                break;
+
+            case Token::Type::word:
+                {
+                    auto iter = dictionary.find(token.text);
+
+                    if (iter != dictionary.end())
+                    {
+                        if (iter->second.immediate)
+                        {
+                            auto index = iter->second.handler_index;
+                            handlers[index]();
+                        }
+                        else
+                        {
+                            construction_stack.top().code.push_back({
+                                .id = OpCode::Id::exec,
+                                .value = (double)iter->second.handler_index
+                            });
+                        }
+                    }
+                    else
+                    {
+                        throw_error(token.location, "Word '" + token.text + "' not found.");
+                    }
+                }
+                break;
+        }
+    }
+
+
+    void compile_token_list(TokenList& input_tokens)
     {
         for (current_token = 0; current_token < input_tokens.size(); ++current_token)
         {
             const Token& token = input_tokens[current_token];
-
-            switch (token.type)
-            {
-                case Token::Type::number:
-                    construction_stack.top().code.push_back({
-                        .id = OpCode::Id::push_constant_value,
-                        .value = std::stod(token.text)
-                    });
-                    break;
-
-                case Token::Type::string:
-                    construction_stack.top().code.push_back({
-                        .id = OpCode::Id::push_constant_value,
-                        .value = token.text
-                    });
-                    break;
-
-                case Token::Type::word:
-                    {
-                        auto iter = dictionary.find(token.text);
-
-                        if (iter != dictionary.end())
-                        {
-                            if (iter->second.immediate)
-                            {
-                                auto index = iter->second.handler_index;
-                                handlers[index]();
-                            }
-                            else
-                            {
-                                construction_stack.top().code.push_back({
-                                    .id = OpCode::Id::exec,
-                                    .value = (double)iter->second.handler_index
-                                });
-                            }
-                        }
-                        else
-                        {
-                            throw_error(token.location, "Word '" + token.text + "' not found.");
-                        }
-                    }
-                    break;
-            }
+            compile_token(token);
         }
     }
 
@@ -578,12 +712,41 @@ namespace
 
             switch (op.id)
             {
+                case OpCode::Id::nop:
+                    break;
+
                 case OpCode::Id::push_constant_value:
                     push(op.value);
                     break;
 
                 case OpCode::Id::exec:
                     handlers[(size_t)std::get<double>(op.value)]();
+                    break;
+
+                case OpCode::Id::jump:
+                    pc = (size_t)std::get<double>(op.value);
+                    break;
+
+                case OpCode::Id::jump_if_zero:
+                    {
+                        auto value = pop();
+
+                        if (expect_value_type<double>(value) == 0.0)
+                        {
+                            pc = (size_t)std::get<double>(op.value);
+                        }
+                    }
+                    break;
+
+                case OpCode::Id::jump_if_not_zero:
+                    {
+                        auto value = pop();
+
+                        if (expect_value_type<double>(value) != 0.0)
+                        {
+                            pc = (size_t)std::get<double>(op.value);
+                        }
+                    }
                     break;
             }
         }
@@ -595,7 +758,7 @@ namespace
         construction_stack.push({});
 
         input_tokens = tokenize(source);
-        compile_bytecode(input_tokens);
+        compile_token_list(input_tokens);
 
         // If the construction stack isn't 1 deep we have a problem.
 
@@ -672,6 +835,8 @@ int main(int argc, char* argv[])
 
         add_word(":", word_start_function, true);
         add_word(";", word_end_function, true);
+
+        add_word("if", word_if, true);
 
         auto base_path = std::filesystem::canonical(argv[0]).remove_filename() / "std.sorth";
 
