@@ -676,6 +676,94 @@ namespace
     }
 
 
+    void word_loop()
+    {
+        auto& base_code = construction_stack.top().code;
+
+        Construction loop_block;
+        Construction condition_block;
+
+        bool found_until = false;
+        bool found_while = false;
+
+        auto begin_location = input_tokens[current_token].location;
+
+        construction_stack.push({});
+
+        for (++current_token; current_token < input_tokens.size(); ++current_token)
+        {
+
+            const Token& token = input_tokens[current_token];
+
+            if (token.text == "until")
+            {
+                if (found_while)
+                {
+                    throw_error(token.location, "Unexpected until word in while loop.");
+                }
+
+                loop_block = construction_stack.top();
+                construction_stack.pop();
+
+                loop_block.code.push_back({
+                    .id = OpCode::Id::jump_if_zero,
+                    .value = (double)base_code.size()
+                });
+
+                base_code.insert(base_code.end(), loop_block.code.begin(), loop_block.code.end());
+                break;
+            }
+            else if (token.text == "while")
+            {
+                condition_block = construction_stack.top();
+                construction_stack.pop();
+
+                found_while = true;
+                construction_stack.push({});
+            }
+            else if (token.text == "repeat")
+            {
+                if (!found_while)
+                {
+                    throw_error(begin_location, "Loop missing while word.");
+                }
+
+                loop_block = construction_stack.top();
+                construction_stack.pop();
+
+                condition_block.code.push_back({
+                    .id = OpCode::Id::jump_if_zero,
+                    .value = (double)(base_code.size() +
+                                      condition_block.code.size() +
+                                      loop_block.code.size() +
+                                      2)
+                });
+
+                loop_block.code.push_back({
+                    .id = OpCode::Id::jump,
+                    .value = (double)(base_code.size())
+                });
+
+                loop_block.code.push_back({
+                    .id = OpCode::Id::nop,
+                    .value = 0.0
+                });
+
+                base_code.insert(base_code.end(),
+                                 condition_block.code.begin(),
+                                 condition_block.code.end());
+
+                base_code.insert(base_code.end(), loop_block.code.begin(), loop_block.code.end());
+                break;
+            }
+            else
+            {
+                compile_token(token);
+            }
+        }
+    }
+
+
     void word_print_stack()
     {
         for (const auto& value : stack)
@@ -794,9 +882,10 @@ namespace
 
                 case OpCode::Id::jump_if_zero:
                     {
-                        auto value = pop();
+                        auto top = pop();
+                        auto value = (bool)expect_value_type<double>(top);
 
-                        if (expect_value_type<double>(value) == 0.0)
+                        if (!value)
                         {
                             pc = (size_t)std::get<double>(op.value) - 1;
                         }
@@ -908,9 +997,12 @@ int main(int argc, char* argv[])
         add_word(";", word_end_function, true);
 
         add_word("if", word_if, true);
+        add_word("begin", word_loop, true);
+
+        add_word("until", [](){});
 
         add_word(".s", word_print_stack);
-        add_word(".words", print_dictionary);
+        add_word(".w", print_dictionary);
 
         auto base_path = std::filesystem::canonical(argv[0]).remove_filename() / "std.sorth";
 

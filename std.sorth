@@ -19,13 +19,13 @@
 ( For testing ifs... )
 : hello if "Hello world!" else "Goodbye all." then .cr ;
 
+( Testing loops... )
+: loop_until 10 begin "Hello world." .cr -- dup 0 <= until ;
+: loop_while 10 begin -- dup 0 >= while "Hello world." .cr repeat ;
 
 
 (
 Missing functionality
-
-  BEGIN loop-part condition UNTIL          Looping.
-  BEGIN condition WHILE loop-part REPEAT   Looping.
 
   swap
   over
