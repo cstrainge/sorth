@@ -247,7 +247,7 @@ namespace
 
 
     using Value = std::variant<double, std::string>;
-    using ValueStack = std::stack<Value>;
+    using ValueStack = std::list<Value>;
     using ValueList = std::vector<Value>;
 
 
@@ -371,8 +371,8 @@ namespace
             throw std::runtime_error("Stack underflow.");
         }
 
-        Value next = stack.top();
-        stack.pop();
+        Value next = stack.front();
+        stack.pop_front();
 
         return next;
     }
@@ -380,7 +380,7 @@ namespace
 
     void push(const Value& new_value)
     {
-        stack.push(new_value);
+        stack.push_front(new_value);
     }
 
 
@@ -429,8 +429,10 @@ namespace
 
     void word_dup()
     {
-        Value next = stack.top();
-        stack.push(next);
+        Value next = pop();
+
+        push(next);
+        push(next);
     }
 
 
@@ -462,39 +464,66 @@ namespace
     }
 
 
-    void word_add()
+    void math_op(std::function<double(double, double)> op)
     {
         Value b = pop();
         Value a = pop();
 
-        stack.push(expect_value_type<double>(a) + expect_value_type<double>(b));
+        push(op(expect_value_type<double>(a), expect_value_type<double>(b)));
+    }
+
+
+    void word_add()
+    {
+        math_op([](double a, double b) -> double { return a + b; });
     }
 
 
     void word_subtract()
     {
-        Value b = pop();
-        Value a = pop();
-
-        stack.push(expect_value_type<double>(a) - expect_value_type<double>(b));
+        math_op([](double a, double b) -> double { return a - b; });
     }
 
 
     void word_multiply()
     {
-        Value b = pop();
-        Value a = pop();
-
-        stack.push(expect_value_type<double>(a) * expect_value_type<double>(b));
+        math_op([](double a, double b) -> double { return a * b; });
     }
 
 
     void word_divide()
     {
-        Value b = pop();
-        Value a = pop();
+        math_op([](double a, double b) -> double { return a / b; });
+    }
 
-        stack.push(expect_value_type<double>(a) / expect_value_type<double>(b));
+
+    void word_equal()
+    {
+        math_op([](double a, double b) -> double { return a == b; });
+    }
+
+
+    void word_greater_equal()
+    {
+        math_op([](double a, double b) -> double { return a >= b; });
+    }
+
+
+    void word_less_equal()
+    {
+        math_op([](double a, double b) -> double { return a <= b; });
+    }
+
+
+    void word_greater()
+    {
+        math_op([](double a, double b) -> double { return a > b; });
+    }
+
+
+    void word_less()
+    {
+        math_op([](double a, double b) -> double { return a < b; });
     }
 
 
@@ -505,7 +534,7 @@ namespace
         auto name = input_tokens[current_token].text;
         double new_index = variables.size();
 
-        add_word(name, [name, new_index]() { stack.push(new_index); });
+        add_word(name, [name, new_index]() { push(new_index); });
         variables.push_back({});
     }
 
@@ -515,7 +544,7 @@ namespace
         Value top = pop();
         auto index = expect_value_type<double>(top);
 
-        stack.push(variables[index]);
+        push(variables[index]);
     }
 
 
@@ -644,6 +673,42 @@ namespace
 
         base_code.insert(base_code.end(), if_block.code.begin(), if_block.code.end());
         base_code.insert(base_code.end(), else_block.code.begin(), else_block.code.end());
+    }
+
+
+    void word_print_stack()
+    {
+        for (const auto& value : stack)
+        {
+            std::cout << value << std::endl;
+        }
+    }
+
+
+    void print_dictionary()
+    {
+        size_t max = 0;
+
+        for (const auto& word : dictionary)
+        {
+            if (max < word.first.size())
+            {
+                max = word.first.size();
+            }
+        }
+
+        for (const auto& word : dictionary)
+        {
+            std::cout << std::setw(max) << word.first << " "
+                      << std::setw(4) << word.second.handler_index;
+
+            if (word.second.immediate)
+            {
+                std::cout << " immediate";
+            }
+
+            std::cout << std::endl;
+        }
     }
 
 
@@ -829,6 +894,12 @@ int main(int argc, char* argv[])
         add_word("*", word_multiply);
         add_word("/", word_divide);
 
+        add_word("=", word_equal);
+        add_word(">=", word_greater_equal);
+        add_word("<=", word_less_equal);
+        add_word(">", word_greater);
+        add_word("<", word_less);
+
         add_word("variable", word_variable, true);
         add_word("@", word_read_variable);
         add_word("!", word_write_variable);
@@ -837,6 +908,9 @@ int main(int argc, char* argv[])
         add_word(";", word_end_function, true);
 
         add_word("if", word_if, true);
+
+        add_word(".s", word_print_stack);
+        add_word(".words", print_dictionary);
 
         auto base_path = std::filesystem::canonical(argv[0]).remove_filename() / "std.sorth";
 
