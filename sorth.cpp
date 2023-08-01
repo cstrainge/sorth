@@ -293,6 +293,8 @@ namespace
     TokenList input_tokens;
     size_t current_token = 0;
 
+    bool new_word_is_immediate = false;
+
 
     struct OpCode
     {
@@ -427,6 +429,13 @@ namespace
     }
 
 
+    void word_word()
+    {
+        const auto& word = input_tokens[++current_token];
+        push(word.text);
+    }
+
+
     void word_dup()
     {
         Value next = pop();
@@ -473,9 +482,51 @@ namespace
     }
 
 
+    bool either_is_string(const Value& a, const Value& b)
+    {
+        return    std::holds_alternative<std::string>(a)
+               || std::holds_alternative<std::string>(b);
+    }
+
+
+    std::string as_string(const Value& value)
+    {
+        if (std::holds_alternative<double>(value))
+        {
+            return std::to_string(std::get<double>(value));
+        }
+
+        return std::get<std::string>(value);
+    }
+
+
+    void string_or_double_op(std::function<void(double,double)> dop,
+                             std::function<void(std::string,std::string)> sop)
+    {
+        auto b = pop();
+        auto a = pop();
+
+        if (either_is_string(a, b))
+        {
+            auto str_a = as_string(a);
+            auto str_b = as_string(b);
+
+            sop(str_a, str_b);
+        }
+        else
+        {
+            auto a_num = std::get<double>(a);
+            auto b_num = std::get<double>(b);
+
+            dop(a_num, b_num);
+        }
+    }
+
+
     void word_add()
     {
-        math_op([](double a, double b) -> double { return a + b; });
+        string_or_double_op([](auto a, auto b) { push(a + b); },
+                            [](auto a, auto b) { push(a + b); });
     }
 
 
@@ -499,31 +550,36 @@ namespace
 
     void word_equal()
     {
-        math_op([](double a, double b) -> double { return a == b; });
+        string_or_double_op([](auto a, auto b) { push((double)(a == b)); },
+                            [](auto a, auto b) { push((double)(a == b)); });
     }
 
 
     void word_greater_equal()
     {
-        math_op([](double a, double b) -> double { return a >= b; });
+        string_or_double_op([](auto a, auto b) { push((double)(a >= b)); },
+                            [](auto a, auto b) { push((double)(a >= b)); });
     }
 
 
     void word_less_equal()
     {
-        math_op([](double a, double b) -> double { return a <= b; });
+        string_or_double_op([](auto a, auto b) { push((double)(a <= b)); },
+                            [](auto a, auto b) { push((double)(a <= b)); });
     }
 
 
     void word_greater()
     {
-        math_op([](double a, double b) -> double { return a > b; });
+        string_or_double_op([](auto a, auto b) { push((double)(a > b)); },
+                            [](auto a, auto b) { push((double)(a > b)); });
     }
 
 
     void word_less()
     {
-        math_op([](double a, double b) -> double { return a < b; });
+        string_or_double_op([](auto a, auto b) { push((double)(a < b)); },
+                            [](auto a, auto b) { push((double)(a < b)); });
     }
 
 
@@ -564,6 +620,8 @@ namespace
         auto name = input_tokens[current_token].text;
 
         construction_stack.push({ .name = name });
+
+        new_word_is_immediate = false;
     }
 
 
@@ -577,9 +635,16 @@ namespace
         add_word(construction.name, [construction]()
             {
                 execute_code(construction.code);
-            });
+            },
+            new_word_is_immediate);
 
         construction_stack.pop();
+    }
+
+
+    void word_immediate()
+    {
+        new_word_is_immediate = true;
     }
 
 
@@ -971,8 +1036,7 @@ int main(int argc, char* argv[])
     {
         add_word("quit", word_quit);
 
-        add_word("(", word_comment, true);
-
+        add_word("word", word_word);
         add_word("dup", word_dup);
 
         add_word(".", word_print);
@@ -995,11 +1059,10 @@ int main(int argc, char* argv[])
 
         add_word(":", word_start_function, true);
         add_word(";", word_end_function, true);
+        add_word("immediate", word_immediate, true);
 
         add_word("if", word_if, true);
         add_word("begin", word_loop, true);
-
-        add_word("until", [](){});
 
         add_word(".s", word_print_stack);
         add_word(".w", print_dictionary);

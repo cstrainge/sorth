@@ -1,4 +1,7 @@
 
+: ( immediate begin word ")" = until ;
+
+
 ( The standard library of words for Sorth. )
 
 
@@ -24,9 +27,4 @@
 : loop_while 10 begin -- dup 0 >= while "Hello world." .cr repeat ;
 
 
-(
-Missing functionality
-
-  swap
-  over
-)
+( Missing functionality swap over )
