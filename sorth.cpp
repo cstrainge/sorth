@@ -407,28 +407,6 @@ namespace
     }
 
 
-    void word_comment()
-    {
-        auto location = input_tokens[current_token].location;
-        bool found_end = false;
-
-        for ( ; current_token < input_tokens.size(); ++current_token)
-        {
-            if (   (input_tokens[current_token].type == Token::Type::word)
-                && (input_tokens[current_token].text == ")"))
-            {
-                found_end = true;
-                break;
-            }
-        }
-
-        if (!found_end)
-        {
-            throw_error(location, "Missing end of comment block, ')'.");
-        }
-    }
-
-
     void word_word()
     {
         const auto& word = input_tokens[++current_token];
