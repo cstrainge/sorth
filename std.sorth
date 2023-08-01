@@ -5,13 +5,19 @@
 ( The standard library of words for Sorth. )
 
 
-( Lets save some typing. )
-: .cr . cr ;
-
-
 ( Simple increment and decrements. )
-: ++ 1 + ;
-: -- 1 - ;
+: ++ ( value -- incremented ) 1 + ;
+: -- ( value -- decremented ) 1 - ;
+
+
+( Lets save some typing. )
+: .cr ( -- ) . cr ;
+: .sp ( count -- ) begin -- dup 0 >= while "" . repeat ;
+
+
+( Alternate ways to exit the interpreter. )
+: q    ( -- ) quit ;
+: exit ( -- ) quit ;
 
 
 ( Values for true and false. )
@@ -20,11 +26,11 @@
 
 
 ( For testing ifs... )
-: hello if "Hello world!" else "Goodbye all." then .cr ;
+: hello ( boolean -- ) if "Hello world!" else "Goodbye all." then .cr ;
 
 ( Testing loops... )
-: loop_until 10 begin "Hello world." .cr -- dup 0 <= until ;
-: loop_while 10 begin -- dup 0 >= while "Hello world." .cr repeat ;
+: loop_until ( -- ) 10 begin "Hello world." .cr -- dup 0 <= until ;
+: loop_while ( -- ) 10 begin -- dup 0 >= while "Hello world." .cr repeat ;
 
 
 ( Missing functionality swap over )
