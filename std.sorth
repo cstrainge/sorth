@@ -12,7 +12,7 @@
 
 ( Lets save some typing. )
 : .cr ( -- ) . cr ;
-: .sp ( count -- ) begin -- dup 0 >= while "" . repeat ;
+: .sp ( count -- ) begin -- dup 0 >= while "" . repeat drop ;
 
 
 ( Alternate ways to exit the interpreter. )
@@ -29,8 +29,8 @@
 : hello ( boolean -- ) if "Hello world!" else "Goodbye all." then .cr ;
 
 ( Testing loops... )
-: loop_until ( -- ) 10 begin "Hello world." .cr -- dup 0 <= until ;
-: loop_while ( -- ) 10 begin -- dup 0 >= while "Hello world." .cr repeat ;
+: loop_until ( -- ) 10 begin "Hello world." .cr -- dup 0 <= until drop ;
+: loop_while ( -- ) 10 begin -- dup 0 >= while "Hello world." .cr repeat drop ;
 
 
 ( Missing functionality swap over )

@@ -423,6 +423,12 @@ namespace
     }
 
 
+    void word_drop()
+    {
+        pop();
+    }
+
+
     template <typename variant>
     variant expect_value_type(Value& value)
     {
@@ -1016,11 +1022,13 @@ int main(int argc, char* argv[])
 
         add_word("word", word_word);
         add_word("dup", word_dup);
+        add_word("drop", word_drop);
 
         add_word(".", word_print);
         add_word("cr", word_newline);
 
         add_word("+", word_add);
+
         add_word("-", word_subtract);
         add_word("*", word_multiply);
         add_word("/", word_divide);
@@ -1046,9 +1054,24 @@ int main(int argc, char* argv[])
         add_word(".w", print_dictionary);
 
         auto base_path = std::filesystem::canonical(argv[0]).remove_filename() / "std.sorth";
-
         process_source(base_path);
-        process_repl();
+
+        if (argc == 2)
+        {
+            std::filesystem::path source_path = argv[1];
+
+            if (!std::filesystem::exists(source_path))
+            {
+                throw std::runtime_error(std::string("Error file ") + source_path.string() +
+                                        "does not exist.");
+            }
+
+            process_source(source_path);
+        }
+        else
+        {
+            process_repl();
+        }
     }
     catch(const std::exception& e)
     {
