@@ -3,5 +3,10 @@
     "files.associations":
     {
         "*.sorth": "forth"
-    }
+    },
+
+    "cSpell.words":
+    [
+        "sorth"
+    ]
 }
