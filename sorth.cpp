@@ -295,6 +295,9 @@ namespace
 
     bool new_word_is_immediate = false;
 
+    bool is_showing_bytecode = false;
+    bool is_showing_exec_code = false;
+
 
     struct OpCode
     {
@@ -889,6 +892,21 @@ namespace
     }
 
 
+    void word_show_bytecode()
+    {
+        auto value = pop();
+        is_showing_bytecode = (bool)expect_value_type<double>(value);
+    }
+
+
+    void word_show_exec_code()
+    {
+
+        auto value = pop();
+        is_showing_exec_code = (bool)expect_value_type<double>(value);
+    }
+
+
     void process_source(const std::filesystem::path& path);
 
 
@@ -965,9 +983,19 @@ namespace
 
     void execute_code(const ByteCode& code)
     {
+        if (is_showing_exec_code)
+        {
+            std::cout << "-------------------------------------" << std::endl;
+        }
+
         for (size_t pc = 0; pc < code.size(); ++pc)
         {
             const OpCode& op = code[pc];
+
+            if (is_showing_exec_code)
+            {
+                std::cout << std::setw(4) << pc << " - " << op << std::endl;
+            }
 
             switch (op.id)
             {
@@ -1011,6 +1039,11 @@ namespace
                     break;
             }
         }
+
+        if (is_showing_exec_code)
+        {
+            std::cout << "=====================================" << std::endl;
+        }
     }
 
 
@@ -1022,6 +1055,11 @@ namespace
         compile_token_list(input_tokens);
 
         // If the construction stack isn't 1 deep we have a problem.
+
+        if (is_showing_bytecode)
+        {
+            std::cout << construction_stack.top().code;
+        }
 
         execute_code(construction_stack.top().code);
 
@@ -1090,7 +1128,6 @@ int main(int argc, char* argv[])
         add_word("cr", word_newline);
 
         add_word("+", word_add);
-
         add_word("-", word_subtract);
         add_word("*", word_multiply);
         add_word("/", word_divide);
@@ -1115,6 +1152,9 @@ int main(int argc, char* argv[])
 
         add_word(".s", word_print_stack);
         add_word(".w", word_print_dictionary);
+
+        add_word("show_bytecode", word_show_bytecode);
+        add_word("show_exec_code", word_show_exec_code);
 
         add_word("include", word_include);
 
