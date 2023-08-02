@@ -429,6 +429,39 @@ namespace
     }
 
 
+    void word_swap()
+    {
+        auto a = pop();
+        auto b = pop();
+
+        push(a);
+        push(b);
+    }
+
+
+    void word_over()
+    {
+        auto a = pop();
+        auto b = pop();
+
+        push(a);
+        push(b);
+        push(a);
+    }
+
+
+    void word_rot()
+    {
+        auto c = pop();
+        auto b = pop();
+        auto a = pop();
+
+        push(c);
+        push(a);
+        push(b);
+    }
+
+
     template <typename variant>
     variant expect_value_type(Value& value)
     {
@@ -536,6 +569,13 @@ namespace
     {
         string_or_double_op([](auto a, auto b) { push((double)(a == b)); },
                             [](auto a, auto b) { push((double)(a == b)); });
+    }
+
+
+    void word_not_equal()
+    {
+        string_or_double_op([](auto a, auto b) { push((double)(a != b)); },
+                            [](auto a, auto b) { push((double)(a != b)); });
     }
 
 
@@ -822,7 +862,7 @@ namespace
     }
 
 
-    void print_dictionary()
+    void word_print_dictionary()
     {
         size_t max = 0;
 
@@ -837,7 +877,7 @@ namespace
         for (const auto& word : dictionary)
         {
             std::cout << std::setw(max) << word.first << " "
-                      << std::setw(4) << word.second.handler_index;
+                      << std::setw(6) << word.second.handler_index;
 
             if (word.second.immediate)
             {
@@ -846,6 +886,23 @@ namespace
 
             std::cout << std::endl;
         }
+    }
+
+
+    void process_source(const std::filesystem::path& path);
+
+
+    void word_include()
+    {
+        auto top = pop();
+        std::filesystem::path file_path = expect_value_type<std::string>(top);
+
+        if (!std::filesystem::exists(file_path))
+        {
+            throw_error({}, "The file " + file_path.string() + " can not be found.");
+        }
+
+        process_source(file_path);
     }
 
 
@@ -943,9 +1000,10 @@ namespace
 
                 case OpCode::Id::jump_if_not_zero:
                     {
-                        auto value = pop();
+                        auto top = pop();
+                        auto value = (bool)expect_value_type<double>(top);
 
-                        if (expect_value_type<double>(value) != 0.0)
+                        if (value)
                         {
                             pc = (size_t)std::get<double>(op.value) - 1;
                         }
@@ -1021,8 +1079,12 @@ int main(int argc, char* argv[])
         add_word("quit", word_quit);
 
         add_word("word", word_word);
+
         add_word("dup", word_dup);
         add_word("drop", word_drop);
+        add_word("swap", word_swap);
+        add_word("over", word_over);
+        add_word("rot", word_rot);
 
         add_word(".", word_print);
         add_word("cr", word_newline);
@@ -1034,6 +1096,7 @@ int main(int argc, char* argv[])
         add_word("/", word_divide);
 
         add_word("=", word_equal);
+        add_word("<>", word_not_equal);
         add_word(">=", word_greater_equal);
         add_word("<=", word_less_equal);
         add_word(">", word_greater);
@@ -1051,7 +1114,9 @@ int main(int argc, char* argv[])
         add_word("begin", word_loop, true);
 
         add_word(".s", word_print_stack);
-        add_word(".w", print_dictionary);
+        add_word(".w", word_print_dictionary);
+
+        add_word("include", word_include);
 
         auto base_path = std::filesystem::canonical(argv[0]).remove_filename() / "std.sorth";
         process_source(base_path);
@@ -1062,11 +1127,11 @@ int main(int argc, char* argv[])
 
             if (!std::filesystem::exists(source_path))
             {
-                throw std::runtime_error(std::string("Error file ") + source_path.string() +
-                                        "does not exist.");
+                throw std::runtime_error(std::string("File ") + source_path.string() +
+                                        " does not exist.");
             }
 
-            process_source(source_path);
+            process_source(std::filesystem::canonical(source_path));
         }
         else
         {
