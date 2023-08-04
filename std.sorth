@@ -11,15 +11,15 @@
 
 
 ( Handy comparisons. )
-: 0> 0 > ;
-: 0= 0 = ;
-: 0< 0 < ;
+: 0> ( value -- test_result ) 0 > ;
+: 0= ( value -- test_result ) 0 = ;
+: 0< ( value -- test_result ) 0 < ;
 
 
 ( Lets save some typing. )
 : .cr  ( value -- ) . cr ;
-: ? ( value -- ) @ .cr ;
-: .sp ( count -- ) begin -- dup 0 >= while "" . repeat drop ;
+: ?    ( value -- ) @ .cr ;
+: .sp  ( count -- ) begin -- dup 0 >= while "" . repeat drop ;
 
 : +! ( value variable -- ) over @ + swap ! ;
 : -! ( value variable -- ) over @ - swap ! ;
@@ -33,11 +33,3 @@
 ( Values for true and false. )
 : true  1 ;
 : false 0 ;
-
-
-( For testing ifs... )
-: hello ( boolean -- ) if "Hello world!" else "Goodbye all." then .cr ;
-
-( Testing loops... )
-: loop_until ( -- ) 10 begin "Hello world." .cr -- dup 0 <= until drop ;
-: loop_while ( -- ) 10 begin -- dup 0 >= while "Hello world." .cr repeat drop ;

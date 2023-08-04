@@ -1,9 +1,22 @@
 
+( For testing ifs... )
+: hello ( boolean -- ) if "Hello world!" else "Goodbye all." then .cr ;
+
+
+( Testing loops... )
+: loop_until ( -- ) 10 begin "Hello world." .cr -- dup 0 <= until drop ;
+: loop_while ( -- ) 10 begin -- dup 0 >= while "Hello world." .cr repeat drop ;
+
+
 true hello
 
 "" .cr
 
 loop_until
+
+"" .cr
+
+loop_while
 
 "" .cr
 
