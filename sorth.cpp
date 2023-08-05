@@ -1166,7 +1166,7 @@ namespace
 
     void process_repl()
     {
-        std::cout << "Silly Forth REPL." << std::endl;
+        std::cout << "Strange Forth REPL." << std::endl;
 
         while (   (repl_quit == false)
                 && (std::cin))
@@ -1251,7 +1251,7 @@ int main(int argc, char* argv[])
         // file@
         //
 
-        auto base_path = std::filesystem::canonical(argv[0]).remove_filename() / "std.sorth";
+        auto base_path = std::filesystem::canonical(argv[0]).remove_filename() / "std.f";
         process_source(base_path);
 
         if (argc == 2)
