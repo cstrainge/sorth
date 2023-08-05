@@ -404,13 +404,23 @@ namespace
 
     void add_word(const std::string& word_text, SubFunction handler, bool immediate = false)
     {
-        dictionary.insert(Dictionary::value_type(word_text,
-            {
+        Word new_word = {
                 .immediate = immediate,
                 .handler_index = handlers.size()
-            }));
+            };
 
         handlers.push_back(handler);
+
+        auto iter = dictionary.find(word_text);
+
+        if (iter != dictionary.end())
+        {
+            iter->second = new_word;
+        }
+        else
+        {
+            dictionary.insert(Dictionary::value_type(word_text, new_word));
+        }
     }
 
 
@@ -514,26 +524,6 @@ namespace
     }
 
 
-    void math_op(std::function<double(double, double)> dop,
-                 std::function<int64_t(int64_t, int64_t)> iop)
-    {
-        Value b = pop();
-        Value a = pop();
-        Value result;
-
-        if (either_is<double>)
-        {
-            result = dop(as_numeric<double>(a), as_numeric<double>(b));
-        }
-        else
-        {
-            result = iop(as_numeric<int64_t>(a), as_numeric<int64_t>(b));
-        }
-
-        push(result);
-    }
-
-
     std::string as_string(const Value& value)
     {
         if (std::holds_alternative<double>(value))
@@ -564,6 +554,26 @@ namespace
         }
 
         throw_error({}, "Expected numeric or boolean value.");
+    }
+
+
+    void math_op(std::function<double(double, double)> dop,
+                 std::function<int64_t(int64_t, int64_t)> iop)
+    {
+        Value b = pop();
+        Value a = pop();
+        Value result;
+
+        if (either_is<double>(a, b))
+        {
+            result = dop(as_numeric<double>(a), as_numeric<double>(b));
+        }
+        else
+        {
+            result = iop(as_numeric<int64_t>(a), as_numeric<int64_t>(b));
+        }
+
+        push(result);
     }
 
 
@@ -965,7 +975,7 @@ namespace
     void word_show_bytecode()
     {
         auto value = pop();
-        is_showing_bytecode = (bool)expect_value_type<double>(value);
+        is_showing_bytecode = as_numeric<bool>(value);
     }
 
 
@@ -973,7 +983,7 @@ namespace
     {
 
         auto value = pop();
-        is_showing_exec_code = (bool)expect_value_type<double>(value);
+        is_showing_exec_code = as_numeric<bool>(value);
     }
 
 
@@ -996,48 +1006,52 @@ namespace
 
     void compile_token(const Token& token)
     {
-        switch (token.type)
+        auto iter = dictionary.find(token.text);
+
+        if (iter != dictionary.end())
         {
-            case Token::Type::number:
+            if (iter->second.immediate)
+            {
+                auto index = iter->second.handler_index;
+                handlers[index]();
+            }
+            else
+            {
                 construction_stack.top().code.push_back({
-                    .id = OpCode::Id::push_constant_value,
-                    .value = std::stod(token.text)
+                    .id = OpCode::Id::exec,
+                    .value = (double)iter->second.handler_index
                 });
-                break;
+            }
 
-            case Token::Type::string:
-                construction_stack.top().code.push_back({
-                    .id = OpCode::Id::push_constant_value,
-                    .value = token.text
-                });
-                break;
-
-            case Token::Type::word:
-                {
-                    auto iter = dictionary.find(token.text);
-
-                    if (iter != dictionary.end())
-                    {
-                        if (iter->second.immediate)
-                        {
-                            auto index = iter->second.handler_index;
-                            handlers[index]();
-                        }
-                        else
-                        {
-                            construction_stack.top().code.push_back({
-                                .id = OpCode::Id::exec,
-                                .value = (double)iter->second.handler_index
-                            });
-                        }
-                    }
-                    else
-                    {
-                        throw_error(token.location, "Word '" + token.text + "' not found.");
-                    }
-                }
-                break;
+            return;
         }
+        else
+        {
+            switch (token.type)
+            {
+                case Token::Type::number:
+                    construction_stack.top().code.push_back({
+                        .id = OpCode::Id::push_constant_value,
+                        .value = std::stod(token.text)
+                    });
+                    break;
+
+                case Token::Type::string:
+                    construction_stack.top().code.push_back({
+                        .id = OpCode::Id::push_constant_value,
+                        .value = token.text
+                    });
+                    break;
+
+                case Token::Type::word:
+                    // Already handled up top.
+                    break;
+            }
+
+            return;
+        }
+
+        throw_error(token.location, "Word '" + token.text + "' not found.");
     }
 
 
