@@ -1,5 +1,5 @@
 
-# Silly Forth
+# Strange Forth
 
 Just a quick and dirty implementation of Forth.
 
