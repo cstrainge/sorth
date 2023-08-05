@@ -10,14 +10,14 @@
 
 true hello
 
-"" .cr
+cr
 
 loop_until
 
-"" .cr
+cr
 
 loop_while
 
-"" .cr
+cr
 
 false hello
