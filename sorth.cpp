@@ -506,20 +506,31 @@ namespace
     }
 
 
-    void math_op(std::function<double(double, double)> op)
-    {
-        Value b = pop();
-        Value a = pop();
-
-        push(op(expect_value_type<double>(a), expect_value_type<double>(b)));
-    }
-
-
     template <typename variant>
     bool either_is(const Value& a, const Value& b)
     {
         return    std::holds_alternative<variant>(a)
                || std::holds_alternative<variant>(b);
+    }
+
+
+    void math_op(std::function<double(double, double)> dop,
+                 std::function<int64_t(int64_t, int64_t)> iop)
+    {
+        Value b = pop();
+        Value a = pop();
+        Value result;
+
+        if (either_is<double>)
+        {
+            result = dop(as_numeric<double>(a), as_numeric<double>(b));
+        }
+        else
+        {
+            result = iop(as_numeric<int64_t>(a), as_numeric<int64_t>(b));
+        }
+
+        push(result);
     }
 
 
@@ -600,19 +611,22 @@ namespace
 
     void word_subtract()
     {
-        math_op([](double a, double b) -> double { return a - b; });
+        math_op([](auto a, auto b) -> auto { return a - b; },
+                [](auto a, auto b) -> auto { return a - b; });
     }
 
 
     void word_multiply()
     {
-        math_op([](double a, double b) -> double { return a * b; });
+        math_op([](auto a, auto b) -> auto { return a * b; },
+                [](auto a, auto b) -> auto { return a * b; });
     }
 
 
     void word_divide()
     {
-        math_op([](double a, double b) -> double { return a / b; });
+        math_op([](auto a, auto b) -> auto { return a / b; },
+                [](auto a, auto b) -> auto { return a / b; });
     }
 
 
