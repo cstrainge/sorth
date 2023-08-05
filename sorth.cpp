@@ -246,7 +246,7 @@ namespace
     }
 
 
-    using Value = std::variant<double, std::string>;
+    using Value = std::variant<bool, int64_t, double, std::string>;
     using ValueStack = std::list<Value>;
     using ValueList = std::vector<Value>;
 
@@ -256,13 +256,25 @@ namespace
     {
         if (const variant* value = std::get_if<variant>(&next))
         {
-            std::cout << *value;
+            stream << *value;
+        }
+    }
+
+
+    template <>
+    inline void word_print_if<bool>(std::ostream& stream, const Value& next)
+    {
+        if (const bool* value = std::get_if<bool>(&next))
+        {
+            stream << std::boolalpha << *value;
         }
     }
 
 
     std::ostream& operator <<(std::ostream& stream, const Value& value)
     {
+        word_print_if<bool>(stream, value);
+        word_print_if<int64_t>(stream, value);
         word_print_if<double>(stream, value);
         word_print_if<std::string>(stream, value);
 
@@ -360,6 +372,7 @@ namespace
     ConstructionStack construction_stack;
 
 
+    [[noreturn]]
     void throw_error(const Location& location, const std::string& message)
     {
         std::stringstream stream;
@@ -502,10 +515,11 @@ namespace
     }
 
 
-    bool either_is_string(const Value& a, const Value& b)
+    template <typename variant>
+    bool either_is(const Value& a, const Value& b)
     {
-        return    std::holds_alternative<std::string>(a)
-               || std::holds_alternative<std::string>(b);
+        return    std::holds_alternative<variant>(a)
+               || std::holds_alternative<variant>(b);
     }
 
 
@@ -520,13 +534,36 @@ namespace
     }
 
 
+    template <typename variant>
+    variant as_numeric(const Value& value)
+    {
+        if (std::holds_alternative<bool>(value))
+        {
+            return std::get<bool>(value);
+        }
+
+        if (std::holds_alternative<int64_t>(value))
+        {
+            return std::get<int64_t>(value);
+        }
+
+        if (std::holds_alternative<double>(value))
+        {
+            return std::get<double>(value);
+        }
+
+        throw_error({}, "Expected numeric or boolean value.");
+    }
+
+
     void string_or_double_op(std::function<void(double,double)> dop,
+                             std::function<void(int64_t,int64_t)> iop,
                              std::function<void(std::string,std::string)> sop)
     {
         auto b = pop();
         auto a = pop();
 
-        if (either_is_string(a, b))
+        if (either_is<std::string>(a, b))
         {
             auto str_a = as_string(a);
             auto str_b = as_string(b);
@@ -535,10 +572,20 @@ namespace
         }
         else
         {
-            auto a_num = std::get<double>(a);
-            auto b_num = std::get<double>(b);
+            if (either_is<double>(a, b))
+            {
+                auto a_num = as_numeric<double>(a);
+                auto b_num = as_numeric<double>(b);
 
-            dop(a_num, b_num);
+                dop(a_num, b_num);
+            }
+            else
+            {
+                auto a_num = as_numeric<int64_t>(a);
+                auto b_num = as_numeric<int64_t>(b);
+
+                iop(a_num, b_num);
+            }
         }
     }
 
@@ -546,6 +593,7 @@ namespace
     void word_add()
     {
         string_or_double_op([](auto a, auto b) { push(a + b); },
+                            [](auto a, auto b) { push(a + b); },
                             [](auto a, auto b) { push(a + b); });
     }
 
@@ -570,43 +618,49 @@ namespace
 
     void word_equal()
     {
-        string_or_double_op([](auto a, auto b) { push((double)(a == b)); },
-                            [](auto a, auto b) { push((double)(a == b)); });
+        string_or_double_op([](auto a, auto b) { push((bool)(a == b)); },
+                            [](auto a, auto b) { push((bool)(a == b)); },
+                            [](auto a, auto b) { push((bool)(a == b)); });
     }
 
 
     void word_not_equal()
     {
-        string_or_double_op([](auto a, auto b) { push((double)(a != b)); },
-                            [](auto a, auto b) { push((double)(a != b)); });
+        string_or_double_op([](auto a, auto b) { push((bool)(a != b)); },
+                            [](auto a, auto b) { push((bool)(a != b)); },
+                            [](auto a, auto b) { push((bool)(a != b)); });
     }
 
 
     void word_greater_equal()
     {
-        string_or_double_op([](auto a, auto b) { push((double)(a >= b)); },
-                            [](auto a, auto b) { push((double)(a >= b)); });
+        string_or_double_op([](auto a, auto b) { push((bool)(a >= b)); },
+                            [](auto a, auto b) { push((bool)(a >= b)); },
+                            [](auto a, auto b) { push((bool)(a >= b)); });
     }
 
 
     void word_less_equal()
     {
-        string_or_double_op([](auto a, auto b) { push((double)(a <= b)); },
-                            [](auto a, auto b) { push((double)(a <= b)); });
+        string_or_double_op([](auto a, auto b) { push((bool)(a <= b)); },
+                            [](auto a, auto b) { push((bool)(a <= b)); },
+                            [](auto a, auto b) { push((bool)(a <= b)); });
     }
 
 
     void word_greater()
     {
-        string_or_double_op([](auto a, auto b) { push((double)(a > b)); },
-                            [](auto a, auto b) { push((double)(a > b)); });
+        string_or_double_op([](auto a, auto b) { push((bool)(a > b)); },
+                            [](auto a, auto b) { push((bool)(a > b)); },
+                            [](auto a, auto b) { push((bool)(a > b)); });
     }
 
 
     void word_less()
     {
-        string_or_double_op([](auto a, auto b) { push((double)(a < b)); },
-                            [](auto a, auto b) { push((double)(a < b)); });
+        string_or_double_op([](auto a, auto b) { push((bool)(a < b)); },
+                            [](auto a, auto b) { push((bool)(a < b)); },
+                            [](auto a, auto b) { push((bool)(a < b)); });
     }
 
 
@@ -877,6 +931,8 @@ namespace
             }
         }
 
+        std::cout << dictionary.size() << " words defined." << std::endl;
+
         for (const auto& word : dictionary)
         {
             std::cout << std::setw(max) << word.first << " "
@@ -1017,11 +1073,11 @@ namespace
                 case OpCode::Id::jump_if_zero:
                     {
                         auto top = pop();
-                        auto value = (bool)expect_value_type<double>(top);
+                        auto value = as_numeric<bool>(top);
 
                         if (!value)
                         {
-                            pc = (size_t)std::get<double>(op.value) - 1;
+                            pc = (size_t)as_numeric<int64_t>(op.value) - 1;
                         }
                     }
                     break;
@@ -1029,11 +1085,11 @@ namespace
                 case OpCode::Id::jump_if_not_zero:
                     {
                         auto top = pop();
-                        auto value = (bool)expect_value_type<double>(top);
+                        auto value = as_numeric<bool>(top);
 
                         if (value)
                         {
-                            pc = (size_t)std::get<double>(op.value) - 1;
+                            pc = (size_t)as_numeric<int64_t>(op.value) - 1;
                         }
                     }
                     break;
@@ -1156,7 +1212,16 @@ int main(int argc, char* argv[])
         add_word("show_bytecode", word_show_bytecode);
         add_word("show_exec_code", word_show_exec_code);
 
+        add_word("true", []() { push(true); });
+        add_word("false", []() { push(false); });
+
         add_word("include", word_include);
+
+        // file_open
+        // file_close
+        // file!
+        // file@
+        //
 
         auto base_path = std::filesystem::canonical(argv[0]).remove_filename() / "std.sorth";
         process_source(base_path);

@@ -28,8 +28,3 @@
 ( Alternate ways to exit the interpreter. )
 : q    ( -- ) quit ;
 : exit ( -- ) quit ;
-
-
-( Values for true and false. )
-: true  1 ;
-: false 0 ;
