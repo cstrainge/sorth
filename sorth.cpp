@@ -768,9 +768,9 @@ namespace
 
         construction_stack.push({});
         construction_stack.top().code.push_back({
-            .id = OpCode::Id::jump_if_zero,
-            .value = 0.0
-        });
+                .id = OpCode::Id::jump_if_zero,
+                .value = 0
+            });
 
         for (++current_token; current_token < input_tokens.size(); ++current_token)
         {
@@ -780,7 +780,10 @@ namespace
             {
                 if (found_else)
                 {
-                    throw_error(token.location, "Duplicate else for if word.");
+                    std::stringstream stream;
+
+                    stream << "Duplicate else for if word, " << if_location << ".";
+                    throw_error(token.location, stream.str());
                 }
 
                 found_else = true;
@@ -816,30 +819,29 @@ namespace
             throw_error(if_location, "Missing matching then word for starting if word.");
         }
 
-        if_block.code[0].value = (double)if_block.code.size();
-
-        auto& base_code = construction_stack.top().code;
-
         if (found_else)
         {
             else_block.code.push_back({
-                .id = OpCode::Id::nop,
-                .value = 0.0
-            });
+                    .id = OpCode::Id::nop,
+                    .value = 0.0
+                });
 
-            if_block.code[0].value = std::get<double>(if_block.code[0].value) + 1.0;
             if_block.code.push_back({
-                .id = OpCode::Id::jump,
-                .value = (double)(if_block.code.size() + else_block.code.size())
-            });
+                    .id = OpCode::Id::jump,
+                    .value = (int64_t)else_block.code.size()
+                });
         }
         else
         {
             if_block.code.push_back({
-                .id = OpCode::Id::nop,
-                .value = 0.0
-            });
+                    .id = OpCode::Id::nop,
+                    .value = 0
+                });
         }
+
+        if_block.code[0].value = (int64_t)if_block.code.size();
+
+        auto& base_code = construction_stack.top().code;
 
         base_code.insert(base_code.end(), if_block.code.begin(), if_block.code.end());
         base_code.insert(base_code.end(), else_block.code.begin(), else_block.code.end());
@@ -869,7 +871,10 @@ namespace
             {
                 if (found_while)
                 {
-                    throw_error(token.location, "Unexpected until word in while loop.");
+                    std::stringstream stream;
+
+                    stream << "Unexpected until word in while loop, " << begin_location << ".";
+                    throw_error(token.location, stream.str());
                 }
 
                 loop_block = construction_stack.top();
@@ -877,7 +882,7 @@ namespace
 
                 loop_block.code.push_back({
                     .id = OpCode::Id::jump_if_zero,
-                    .value = (double)base_code.size()
+                    .value = (int64_t)(0 - loop_block.code.size())
                 });
 
                 base_code.insert(base_code.end(), loop_block.code.begin(), loop_block.code.end());
@@ -903,15 +908,13 @@ namespace
 
                 condition_block.code.push_back({
                     .id = OpCode::Id::jump_if_zero,
-                    .value = (double)(base_code.size() +
-                                      condition_block.code.size() +
-                                      loop_block.code.size() +
-                                      2)
+                    .value = (int64_t)(loop_block.code.size() + 2)
                 });
 
                 loop_block.code.push_back({
                     .id = OpCode::Id::jump,
-                    .value = (double)(base_code.size())
+                    .value = (int64_t)(0 - (condition_block.code.size() +
+                                       loop_block.code.size()))
                 });
 
                 loop_block.code.push_back({
@@ -1022,8 +1025,6 @@ namespace
                     .value = (double)iter->second.handler_index
                 });
             }
-
-            return;
         }
         else
         {
@@ -1031,27 +1032,23 @@ namespace
             {
                 case Token::Type::number:
                     construction_stack.top().code.push_back({
-                        .id = OpCode::Id::push_constant_value,
-                        .value = std::stod(token.text)
-                    });
+                            .id = OpCode::Id::push_constant_value,
+                            .value = std::stod(token.text)
+                        });
                     break;
 
                 case Token::Type::string:
                     construction_stack.top().code.push_back({
-                        .id = OpCode::Id::push_constant_value,
-                        .value = token.text
-                    });
+                            .id = OpCode::Id::push_constant_value,
+                            .value = token.text
+                        });
                     break;
 
                 case Token::Type::word:
-                    // Already handled up top.
+                    throw_error(token.location, "Word '" + token.text + "' not found.");
                     break;
             }
-
-            return;
         }
-
-        throw_error(token.location, "Word '" + token.text + "' not found.");
     }
 
 
@@ -1091,11 +1088,11 @@ namespace
                     break;
 
                 case OpCode::Id::exec:
-                    handlers[(size_t)std::get<double>(op.value)]();
+                    handlers[as_numeric<int64_t>(op.value)]();
                     break;
 
                 case OpCode::Id::jump:
-                    pc = (size_t)std::get<double>(op.value) - 1;
+                    pc += as_numeric<int64_t>(op.value) - 1;
                     break;
 
                 case OpCode::Id::jump_if_zero:
@@ -1105,7 +1102,7 @@ namespace
 
                         if (!value)
                         {
-                            pc = (size_t)as_numeric<int64_t>(op.value) - 1;
+                            pc += as_numeric<int64_t>(op.value) - 1;
                         }
                     }
                     break;
@@ -1117,7 +1114,7 @@ namespace
 
                         if (value)
                         {
-                            pc = (size_t)as_numeric<int64_t>(op.value) - 1;
+                            pc += as_numeric<int64_t>(op.value) - 1;
                         }
                     }
                     break;

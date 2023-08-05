@@ -23,7 +23,6 @@
 : 0<= ( value -- test_result ) 0 <= ;
 
 
-
 : +! ( value variable -- ) over @ + swap ! ;
 : -! ( value variable -- ) over @ - swap ! ;
 
