@@ -27,7 +27,12 @@ cr
 variable fp
 foo.new fp !
 
+fp @ .cr
+
 1024 foo.a fp #!!
+"Hello world!" foo.b fp #!!
+true foo.c fp #!!
+
 foo.a fp #@@ .cr
 
 fp @ .cr
