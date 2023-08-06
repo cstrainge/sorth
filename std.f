@@ -30,3 +30,9 @@
 ( Alternate ways to exit the interpreter. )
 : q    ( -- ) quit ;
 : exit ( -- ) quit ;
+
+
+( Quicker data field access. )
+
+: #!! @ #! ;
+: #@@ @ #@ ;

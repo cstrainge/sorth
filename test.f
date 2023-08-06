@@ -20,4 +20,19 @@ loop_while
 
 cr
 
+
+( Now lets test data object creation and access. )
+# foo a b c ;
+
+variable fp
+foo.new fp !
+
+1024 foo.a fp #!!
+foo.a fp #@@ .cr
+
+fp @ .cr
+
+
+cr
+
 false hello

@@ -245,11 +245,47 @@ namespace
         return tokens;
     }
 
+    struct DataObject;
+    using DataObjectPtr = std::shared_ptr<DataObject>;
 
-    using Value = std::variant<bool, int64_t, double, std::string>;
+    using Value = std::variant<bool, int64_t, double, std::string, DataObjectPtr>;
     using ValueStack = std::list<Value>;
     using ValueList = std::vector<Value>;
 
+
+    struct DataObjectDefinition
+    {
+        using NameList = std::vector<std::string>;
+
+        std::string name;
+        NameList fieldNames;
+    };
+
+    using DataObjectDefinitionPtr = std::shared_ptr<DataObjectDefinition>;
+    using DefinitionList = std::vector<DataObjectDefinitionPtr>;
+
+    struct DataObject
+    {
+        DataObjectDefinitionPtr definition;
+        ValueList fields;
+    };
+
+    std::ostream& operator <<(std::ostream& stream, const Value& value);
+
+    std::ostream& operator <<(std::ostream& stream, const DataObjectPtr& data)
+    {
+        stream << "# " << data->definition->name << " ";
+
+        for (int64_t i = 0; i < data->fields.size(); ++i)
+        {
+            stream << data->definition->fieldNames[i] << ": "
+                   << data->fields[i] << " ";
+        }
+
+        stream << ";";
+
+        return stream;
+    }
 
     template <typename variant>
     inline void word_print_if(std::ostream& stream, const Value& next)
@@ -277,6 +313,7 @@ namespace
         word_print_if<int64_t>(stream, value);
         word_print_if<double>(stream, value);
         word_print_if<std::string>(stream, value);
+        word_print_if<DataObjectPtr>(stream, value);
 
         return stream;
     }
@@ -296,6 +333,8 @@ namespace
 
     ValueStack stack;
     ValueList variables;
+
+    DefinitionList data_definitions;
 
     Dictionary dictionary;
     WordList handlers;
@@ -719,6 +758,72 @@ namespace
     }
 
 
+    void word_data_definition()
+    {
+        DataObjectDefinition definition;
+
+        ++current_token;
+        DataObjectDefinitionPtr definition_ptr = std::make_shared<DataObjectDefinition>();
+        definition_ptr->name = input_tokens[current_token].text;
+
+        for (++current_token; current_token < input_tokens.size(); ++current_token)
+        {
+            if (input_tokens[current_token].text == ";")
+            {
+                break;
+            }
+
+            definition_ptr->fieldNames.push_back(input_tokens[current_token].text);
+        }
+
+        add_word(definition_ptr->name + ".new", [definition_ptr]()
+            {
+                DataObjectPtr new_object = std::make_shared<DataObject>();
+
+                new_object->definition = definition_ptr;
+                new_object->fields.resize(definition_ptr->fieldNames.size());
+
+                push(new_object);
+            });
+
+        for (int64_t i = 0; i < definition_ptr->fieldNames.size(); ++i)
+        {
+            add_word(definition_ptr->name + "." + definition_ptr->fieldNames[i],
+                [i]()
+                {
+                    push(i);
+                });
+        }
+    }
+
+
+    void word_read_field()
+    {
+        auto var = pop();
+
+        auto object = expect_value_type<DataObjectPtr>(var);
+
+        var = pop();
+        auto field_index = as_numeric<int64_t>(var);
+
+        push(object->fields[field_index]);
+    }
+
+
+    void word_write_field()
+    {
+        auto var = pop();
+
+        auto object = expect_value_type<DataObjectPtr>(var);
+
+        var = pop();
+        auto field_index = as_numeric<int64_t>(var);
+
+        var = pop();
+        object->fields[field_index] = var;
+    }
+
+
     void word_start_function()
     {
         ++current_token;
@@ -881,9 +986,9 @@ namespace
                 construction_stack.pop();
 
                 loop_block.code.push_back({
-                    .id = OpCode::Id::jump_if_zero,
-                    .value = (int64_t)(0 - loop_block.code.size())
-                });
+                        .id = OpCode::Id::jump_if_zero,
+                        .value = (int64_t)(0 - loop_block.code.size())
+                    });
 
                 base_code.insert(base_code.end(), loop_block.code.begin(), loop_block.code.end());
                 break;
@@ -907,20 +1012,20 @@ namespace
                 construction_stack.pop();
 
                 condition_block.code.push_back({
-                    .id = OpCode::Id::jump_if_zero,
-                    .value = (int64_t)(loop_block.code.size() + 2)
-                });
+                        .id = OpCode::Id::jump_if_zero,
+                        .value = (int64_t)(loop_block.code.size() + 2)
+                    });
 
                 loop_block.code.push_back({
-                    .id = OpCode::Id::jump,
-                    .value = (int64_t)(0 - (condition_block.code.size() +
-                                       loop_block.code.size()))
-                });
+                        .id = OpCode::Id::jump,
+                        .value = (int64_t)(0 - (condition_block.code.size() +
+                                        loop_block.code.size()))
+                    });
 
                 loop_block.code.push_back({
-                    .id = OpCode::Id::nop,
-                    .value = 0.0
-                });
+                        .id = OpCode::Id::nop,
+                        .value = 0.0
+                    });
 
                 base_code.insert(base_code.end(),
                                  condition_block.code.begin(),
@@ -1021,9 +1126,9 @@ namespace
             else
             {
                 construction_stack.top().code.push_back({
-                    .id = OpCode::Id::exec,
-                    .value = (double)iter->second.handler_index
-                });
+                        .id = OpCode::Id::exec,
+                        .value = (double)iter->second.handler_index
+                    });
             }
         }
         else
@@ -1224,6 +1329,10 @@ int main(int argc, char* argv[])
         add_word("@", word_read_variable);
         add_word("!", word_write_variable);
 
+        add_word("#", word_data_definition, true);
+        add_word("#@", word_read_field);
+        add_word("#!", word_write_field);
+
         add_word(":", word_start_function, true);
         add_word(";", word_end_function, true);
         add_word("immediate", word_immediate, true);
@@ -1237,7 +1346,7 @@ int main(int argc, char* argv[])
         add_word("show_bytecode", word_show_bytecode);
         add_word("show_exec_code", word_show_exec_code);
 
-        add_word("true", []() { push(true); });
+        add_word("true",  []() { push(true);  });
         add_word("false", []() { push(false); });
 
         add_word("include", word_include);
