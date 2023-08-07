@@ -800,7 +800,6 @@ namespace
     void word_read_field()
     {
         auto var = pop();
-
         auto object = expect_value_type<DataObjectPtr>(var);
 
         var = pop();
@@ -813,7 +812,6 @@ namespace
     void word_write_field()
     {
         auto var = pop();
-
         auto object = expect_value_type<DataObjectPtr>(var);
 
         var = pop();
