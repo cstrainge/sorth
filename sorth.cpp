@@ -248,7 +248,7 @@ namespace
     struct DataObject;
     using DataObjectPtr = std::shared_ptr<DataObject>;
 
-    using Value = std::variant<bool, int64_t, double, std::string, DataObjectPtr>;
+    using Value = std::variant<int64_t, double, bool, std::string, DataObjectPtr>;
     using ValueStack = std::list<Value>;
     using ValueList = std::vector<Value>;
 
@@ -274,15 +274,22 @@ namespace
 
     std::ostream& operator <<(std::ostream& stream, const DataObjectPtr& data)
     {
-        stream << "# " << data->definition->name << " ";
-
-        for (int64_t i = 0; i < data->fields.size(); ++i)
+        if (data)
         {
-            stream << data->definition->fieldNames[i] << ": "
-                   << data->fields[i] << " ";
-        }
+            stream << "# " << data->definition->name << " ";
 
-        stream << ";";
+            for (int64_t i = 0; i < data->fields.size(); ++i)
+            {
+                stream << data->definition->fieldNames[i] << ": "
+                       << data->fields[i] << " ";
+            }
+
+            stream << ";";
+        }
+        else
+        {
+            stream << "NULL";
+        }
 
         return stream;
     }
@@ -309,9 +316,9 @@ namespace
 
     std::ostream& operator <<(std::ostream& stream, const Value& value)
     {
-        word_print_if<bool>(stream, value);
         word_print_if<int64_t>(stream, value);
         word_print_if<double>(stream, value);
+        word_print_if<bool>(stream, value);
         word_print_if<std::string>(stream, value);
         word_print_if<DataObjectPtr>(stream, value);
 
@@ -1134,10 +1141,16 @@ namespace
             switch (token.type)
             {
                 case Token::Type::number:
-                    construction_stack.top().code.push_back({
-                            .id = OpCode::Id::push_constant_value,
-                            .value = std::stod(token.text)
-                        });
+                    {
+                        Value value = (token.text.find('.') != std::string::npos) ?
+                            std::stod(token.text) :
+                            std::stoi(token.text);
+
+                        construction_stack.top().code.push_back({
+                                .id = OpCode::Id::push_constant_value,
+                                .value = value
+                            });
+                    }
                     break;
 
                 case Token::Type::string:
