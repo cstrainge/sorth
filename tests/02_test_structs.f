@@ -8,7 +8,7 @@ variable fp
 foo.new fp !
 
 ( Print out what we have so far. )
-"---" . fp ?
+fp ?
 
 ( Assign some values to the first two fields. )
 1024 foo.a fp #!!
@@ -23,4 +23,4 @@ bar.new foo.c fp #!!
 350 bar.z foo.c fp #@@ #!
 
 ( Finally print the whole thing. )
-"---" . fp ?
+fp ?

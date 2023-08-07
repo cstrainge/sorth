@@ -5,6 +5,4 @@
 
 true hello
 
-cr
-
 false hello
