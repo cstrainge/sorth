@@ -23,6 +23,7 @@
 : 0<= ( value -- test_result ) 0 <= ;
 
 
+( Increment and decrement variables. )
 : +! ( value variable -- ) over @ + swap ! ;
 : -! ( value variable -- ) over @ - swap ! ;
 
@@ -33,6 +34,5 @@
 
 
 ( Quicker data field access. )
-
 : #!! @ #! ;
 : #@@ @ #@ ;
