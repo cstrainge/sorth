@@ -686,11 +686,7 @@ namespace
     {
         auto b = pop();
         auto a = pop();
-
-std::cout << "--" << a << ", " << b ;
         auto result = op(as_numeric<int64_t>(a), as_numeric<int64_t>(b));
-
-std::cout << " -> " << result << std::endl;
 
         push(result);
     }
