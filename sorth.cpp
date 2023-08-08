@@ -750,15 +750,15 @@ namespace
     }
 
 
-    void word_lshift()
+    void word_left_shift()
     {
-        logic_bit_op([](auto amount, auto value) { return value << amount; });
+        logic_bit_op([](auto value, auto amount) { return value << amount; });
     }
 
 
-    void word_rshift()
+    void word_right_shift()
     {
-        logic_bit_op([](auto amount, auto value) { return value >> amount; });
+        logic_bit_op([](auto value, auto amount) { return value >> amount; });
     }
 
 
@@ -1432,8 +1432,8 @@ int main(int argc, char* argv[])
         add_word("or", word_or);
         add_word("xor", word_xor);
         add_word("not", word_not);
-        add_word("<<", word_lshift);
-        add_word(">>", word_rshift);
+        add_word("<<", word_left_shift);
+        add_word(">>", word_right_shift);
 
         add_word("=", word_equal);
         add_word("<>", word_not_equal);
