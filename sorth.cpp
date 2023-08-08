@@ -619,6 +619,15 @@ namespace
     }
 
 
+    void word_hex()
+    {
+        Value next = pop();
+        auto int_value = as_numeric<int64_t>(next);
+
+        std::cout << std::hex << int_value << std::dec << " ";
+    }
+
+
     void math_op(std::function<double(double, double)> dop,
                  std::function<int64_t(int64_t, int64_t)> iop)
     {
@@ -673,6 +682,20 @@ namespace
     }
 
 
+    void logic_bit_op(std::function<int64_t(int64_t, int64_t)> op)
+    {
+        auto b = pop();
+        auto a = pop();
+
+std::cout << "--" << a << ", " << b ;
+        auto result = op(as_numeric<int64_t>(a), as_numeric<int64_t>(b));
+
+std::cout << " -> " << result << std::endl;
+
+        push(result);
+    }
+
+
     void word_add()
     {
         string_or_double_op([](auto a, auto b) { push(a + b); },
@@ -699,6 +722,35 @@ namespace
     {
         math_op([](auto a, auto b) -> auto { return a / b; },
                 [](auto a, auto b) -> auto { return a / b; });
+    }
+
+
+    void word_and()
+    {
+        logic_bit_op([](auto a, auto b) { return a & b; });
+    }
+
+
+    void word_or()
+    {
+        logic_bit_op([](auto a, auto b) { return a | b; });
+    }
+
+
+    void word_xor()
+    {
+        logic_bit_op([](auto a, auto b) { return a ^ b; });
+    }
+
+
+    void word_not()
+    {
+        auto top = pop();
+        auto value = as_numeric<int64_t>(top);
+
+        value = ~value;
+
+        push(value);
     }
 
 
@@ -1158,9 +1210,22 @@ namespace
             {
                 case Token::Type::number:
                     {
-                        Value value = (token.text.find('.') != std::string::npos) ?
-                            std::stod(token.text) :
-                            std::stoi(token.text);
+                        Value value;
+
+
+                        if (token.text.find('.') != std::string::npos)
+                        {
+                            value = std::stod(token.text);
+                        }
+                        else if ((token.text[0] == '0') && (token.text[1] == 'x'))
+                        {
+                            size_t pos = 2;
+                            value = std::stoll(token.text, nullptr, 16);
+                        }
+                        else
+                        {
+                            value = std::stoll(token.text);
+                        }
 
                         construction_stack.top().code.push_back({
                                 .id = OpCode::Id::push_constant_value,
@@ -1348,11 +1413,17 @@ int main(int argc, char* argv[])
 
         add_word(".", word_print);
         add_word("cr", word_newline);
+        add_word(".hex", word_hex);
 
         add_word("+", word_add);
         add_word("-", word_subtract);
         add_word("*", word_multiply);
         add_word("/", word_divide);
+
+        add_word("and", word_and);
+        add_word("or", word_or);
+        add_word("xor", word_xor);
+        add_word("not", word_not);
 
         add_word("=", word_equal);
         add_word("<>", word_not_equal);

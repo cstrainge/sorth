@@ -13,6 +13,7 @@
 : .cr  ( value -- ) . cr ;
 : ?    ( value -- ) @ .cr ;
 : .sp  ( count -- ) begin -- dup 0 >= while "" . repeat drop ;
+: .hcr ( value -- ) .hex cr ;
 
 
 ( Handy comparisons. )
