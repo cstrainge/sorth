@@ -356,6 +356,8 @@ namespace
     bool is_showing_bytecode = false;
     bool is_showing_exec_code = false;
 
+    std::stack<std::filesystem::path> current_path;
+
 
     struct OpCode
     {
@@ -416,6 +418,20 @@ namespace
     using ConstructionStack = std::stack<Construction>;
 
     ConstructionStack construction_stack;
+
+
+    void set_wd(const std::filesystem::path& path)
+    {
+        std::filesystem::current_path(path);
+        current_path.push(path);
+    }
+
+
+    void reset_wd()
+    {
+        current_path.pop();
+        std::filesystem::current_path(current_path.top());
+    }
 
 
     [[noreturn]]
@@ -1266,7 +1282,14 @@ namespace
 
     void process_source(const std::filesystem::path& path)
     {
-        std::ifstream source_file(path);
+        auto source_path = std::filesystem::canonical(path);
+
+        auto base_path = source_path;
+        base_path.remove_filename();
+
+        set_wd(base_path);
+
+        std::ifstream source_file(source_path);
 
         auto begin = std::istreambuf_iterator<char>(source_file);
         auto end = std::istreambuf_iterator<char>();
@@ -1274,6 +1297,8 @@ namespace
         auto new_source = std::string(begin, end);
 
         process_source(new_source);
+
+        reset_wd();
     }
 
 
@@ -1368,8 +1393,10 @@ int main(int argc, char* argv[])
         // file@
         //
 
-        auto base_path = std::filesystem::canonical(argv[0]).remove_filename() / "std.f";
-        process_source(base_path);
+        current_path.push(std::filesystem::current_path());
+
+        auto base_path = std::filesystem::canonical(argv[0]).remove_filename();
+        process_source(base_path / "std.f");
 
         if (argc == 2)
         {
