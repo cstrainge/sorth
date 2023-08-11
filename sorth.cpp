@@ -1144,7 +1144,6 @@ namespace
         }
 
         int64_t jump_offset = 0;
-        int64_t count = 0;
 
         for (auto iter = case_blocks.rbegin(); iter != case_blocks.rend(); ++iter)
         {
@@ -1156,17 +1155,10 @@ namespace
                     (int64_t)block.body.code.size() + 2;
             }
 
-            if (   (!block.body.code.empty())
-                && (!block.test.code.empty()))
+            if (!block.body.code.empty())
             {
-                ++count;
                 block.body.code[block.body.code.size() - 1].value = jump_offset;
-
                 jump_offset += block.test.code.size() + block.body.code.size();
-            }
-            else if (!block.body.code.empty())
-            {
-                jump_offset += block.body.code.size();
             }
         }
 
