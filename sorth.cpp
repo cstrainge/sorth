@@ -1533,7 +1533,7 @@ namespace
 
                 std::cout << "ok" << std::endl;
             }
-            catch(const std::exception& e)
+            catch (const std::exception& e)
             {
                 std::cerr << e.what() << std::endl;
             }
@@ -1627,7 +1627,7 @@ int main(int argc, char* argv[])
             if (!std::filesystem::exists(source_path))
             {
                 throw std::runtime_error(std::string("File ") + source_path.string() +
-                                        " does not exist.");
+                                         " does not exist.");
             }
 
             process_source(std::filesystem::canonical(source_path));
@@ -1637,7 +1637,7 @@ int main(int argc, char* argv[])
             process_repl();
         }
     }
-    catch(const std::exception& e)
+    catch (const std::exception& e)
     {
         std::cerr << "Fatal: " << e.what() << std::endl;
         return EXIT_FAILURE;
