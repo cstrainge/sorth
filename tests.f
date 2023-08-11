@@ -16,3 +16,9 @@ cr
 "tests/02_test_structs.f" include
 
 cr
+
+"--- Testing case blocks. ---" .cr
+
+"tests/03_test_case.f" include
+
+cr

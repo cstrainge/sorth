@@ -1034,6 +1034,154 @@ namespace
     }
 
 
+    void word_case()
+    {
+        struct CaseBlock
+        {
+            Construction test;
+            Construction body;
+        };
+
+        std::vector<CaseBlock> case_blocks;
+
+        construction_stack.push({});
+        case_blocks.push_back({});
+
+        bool found_of = false;
+
+        OpCode dup = {
+                .id = OpCode::Id::exec,
+                .value = (int64_t)dictionary.find("dup")->second.handler_index
+            };
+
+        OpCode equals = {
+                .id = OpCode::Id::exec,
+                .value = (int64_t)dictionary.find("=")->second.handler_index
+            };
+
+        OpCode jz = {
+                .id = OpCode::Id::jump_if_zero,
+                .value = 0
+            };
+
+        OpCode jmp = {
+                .id = OpCode::Id::jump,
+                .value = 0
+            };
+
+        OpCode drop = {
+                .id = OpCode::Id::exec,
+                .value = (int64_t)dictionary.find("drop")->second.handler_index
+            };
+
+        OpCode nop = {
+                .id = OpCode::Id::nop,
+                .value = 0
+            };
+
+        for (++current_token; current_token < input_tokens.size(); ++current_token)
+        {
+            const Token& token = input_tokens[current_token];
+
+            if (token.text == "of")
+            {
+                if (found_of)
+                {
+                    throw_error(token.location, "Duplicate of in case block.");
+                }
+
+                found_of = true;
+
+                auto& top = construction_stack.top();
+                top.code.insert(top.code.begin(), dup);
+                top.code.push_back(equals);
+                top.code.push_back(jz);
+                top.code.push_back(drop);
+
+                case_blocks[case_blocks.size() - 1].test = construction_stack.top();
+                construction_stack.pop();
+
+                construction_stack.push({});
+            }
+            else if (token.text == "endof")
+            {
+                if (!found_of)
+                {
+                    throw_error(token.location, "Missing of clause for endof.");
+                }
+
+                found_of = false;
+
+                auto& top = construction_stack.top();
+                top.code.push_back(jmp);
+
+                case_blocks[case_blocks.size() - 1].body = construction_stack.top();
+                construction_stack.pop();
+
+                construction_stack.push({});
+                case_blocks.push_back({});
+            }
+            else if (token.text == "endcase")
+            {
+                if (found_of)
+                {
+                    throw_error(token.location, "Missing endof for of clause.");
+                }
+
+                auto& top = construction_stack.top();
+                top.code.push_back(nop);
+
+                case_blocks[case_blocks.size() - 1].test.code.push_back(drop);
+                case_blocks[case_blocks.size() - 1].body = construction_stack.top();
+                construction_stack.pop();
+
+                break;
+            }
+            else
+            {
+                compile_token(token);
+            }
+        }
+
+        int64_t jump_offset = 0;
+        int64_t count = 0;
+
+        for (auto iter = case_blocks.rbegin(); iter != case_blocks.rend(); ++iter)
+        {
+            auto& block = *iter;
+
+            if (!block.test.code.empty())
+            {
+                block.test.code[block.test.code.size() - 2].value =
+                    (int64_t)block.body.code.size() + 2;
+            }
+
+            if (   (!block.body.code.empty())
+                && (!block.test.code.empty()))
+            {
+                ++count;
+                block.body.code[block.body.code.size() - 1].value = jump_offset;
+
+                jump_offset += block.test.code.size() + block.body.code.size();
+            }
+            else if (!block.body.code.empty())
+            {
+                jump_offset += block.body.code.size();
+            }
+        }
+
+        auto& base_code = construction_stack.top().code;
+
+        for (size_t i = 0; i < case_blocks.size(); ++i)
+        {
+            auto& block = case_blocks[i];
+
+            base_code.insert(base_code.end(), block.test.code.begin(), block.test.code.end());
+            base_code.insert(base_code.end(), block.body.code.begin(), block.body.code.end());
+        }
+    }
+
+
     void word_loop()
     {
         auto& base_code = construction_stack.top().code;
@@ -1455,6 +1603,7 @@ int main(int argc, char* argv[])
         add_word("immediate", word_immediate, true);
 
         add_word("if", word_if, true);
+        add_word("case", word_case, true);
         add_word("begin", word_loop, true);
 
         add_word(".s", word_print_stack);
