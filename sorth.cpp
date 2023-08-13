@@ -367,7 +367,7 @@ namespace
     // variant.  With int64_t being defined first, all values will default to the integer value of
     // zero.
     using Value = std::variant<int64_t, double, bool, std::string, Token, Location>;
-    using ValueStack = std::stack<Value>;
+    using ValueStack = std::list<Value>;
 
 
     // Let's make sure we can convert values to text for displaying to the user among various other
@@ -569,6 +569,44 @@ namespace
 
     std::ostream& operator <<(std::ostream& stream, const Dictionary& dictionary)
     {
+        // First merge all the sub-dictionaries into one.
+        Dictionary::SubDictionary new_dictionary;
+
+        for (auto iter = dictionary.stack.begin(); iter != dictionary.stack.end(); ++iter)
+        {
+            const Dictionary::SubDictionary& sub_dictionary = *iter;
+            new_dictionary.insert(sub_dictionary.begin(), sub_dictionary.end());
+        }
+
+        // For formatting, find out the largest word width.
+
+        size_t max = 0;
+
+        for (const auto& word : new_dictionary)
+        {
+            if (max < word.first.size())
+            {
+                max = word.first.size();
+            }
+        }
+
+        // Now, print out the consolidated dictionary.
+
+        std::cout << new_dictionary.size() << " words defined." << std::endl;
+
+        for (const auto& word : new_dictionary)
+        {
+            std::cout << std::setw(max) << word.first << " "
+                      << std::setw(4) << word.second.handler_index;
+
+            if (word.second.immediate)
+            {
+                std::cout << " immediate";
+            }
+
+            std::cout << std::endl;
+        }
+
         return stream;
     }
 
@@ -620,8 +658,8 @@ namespace
             throw_error(current_location, "Stack underflow.");
         }
 
-        auto next = stack.top();
-        stack.pop();
+        auto next = stack.front();
+        stack.pop_front();
 
         return next;
     }
@@ -629,7 +667,7 @@ namespace
 
     inline void push(const Value& value)
     {
-        stack.push(value);
+        stack.push_front(value);
     }
 
 
@@ -1081,6 +1119,21 @@ namespace
     }
 
 
+    void word_print_stack() noexcept
+    {
+        for (const auto& value : stack)
+        {
+            std::cout << value << std::endl;
+        }
+    }
+
+
+    void word_print_dictionary() noexcept
+    {
+        std::cout << dictionary;
+    }
+
+
     // Gather up all the native words and make them available to the interpreter.
 
     void init_builtin_words() noexcept
@@ -1095,6 +1148,10 @@ namespace
         add_word("exit_failure", word_exit_failure);  // ( -- exit_fail )
         add_word("true", word_true);                  // ( -- true )
         add_word("false", word_false);                // ( -- false )
+
+        // Debug support.
+        add_word(".s", word_print_stack);
+        add_word(".w", word_print_dictionary);
     }
 
 
