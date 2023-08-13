@@ -1,4 +1,18 @@
 
+// Implementation of an interpreted version of Forth.  This version is aware of the standard ANS
+// Forth however we don't adhere to it very closely.  We've taken liberties to follow some idioms
+// from newer languages where the author finds it enhances readability.  It's acknowledged that this
+// is an entirely subjective standard.
+//
+// The second reason why this version deviates from most Forth implementations is that this version
+// doesn't compile to machine code.  Instead this version compiles and runs as a bytecode
+// interpreter, and also makes use of exceptions and features available in newer versions of C++ as
+// opposed to mostly being implemented in assembly.
+//
+// The knock on effects of these decisions is that this version of Form may be slower than other
+// compiled versions.  The intention of this is for this version to act more as a scripting language
+// rather than as a compiler/executable generator with optional REPL.
+
 #include <iostream>
 #include <sstream>
 #include <filesystem>
@@ -10,6 +24,7 @@
 #include <vector>
 #include <variant>
 #include <unordered_map>
+#include <cassert>
 
 
 
@@ -17,9 +32,37 @@ namespace
 {
 
 
+    // First off, we need to keep track of where we are in the source code for error reporting.  We
+    // use a shared_ptr for the path component in order to avoid duplicating a path string all over
+    // the place.
+
+    using PathPtr = std::shared_ptr<std::filesystem::path>;
+
+
+    // Simple wrappers create this shared path.
+
+    inline PathPtr shared_path(const char* string)
+    {
+        return std::make_shared<std::filesystem::path>(string);
+    }
+
+
+    inline PathPtr shared_path(const std::string& string)
+    {
+        return std::make_shared<std::filesystem::path>(string);
+    }
+
+
+    inline PathPtr shared_path(const std::filesystem::path& path)
+    {
+        return std::make_shared<std::filesystem::path>(path);
+    }
+
+
     class Location
     {
         private:
+            PathPtr source_path;
             size_t line;
             size_t column;
 
@@ -30,7 +73,19 @@ namespace
             {
             }
 
+            Location(const PathPtr& path)
+            : source_path(path),
+              line(1),
+              column(1)
+            {
+            }
+
         public:
+            const PathPtr& get_path() const noexcept
+            {
+                return source_path;
+            }
+
             size_t get_line() const noexcept
             {
                 return line;
@@ -55,13 +110,46 @@ namespace
     };
 
 
+    // We format errors more like gcc so that code editors have an easier time of jumping to the
+    // location the error actually occurred.
+
     std::ostream& operator <<(std::ostream& stream, Location location)
     {
-        stream << "(" << location.get_line() << ", " << location.get_column() << ")";
+        auto& path = location.get_path();
+
+        if (path)
+        {
+            stream << *path << ":";
+        }
+
+        stream << location.get_line() << ":" << location.get_column();
 
         return stream;
     }
 
+
+    [[noreturn]]
+    inline void throw_error(const Location& location, const std::string& message)
+    {
+        std::stringstream stream;
+
+        stream << location << ": Error: " << message;
+        throw std::runtime_error(stream.str());
+    }
+
+
+    inline void throw_error_if(bool condition, const Location& location, const std::string& message)
+    {
+        if (condition)
+        {
+            throw_error(location, message);
+        }
+    }
+
+
+    // Helper class that keeps track of the current location as we tokenize the source code.  It'll
+    // also take care of loading the source from a file on disk.  Or just simply accept text from
+    // the REPL.
 
     class SourceBuffer
     {
@@ -74,15 +162,31 @@ namespace
             SourceBuffer()
             : source(),
               position(0),
-              source_location()
+              source_location(shared_path("<repl>"))
             {
             }
 
             SourceBuffer(std::string const& new_source)
             : source(new_source),
               position(0),
-              source_location()
+              source_location(shared_path("<repl>"))
             {
+            }
+
+            SourceBuffer(const std::filesystem::path& path)
+            : source(),
+              position(0),
+              source_location(shared_path(path))
+            {
+                std::ifstream source_file(*source_location.get_path());
+
+                auto begin = std::istreambuf_iterator<char>(source_file);
+                auto end = std::istreambuf_iterator<char>();
+
+                source = std::move(std::string(begin, end));
+
+                // TODO: Look for a #! on the first line and remove it before the rest of the
+                //       interpreter sees it.
             }
 
         public:
@@ -136,8 +240,14 @@ namespace
     };
 
 
+    // Take the source in a source buffer and convert it into a list of tokens, or words really.
+    // This is used by the native compiler and also the interpreted code to manipulate the language
+    // itself.  One of the fun things about Forth is that it can help define itself.
+
     struct Token
     {
+        // The tokenizer's best guess of the meaning of the given token.  This is really optional as
+        // it may be reinterpreted later.
         enum class Type
         {
             number,
@@ -145,30 +255,37 @@ namespace
             word
         };
 
-        Type type;
-        Location location;
-        std::string text;
+        Type type;          // What kind of token do we think this is?
+        Location location;  // Where in the source was this token found?
+        std::string text;   // The actual token itself.
     };
+
+
+    std::ostream& operator <<(std::ostream& stream, Token token) noexcept
+    {
+        stream << token.location << ": " << token.text;
+
+        return stream;
+    }
 
 
     using TokenList = std::vector<Token>;
 
 
-    TokenList tokenize(const std::string& source_text)
+    TokenList tokenize(SourceBuffer& source_code)
     {
         TokenList tokens;
-        SourceBuffer source(source_text);
 
         auto get_while = [&](std::function<bool(char)> test) -> std::string
             {
                 std::string new_string;
-                char next = source.peek_next();
+                char next = source_code.peek_next();
 
-                while (    (source)
+                while (    (source_code)
                         && (test(next)))
                 {
-                    new_string += source.next();
-                    next = source.peek_next();
+                    new_string += source_code.next();
+                    next = source_code.peek_next();
                 }
 
                 return new_string;
@@ -199,35 +316,35 @@ namespace
 
         auto skip_whitespace = [&]()
             {
-                char next = source.peek_next();
+                char next = source_code.peek_next();
 
-                while (source && (is_whitespace(next)))
+                while (source_code && (is_whitespace(next)))
                 {
-                    source.next();
-                    next = source.peek_next();
+                    source_code.next();
+                    next = source_code.peek_next();
                 }
             };
 
-        while (source)
+        while (source_code)
         {
             skip_whitespace();
 
-            if (!source)
+            if (!source_code)
             {
                 break;
             }
 
             std::string text;
             Token::Type type = Token::Type::word;
-            Location location = source.current_location();
+            Location location = source_code.current_location();
 
-            if (source.peek_next() == '"')
+            if (source_code.peek_next() == '"')
             {
                 type = Token::Type::string;
 
-                source.next();
+                source_code.next();
                 text = get_while([&](char next) -> bool { return next != '"'; });
-                source.next();
+                source_code.next();
             }
             else
             {
@@ -245,59 +362,20 @@ namespace
         return tokens;
     }
 
-    struct DataObject;
-    using DataObjectPtr = std::shared_ptr<DataObject>;
 
-    using Value = std::variant<int64_t, double, bool, std::string, DataObjectPtr>;
-    using ValueStack = std::list<Value>;
-    using ValueList = std::vector<Value>;
+    // All of the types that ther interpreter can natively understand are represented in the value
+    // variant.  With int64_t being defined first, all values will default to the integer value of
+    // zero.
+    using Value = std::variant<int64_t, double, bool, std::string, Token, Location>;
+    using ValueStack = std::stack<Value>;
 
 
-    struct DataObjectDefinition
-    {
-        using NameList = std::vector<std::string>;
-
-        std::string name;
-        NameList fieldNames;
-    };
-
-    using DataObjectDefinitionPtr = std::shared_ptr<DataObjectDefinition>;
-    using DefinitionList = std::vector<DataObjectDefinitionPtr>;
-
-    struct DataObject
-    {
-        DataObjectDefinitionPtr definition;
-        ValueList fields;
-    };
-
-    std::ostream& operator <<(std::ostream& stream, const Value& value);
-
-    std::ostream& operator <<(std::ostream& stream, const DataObjectPtr& data)
-    {
-        if (data)
-        {
-            stream << "# " << data->definition->name << " ";
-
-            for (int64_t i = 0; i < data->fields.size(); ++i)
-            {
-                stream << data->definition->fieldNames[i] << ": "
-                       << data->fields[i] << " ";
-            }
-
-            stream << ";";
-        }
-        else
-        {
-            stream << "NULL";
-        }
-
-        return stream;
-    }
-
+    // Let's make sure we can convert values to text for displaying to the user among various other
+    // uses like writing to a text file.
     template <typename variant>
-    inline void word_print_if(std::ostream& stream, const Value& next)
+    inline void value_print_if(std::ostream& stream, const Value& variant_value) noexcept
     {
-        if (const variant* value = std::get_if<variant>(&next))
+        if (const variant* value = std::get_if<variant>(&variant_value))
         {
             stream << *value;
         }
@@ -305,278 +383,259 @@ namespace
 
 
     template <>
-    inline void word_print_if<bool>(std::ostream& stream, const Value& next)
+    inline void value_print_if<bool>(std::ostream& stream, const Value& variant_value) noexcept
     {
-        if (const bool* value = std::get_if<bool>(&next))
+        if (const bool* value = std::get_if<bool>(&variant_value))
         {
             stream << std::boolalpha << *value;
         }
     }
 
 
-    std::ostream& operator <<(std::ostream& stream, const Value& value)
+    std::ostream& operator <<(std::ostream& stream, const Value& value) noexcept
     {
-        word_print_if<int64_t>(stream, value);
-        word_print_if<double>(stream, value);
-        word_print_if<bool>(stream, value);
-        word_print_if<std::string>(stream, value);
-        word_print_if<DataObjectPtr>(stream, value);
+        value_print_if<int64_t>(stream, value);
+        value_print_if<double>(stream, value);
+        value_print_if<bool>(stream, value);
+        value_print_if<std::string>(stream, value);
+        value_print_if<Token>(stream, value);
+        //value_print_if<DataObjectPtr>(stream, value);
 
         return stream;
     }
 
 
-    using SubFunction = std::function<void()>;
+    // The contextual list allows the interpreter to keep track of various contexts or scopes.
+    // Variables and other forms of data are kept track of by indexable lists.  The idea being that
+    // the list can expand as new items are added.  We extend this concept with contexts or scopes
+    // that when a given context is exited, all values in that context are forgotten.
 
+    extern Location current_location;
+
+    template <typename value_type>
+    class ContextualList
+    {
+        private:
+            struct SubList
+            {
+                std::vector<value_type> items;
+                size_t start_index;
+            };
+
+            using ListStack = std::list<SubList>;
+
+            ListStack stack;
+
+        public:
+            ContextualList()
+            {
+                // Make sure we have an empty list ready to be populated.
+                mark_context();
+            }
+
+        public:
+            size_t size() const noexcept
+            {
+                return stack.front().start_index + stack.front().items.size();
+            }
+
+            size_t insert(const value_type& value)
+            {
+                stack.front().items.push_back(value);
+                return size() - 1;
+            }
+
+            value_type& operator [](size_t index)
+            {
+                if (index >= size())
+                {
+                    throw_error(current_location, "Index out of range.");
+                }
+
+                for (auto stack_iter = stack.begin(); stack_iter != stack.end(); ++stack_iter)
+                {
+                    if (index >= stack_iter->start_index)
+                    {
+                        index -= stack_iter->start_index;
+                        return stack_iter->items[index];
+                    }
+                }
+
+                throw_error(current_location, "Index not found.");
+            }
+
+        public:
+            void mark_context() noexcept
+            {
+                size_t start_index = 0;
+
+                if (!stack.empty())
+                {
+                    start_index = stack.front().start_index + stack.front().items.size();
+                }
+
+                stack.push_front({ .items = {}, .start_index = start_index });
+            }
+
+            void release_context() noexcept
+            {
+                stack.pop_front();
+            }
+    };
+
+
+    // The Forth dictionary.  Handlers for Forth words are not stored directly in the dictionary.
+    // Instead they are stored in their own list and the index and any important flags are what is
+    // stored in the dictionary directly.
+    //
+    // Also note that the dictionary is implemented as a stack of dictionaries.  This allows the
+    // Forth to contain scopes.  If a word is redefined in a higher scope, it effectively replaces
+    // that word until that scope is released.
 
     struct Word
     {
-        bool immediate = false;
-        size_t handler_index;
+        bool immediate = false;  // Should this word be executed at compile or at run time?
+                                 // True indicates that the word is executed at compile time.
+        size_t handler_index;    // Index of the handler to execute.
     };
 
-    using Dictionary = std::unordered_map<std::string, Word>;
-    using WordList = std::vector<SubFunction>;
 
-    ValueStack stack;
-    ValueList variables;
-
-    DefinitionList data_definitions;
-
-    Dictionary dictionary;
-    WordList handlers;
-
-    bool repl_quit = false;
-
-    TokenList input_tokens;
-    size_t current_token = 0;
-
-    bool new_word_is_immediate = false;
-
-    bool is_showing_bytecode = false;
-    bool is_showing_exec_code = false;
-
-    std::stack<std::filesystem::path> current_path;
-
-
-    struct OpCode
+    class Dictionary
     {
-        enum class Id
-        {
-            nop,
-            push_constant_value,
-            exec,
-            jump,
-            jump_if_zero,
-            jump_if_not_zero
-        };
+        private:
+            using SubDictionary = std::unordered_map<std::string, Word>;
+            using DictionaryStack = std::list<SubDictionary>;
 
-        Id id;
-        Value value;
+            DictionaryStack stack;
+
+        public:
+            Dictionary()
+            {
+                // Start with an empty dictionary.
+                mark_context();
+            }
+
+        public:
+            void insert(const std::string& text, const Word& value) noexcept
+            {
+                auto& current_dictionary = stack.front();
+                auto iter = current_dictionary.find(text);
+
+                if (iter != current_dictionary.end())
+                {
+                    iter->second = value;
+                }
+                else
+                {
+                    current_dictionary.insert(SubDictionary::value_type(text, value));
+                }
+            }
+
+            std::tuple<bool, Word> find(const std::string& word) const
+            {
+                for (auto stack_iter = stack.begin(); stack_iter != stack.end(); ++stack_iter)
+                {
+                    auto iter = stack_iter->find(word);
+
+                    if (iter != stack_iter->end())
+                    {
+                        return { true, iter->second };
+                    }
+                }
+
+                return { false, {} };
+            }
+
+        public:
+            void mark_context() noexcept
+            {
+                // Create a new dictionary.
+                stack.push_front({});
+            }
+
+            void release_context()
+            {
+                stack.pop_front();
+
+                // There should always be at least one dictionary.  If there isn't something has
+                // gone horribly wrong.
+                assert(!stack.empty());
+            }
+
+        protected:
+            friend std::ostream& operator <<(std::ostream& stream, const Dictionary& dictionary);
     };
 
-    using ByteCode = std::vector<OpCode>;
 
-    std::ostream& operator <<(std::ostream& stream, const OpCode::Id id)
+    std::ostream& operator <<(std::ostream& stream, const Dictionary& dictionary)
     {
-        switch (id)
-        {
-            case OpCode::Id::nop:                 stream << "nop                "; break;
-            case OpCode::Id::push_constant_value: stream << "push_constant_value"; break;
-            case OpCode::Id::exec:                stream << "exec               "; break;
-            case OpCode::Id::jump:                stream << "jump               "; break;
-            case OpCode::Id::jump_if_zero:        stream << "jump_if_zero       "; break;
-            case OpCode::Id::jump_if_not_zero:    stream << "jump_if_not_zero   "; break;
-        }
-
         return stream;
     }
 
-    std::ostream& operator <<(std::ostream& stream, const OpCode& op)
+
+    using WordFunction = std::function<void()>;
+    using WordList = ContextualList<WordFunction>;
+
+
+    // All of the interpreter's internal state is kept here.  This state is exposed as globals in
+    // order to make it easier to define words both native and interpreted that can manipulate this
+    // internal state.  It's one of the beauties of Forth that the language is extendable by the
+    // language itself.  By exposing this state as Forth words, we make this extension easier.
+
+    bool is_interpreter_quitting = false;
+    int exit_code = EXIT_SUCCESS;
+
+    bool is_showing_bytecode = false;  // Debugging: Show bytecode on stderr as it's generated.
+    bool is_showing_run_code = false;  // Debugging: Show bytecode on stderr as it's about to be
+                                       //            executed.
+    ValueStack stack;  // The interpreter's runtime data stack.  The return stack is taken care of
+                       // by the native C++ stack.
+
+    Location current_location;  // The last source code location noted by the bytecode interpreter.
+
+    Dictionary dictionary;   // All of the words known to the language.
+    WordList word_handlers;  // The functions that are executed for those words.
+
+
+    void mark_context()
     {
-        stream << op.id << " " << op.value;
-        return stream;
-    }
-
-    std::ostream& operator <<(std::ostream& stream, const ByteCode& code)
-    {
-        for (size_t i = 0; i < code.size(); ++i)
-        {
-            const auto& op = code[i];
-            stream << std::setw(4) << i << " " << op << std::endl;
-        }
-
-        return stream;
-    }
-
-    struct Construction
-    {
-        std::string name;
-        ByteCode code;
-    };
-
-    using ConstructionStack = std::stack<Construction>;
-
-    ConstructionStack construction_stack;
-
-
-    void set_wd(const std::filesystem::path& path)
-    {
-        std::filesystem::current_path(path);
-        current_path.push(path);
+        dictionary.mark_context();
+        word_handlers.mark_context();
     }
 
 
-    void reset_wd()
+    void release_context()
     {
-        current_path.pop();
-        std::filesystem::current_path(current_path.top());
+        dictionary.release_context();
+        word_handlers.release_context();
     }
 
 
-    [[noreturn]]
-    void throw_error(const Location& location, const std::string& message)
-    {
-        std::stringstream stream;
-
-        stream << "Error: " << location << " - " << message;
-        throw std::runtime_error(stream.str());
-    }
-
+    // Stack manipulation.  It's handy to concentrate the language semantics here.
 
     Value pop()
     {
         if (stack.empty())
         {
-            throw std::runtime_error("Stack underflow.");
+            throw_error(current_location, "Stack underflow.");
         }
 
-        Value next = stack.front();
-        stack.pop_front();
+        auto next = stack.top();
+        stack.pop();
 
         return next;
     }
 
 
-    void push(const Value& new_value)
+    inline void push(const Value& value)
     {
-        stack.push_front(new_value);
+        stack.push(value);
     }
 
 
-    void add_word(const std::string& word_text, SubFunction handler, bool immediate = false)
-    {
-        Word new_word = {
-                .immediate = immediate,
-                .handler_index = handlers.size()
-            };
-
-        handlers.push_back(handler);
-
-        auto iter = dictionary.find(word_text);
-
-        if (iter != dictionary.end())
-        {
-            iter->second = new_word;
-        }
-        else
-        {
-            dictionary.insert(Dictionary::value_type(word_text, new_word));
-        }
-    }
-
-
-    void process_tokens(const std::string& until);
-
-
-    void word_quit()
-    {
-        repl_quit = true;
-    }
-
-
-    void word_word()
-    {
-        const auto& word = input_tokens[++current_token];
-        push(word.text);
-    }
-
-
-    void word_dup()
-    {
-        Value next = pop();
-
-        push(next);
-        push(next);
-    }
-
-
-    void word_drop()
-    {
-        pop();
-    }
-
-
-    void word_swap()
-    {
-        auto a = pop();
-        auto b = pop();
-
-        push(a);
-        push(b);
-    }
-
-
-    void word_over()
-    {
-        auto a = pop();
-        auto b = pop();
-
-        push(a);
-        push(b);
-        push(a);
-    }
-
-
-    void word_rot()
-    {
-        auto c = pop();
-        auto b = pop();
-        auto a = pop();
-
-        push(c);
-        push(a);
-        push(b);
-    }
-
-
-    template <typename variant>
-    variant expect_value_type(Value& value)
-    {
-        if (std::holds_alternative<variant>(value) == false)
-        {
-            std::stringstream stream;
-
-            stream << "Unexpected type with value, " << value << ".";
-            throw_error({}, stream.str());
-        }
-
-        return std::get<variant>(value);
-    }
-
-
-    void word_print()
-    {
-        Value next = pop();
-        std::cout << next << " ";
-    }
-
-
-    void word_newline()
-    {
-        std::cout << std::endl;
-    }
-
+    // Value interrogation and conversion functions.  Because the value itself is a variant, it's
+    // helpful to have functions that will handle extraction into native types according to the
+    // semantics of the language being implemented.
 
     template <typename variant>
     bool either_is(const Value& a, const Value& b)
@@ -586,14 +645,18 @@ namespace
     }
 
 
-    std::string as_string(const Value& value)
+    bool is_numeric(const Value& value)
     {
-        if (std::holds_alternative<double>(value))
-        {
-            return std::to_string(std::get<double>(value));
-        }
+        return    std::holds_alternative<bool>(value)
+               || std::holds_alternative<int64_t>(value)
+               || std::holds_alternative<double>(value);
+    }
 
-        return std::get<std::string>(value);
+
+    bool is_string(const Value& value)
+    {
+        return    std::holds_alternative<std::string>(value)
+               || std::holds_alternative<Token>(value);
     }
 
 
@@ -615,751 +678,211 @@ namespace
             return std::get<double>(value);
         }
 
-        throw_error({}, "Expected numeric or boolean value.");
+        throw_error(current_location, "Expected numeric or boolean value.");
     }
 
 
-    void word_hex()
+    std::string as_string(const Value& value)
     {
-        Value next = pop();
-        auto int_value = as_numeric<int64_t>(next);
-
-        std::cout << std::hex << int_value << std::dec << " ";
-    }
-
-
-    void math_op(std::function<double(double, double)> dop,
-                 std::function<int64_t(int64_t, int64_t)> iop)
-    {
-        Value b = pop();
-        Value a = pop();
-        Value result;
-
-        if (either_is<double>(a, b))
+        if (std::holds_alternative<int64_t>(value))
         {
-            result = dop(as_numeric<double>(a), as_numeric<double>(b));
-        }
-        else
-        {
-            result = iop(as_numeric<int64_t>(a), as_numeric<int64_t>(b));
+            return std::to_string(std::get<int64_t>(value));
         }
 
-        push(result);
-    }
-
-
-    void string_or_double_op(std::function<void(double,double)> dop,
-                             std::function<void(int64_t,int64_t)> iop,
-                             std::function<void(std::string,std::string)> sop)
-    {
-        auto b = pop();
-        auto a = pop();
-
-        if (either_is<std::string>(a, b))
+        if (std::holds_alternative<double>(value))
         {
-            auto str_a = as_string(a);
-            auto str_b = as_string(b);
-
-            sop(str_a, str_b);
+            return std::to_string(std::get<double>(value));
         }
-        else
+
+        if (std::holds_alternative<bool>(value))
         {
-            if (either_is<double>(a, b))
+            if (std::get<bool>(value))
             {
-                auto a_num = as_numeric<double>(a);
-                auto b_num = as_numeric<double>(b);
-
-                dop(a_num, b_num);
-            }
-            else
-            {
-                auto a_num = as_numeric<int64_t>(a);
-                auto b_num = as_numeric<int64_t>(b);
-
-                iop(a_num, b_num);
-            }
-        }
-    }
-
-
-    void logic_bit_op(std::function<int64_t(int64_t, int64_t)> op)
-    {
-        auto b = pop();
-        auto a = pop();
-        auto result = op(as_numeric<int64_t>(a), as_numeric<int64_t>(b));
-
-        push(result);
-    }
-
-
-    void word_add()
-    {
-        string_or_double_op([](auto a, auto b) { push(a + b); },
-                            [](auto a, auto b) { push(a + b); },
-                            [](auto a, auto b) { push(a + b); });
-    }
-
-
-    void word_subtract()
-    {
-        math_op([](auto a, auto b) -> auto { return a - b; },
-                [](auto a, auto b) -> auto { return a - b; });
-    }
-
-
-    void word_multiply()
-    {
-        math_op([](auto a, auto b) -> auto { return a * b; },
-                [](auto a, auto b) -> auto { return a * b; });
-    }
-
-
-    void word_divide()
-    {
-        math_op([](auto a, auto b) -> auto { return a / b; },
-                [](auto a, auto b) -> auto { return a / b; });
-    }
-
-
-    void word_and()
-    {
-        logic_bit_op([](auto a, auto b) { return a & b; });
-    }
-
-
-    void word_or()
-    {
-        logic_bit_op([](auto a, auto b) { return a | b; });
-    }
-
-
-    void word_xor()
-    {
-        logic_bit_op([](auto a, auto b) { return a ^ b; });
-    }
-
-
-    void word_not()
-    {
-        auto top = pop();
-        auto value = as_numeric<int64_t>(top);
-
-        value = ~value;
-
-        push(value);
-    }
-
-
-    void word_left_shift()
-    {
-        logic_bit_op([](auto value, auto amount) { return value << amount; });
-    }
-
-
-    void word_right_shift()
-    {
-        logic_bit_op([](auto value, auto amount) { return value >> amount; });
-    }
-
-
-    void word_equal()
-    {
-        string_or_double_op([](auto a, auto b) { push((bool)(a == b)); },
-                            [](auto a, auto b) { push((bool)(a == b)); },
-                            [](auto a, auto b) { push((bool)(a == b)); });
-    }
-
-
-    void word_not_equal()
-    {
-        string_or_double_op([](auto a, auto b) { push((bool)(a != b)); },
-                            [](auto a, auto b) { push((bool)(a != b)); },
-                            [](auto a, auto b) { push((bool)(a != b)); });
-    }
-
-
-    void word_greater_equal()
-    {
-        string_or_double_op([](auto a, auto b) { push((bool)(a >= b)); },
-                            [](auto a, auto b) { push((bool)(a >= b)); },
-                            [](auto a, auto b) { push((bool)(a >= b)); });
-    }
-
-
-    void word_less_equal()
-    {
-        string_or_double_op([](auto a, auto b) { push((bool)(a <= b)); },
-                            [](auto a, auto b) { push((bool)(a <= b)); },
-                            [](auto a, auto b) { push((bool)(a <= b)); });
-    }
-
-
-    void word_greater()
-    {
-        string_or_double_op([](auto a, auto b) { push((bool)(a > b)); },
-                            [](auto a, auto b) { push((bool)(a > b)); },
-                            [](auto a, auto b) { push((bool)(a > b)); });
-    }
-
-
-    void word_less()
-    {
-        string_or_double_op([](auto a, auto b) { push((bool)(a < b)); },
-                            [](auto a, auto b) { push((bool)(a < b)); },
-                            [](auto a, auto b) { push((bool)(a < b)); });
-    }
-
-
-    void word_variable()
-    {
-        ++current_token;
-
-        auto name = input_tokens[current_token].text;
-        double new_index = variables.size();
-
-        add_word(name, [name, new_index]() { push(new_index); });
-        variables.push_back({});
-    }
-
-
-    void word_read_variable()
-    {
-        Value top = pop();
-        auto index = expect_value_type<double>(top);
-
-        push(variables[index]);
-    }
-
-
-    void word_write_variable()
-    {
-        Value top = pop();
-        auto index = expect_value_type<double>(top);
-
-        Value new_value = pop();
-        variables[index] = new_value;
-    }
-
-
-    void word_data_definition()
-    {
-        DataObjectDefinition definition;
-
-        ++current_token;
-        DataObjectDefinitionPtr definition_ptr = std::make_shared<DataObjectDefinition>();
-        definition_ptr->name = input_tokens[current_token].text;
-
-        for (++current_token; current_token < input_tokens.size(); ++current_token)
-        {
-            if (input_tokens[current_token].text == ";")
-            {
-                break;
+                return "true";
             }
 
-            definition_ptr->fieldNames.push_back(input_tokens[current_token].text);
+            return "false";
         }
 
-        add_word(definition_ptr->name + ".new", [definition_ptr]()
-            {
-                DataObjectPtr new_object = std::make_shared<DataObject>();
-
-                new_object->definition = definition_ptr;
-                new_object->fields.resize(definition_ptr->fieldNames.size());
-
-                push(new_object);
-            });
-
-        for (int64_t i = 0; i < definition_ptr->fieldNames.size(); ++i)
+        if (std::holds_alternative<Token>(value))
         {
-            add_word(definition_ptr->name + "." + definition_ptr->fieldNames[i],
-                [i]()
-                {
-                    push(i);
-                });
-        }
-    }
-
-
-    void word_read_field()
-    {
-        auto var = pop();
-        auto object = expect_value_type<DataObjectPtr>(var);
-
-        var = pop();
-        auto field_index = as_numeric<int64_t>(var);
-
-        push(object->fields[field_index]);
-    }
-
-
-    void word_write_field()
-    {
-        auto var = pop();
-        auto object = expect_value_type<DataObjectPtr>(var);
-
-        var = pop();
-        auto field_index = as_numeric<int64_t>(var);
-
-        var = pop();
-        object->fields[field_index] = var;
-    }
-
-
-    void word_start_function()
-    {
-        ++current_token;
-        auto name = input_tokens[current_token].text;
-
-        construction_stack.push({ .name = name });
-
-        new_word_is_immediate = false;
-    }
-
-
-    void execute_code(const ByteCode& code);
-
-
-    void word_end_function()
-    {
-        auto& construction = construction_stack.top();
-
-        add_word(construction.name, [construction]()
-            {
-                execute_code(construction.code);
-            },
-            new_word_is_immediate);
-
-        construction_stack.pop();
-    }
-
-
-    void word_immediate()
-    {
-        new_word_is_immediate = true;
-    }
-
-
-    void compile_token(const Token& token);
-
-
-    void word_if()
-    {
-        Construction if_block;
-        Construction else_block;
-
-        bool found_else = false;
-        bool found_then = false;
-
-        auto if_location = input_tokens[current_token].location;
-
-        construction_stack.push({});
-        construction_stack.top().code.push_back({
-                .id = OpCode::Id::jump_if_zero,
-                .value = 0
-            });
-
-        for (++current_token; current_token < input_tokens.size(); ++current_token)
-        {
-            const Token& token = input_tokens[current_token];
-
-            if (token.text == "else")
-            {
-                if (found_else)
-                {
-                    std::stringstream stream;
-
-                    stream << "Duplicate else for if word, " << if_location << ".";
-                    throw_error(token.location, stream.str());
-                }
-
-                found_else = true;
-
-                if_block = construction_stack.top();
-                construction_stack.pop();
-                construction_stack.push({});
-            }
-            else if (token.text == "then")
-            {
-                found_then = true;
-
-                if (found_else)
-                {
-                    else_block = construction_stack.top();
-                }
-                else
-                {
-                    if_block = construction_stack.top();
-                }
-
-                construction_stack.pop();
-                break;
-            }
-            else
-            {
-                compile_token(token);
-            }
+            return std::get<Token>(value).text;
         }
 
-        if (!found_then)
+        if (std::holds_alternative<std::string>(value))
         {
-            throw_error(if_location, "Missing matching then word for starting if word.");
+            return std::get<std::string>(value);
         }
 
-        if (found_else)
-        {
-            else_block.code.push_back({
-                    .id = OpCode::Id::nop,
-                    .value = 0.0
-                });
-
-            if_block.code.push_back({
-                    .id = OpCode::Id::jump,
-                    .value = (int64_t)else_block.code.size()
-                });
-        }
-        else
-        {
-            if_block.code.push_back({
-                    .id = OpCode::Id::nop,
-                    .value = 0
-                });
-        }
-
-        if_block.code[0].value = (int64_t)if_block.code.size();
-
-        auto& base_code = construction_stack.top().code;
-
-        base_code.insert(base_code.end(), if_block.code.begin(), if_block.code.end());
-        base_code.insert(base_code.end(), else_block.code.begin(), else_block.code.end());
+        throw_error(current_location, "No string conversion for value.");
     }
 
 
-    void word_case()
+    // Pieces of the bytecode interpreter itself.  Here we define the raw operations of the
+    // interpreter and the functions that execute those operations.
+
+    struct OperationCode
     {
-        struct CaseBlock
+        enum class Id : unsigned char
         {
-            Construction test;
-            Construction body;
+            nop,
+            execute,
+            push_constant_value,
+            location
         };
 
-        std::vector<CaseBlock> case_blocks;
-
-        construction_stack.push({});
-        case_blocks.push_back({});
-
-        bool found_of = false;
-
-        OpCode dup = {
-                .id = OpCode::Id::exec,
-                .value = (int64_t)dictionary.find("dup")->second.handler_index
-            };
-
-        OpCode equals = {
-                .id = OpCode::Id::exec,
-                .value = (int64_t)dictionary.find("=")->second.handler_index
-            };
-
-        OpCode jz = {
-                .id = OpCode::Id::jump_if_zero,
-                .value = 0
-            };
-
-        OpCode jmp = {
-                .id = OpCode::Id::jump,
-                .value = 0
-            };
-
-        OpCode drop = {
-                .id = OpCode::Id::exec,
-                .value = (int64_t)dictionary.find("drop")->second.handler_index
-            };
-
-        OpCode nop = {
-                .id = OpCode::Id::nop,
-                .value = 0
-            };
-
-        for (++current_token; current_token < input_tokens.size(); ++current_token)
-        {
-            const Token& token = input_tokens[current_token];
-
-            if (token.text == "of")
-            {
-                if (found_of)
-                {
-                    throw_error(token.location, "Duplicate of in case block.");
-                }
-
-                found_of = true;
-
-                auto& top = construction_stack.top();
-                top.code.insert(top.code.begin(), dup);
-                top.code.push_back(equals);
-                top.code.push_back(jz);
-                top.code.push_back(drop);
-
-                case_blocks[case_blocks.size() - 1].test = construction_stack.top();
-                construction_stack.pop();
-
-                construction_stack.push({});
-            }
-            else if (token.text == "endof")
-            {
-                if (!found_of)
-                {
-                    throw_error(token.location, "Missing of clause for endof.");
-                }
-
-                found_of = false;
-
-                auto& top = construction_stack.top();
-                top.code.push_back(jmp);
-
-                case_blocks[case_blocks.size() - 1].body = construction_stack.top();
-                construction_stack.pop();
-
-                construction_stack.push({});
-                case_blocks.push_back({});
-            }
-            else if (token.text == "endcase")
-            {
-                if (found_of)
-                {
-                    throw_error(token.location, "Missing endof for of clause.");
-                }
-
-                auto& top = construction_stack.top();
-                top.code.push_back(nop);
-
-                case_blocks[case_blocks.size() - 1].test.code.push_back(drop);
-                case_blocks[case_blocks.size() - 1].body = construction_stack.top();
-                construction_stack.pop();
-
-                break;
-            }
-            else
-            {
-                compile_token(token);
-            }
-        }
-
-        int64_t jump_offset = 0;
-
-        for (auto iter = case_blocks.rbegin(); iter != case_blocks.rend(); ++iter)
-        {
-            auto& block = *iter;
-
-            if (!block.test.code.empty())
-            {
-                block.test.code[block.test.code.size() - 2].value =
-                    (int64_t)block.body.code.size() + 2;
-            }
-
-            if (!block.body.code.empty())
-            {
-                block.body.code[block.body.code.size() - 1].value = jump_offset;
-                jump_offset += block.test.code.size() + block.body.code.size();
-            }
-        }
-
-        auto& base_code = construction_stack.top().code;
-
-        for (size_t i = 0; i < case_blocks.size(); ++i)
-        {
-            auto& block = case_blocks[i];
-
-            base_code.insert(base_code.end(), block.test.code.begin(), block.test.code.end());
-            base_code.insert(base_code.end(), block.body.code.begin(), block.body.code.end());
-        }
-    }
+        Id id;
+        Value value;
+    };
 
 
-    void word_loop()
+    using ByteCode = std::vector<OperationCode>;  // Operations to be executed by the interpreter.
+
+
+    std::ostream& operator <<(std::ostream& stream, const OperationCode::Id id) noexcept
     {
-        auto& base_code = construction_stack.top().code;
-
-        Construction loop_block;
-        Construction condition_block;
-
-        bool found_until = false;
-        bool found_while = false;
-
-        auto begin_location = input_tokens[current_token].location;
-
-        construction_stack.push({});
-
-        for (++current_token; current_token < input_tokens.size(); ++current_token)
+        switch (id)
         {
+            case OperationCode::Id::nop:                 stream << "nop                "; break;
+            case OperationCode::Id::execute:             stream << "execute            "; break;
+            case OperationCode::Id::push_constant_value: stream << "push_constant_value"; break;
+            case OperationCode::Id::location:            stream << "location           "; break;
+        }
 
-            const Token& token = input_tokens[current_token];
+        return stream;
+    }
 
-            if (token.text == "until")
+
+    std::ostream& operator <<(std::ostream& stream, const OperationCode& op) noexcept
+    {
+        stream << op.id << " " << op.value;
+
+        return stream;
+    }
+
+
+    std::ostream& operator <<(std::ostream& stream, const ByteCode& code)
+    {
+        for (size_t i = 0; i < code.size(); ++i)
+        {
+            const auto& op = code[i];
+            stream << std::setw(6) << i << " " << op << std::endl;
+        }
+
+        return stream;
+    }
+
+
+    void execute_code(ByteCode& code)
+    {
+        if (is_showing_run_code)
+        {
+            std::cout << "-------------------------------------" << std::endl;
+        }
+
+        for (size_t pc = 0; pc < code.size(); ++pc)
+        {
+            OperationCode& operation = code[pc];
+
+            if (is_showing_run_code)
             {
-                if (found_while)
-                {
-                    std::stringstream stream;
-
-                    stream << "Unexpected until word in while loop, " << begin_location << ".";
-                    throw_error(token.location, stream.str());
-                }
-
-                loop_block = construction_stack.top();
-                construction_stack.pop();
-
-                loop_block.code.push_back({
-                        .id = OpCode::Id::jump_if_zero,
-                        .value = (int64_t)(0 - loop_block.code.size())
-                    });
-
-                base_code.insert(base_code.end(), loop_block.code.begin(), loop_block.code.end());
-                break;
+                std::cout << std::setw(6) << pc << " - " << operation << std::endl;
             }
-            else if (token.text == "while")
+
+            switch (operation.id)
             {
-                condition_block = construction_stack.top();
-                construction_stack.pop();
+                case OperationCode::Id::nop:
+                    break;
 
-                found_while = true;
-                construction_stack.push({});
+                case OperationCode::Id::execute:
+                    if (is_string(operation.value))
+                    {
+                        auto [found, word] = dictionary.find(as_string(operation.value));
+
+                        if (!found)
+                        {
+                            throw_error(current_location, "Word not found.");
+                        }
+
+                        word_handlers[word.handler_index]();
+                    }
+                    else if (is_numeric(operation.value))
+                    {
+                        auto index = as_numeric<int64_t>(operation.value);
+                        word_handlers[index]();
+                    }
+                    else
+                    {
+                        throw_error(current_location, "Can no execute unexpected value type.");
+                    }
+                    break;
+
+                case OperationCode::Id::push_constant_value:
+                    push(operation.value);
+                    break;
+
+                case OperationCode::Id::location:
+                    current_location = std::get<Location>(operation.value);
+                    break;
             }
-            else if (token.text == "repeat")
-            {
-                if (!found_while)
-                {
-                    throw_error(begin_location, "Loop missing while word.");
-                }
+        }
 
-                loop_block = construction_stack.top();
-                construction_stack.pop();
-
-                condition_block.code.push_back({
-                        .id = OpCode::Id::jump_if_zero,
-                        .value = (int64_t)(loop_block.code.size() + 2)
-                    });
-
-                loop_block.code.push_back({
-                        .id = OpCode::Id::jump,
-                        .value = (int64_t)(0 - (condition_block.code.size() +
-                                        loop_block.code.size()))
-                    });
-
-                loop_block.code.push_back({
-                        .id = OpCode::Id::nop,
-                        .value = 0.0
-                    });
-
-                base_code.insert(base_code.end(),
-                                 condition_block.code.begin(),
-                                 condition_block.code.end());
-
-                base_code.insert(base_code.end(), loop_block.code.begin(), loop_block.code.end());
-                break;
-            }
-            else
-            {
-                compile_token(token);
-            }
+        if (is_showing_run_code)
+        {
+            std::cout << "=====================================" << std::endl;
         }
     }
 
 
-    void word_print_stack()
+    // The bytecode compiler functionality.  Here we take incoming textual words and convert them to
+    // bytecode to be executed later.
+
+    struct Construction
     {
-        for (const auto& value : stack)
-        {
-            std::cout << value << std::endl;
-        }
-    }
+        std::string name;
+        ByteCode code;
+    };
+
+    using ConstructionStack = std::stack<Construction>;
 
 
-    void word_print_dictionary()
-    {
-        size_t max = 0;
+    ConstructionStack construction_stack;
+    size_t current_token;
 
-        for (const auto& word : dictionary)
-        {
-            if (max < word.first.size())
-            {
-                max = word.first.size();
-            }
-        }
+    TokenList input_tokens;
 
-        std::cout << dictionary.size() << " words defined." << std::endl;
-
-        for (const auto& word : dictionary)
-        {
-            std::cout << std::setw(max) << word.first << " "
-                      << std::setw(6) << word.second.handler_index;
-
-            if (word.second.immediate)
-            {
-                std::cout << " immediate";
-            }
-
-            std::cout << std::endl;
-        }
-    }
-
-
-    void word_show_bytecode()
-    {
-        auto value = pop();
-        is_showing_bytecode = as_numeric<bool>(value);
-    }
-
-
-    void word_show_exec_code()
-    {
-
-        auto value = pop();
-        is_showing_exec_code = as_numeric<bool>(value);
-    }
-
-
-    void process_source(const std::filesystem::path& path);
-
-
-    void word_include()
-    {
-        auto top = pop();
-        std::filesystem::path file_path = expect_value_type<std::string>(top);
-
-        if (!std::filesystem::exists(file_path))
-        {
-            throw_error({}, "The file " + file_path.string() + " can not be found.");
-        }
-
-        process_source(file_path);
-    }
+    std::stack<std::filesystem::path> current_path;  // Keep track of previous working directories
+                                                     // as we change the current one.
 
 
     void compile_token(const Token& token)
     {
-        auto iter = dictionary.find(token.text);
+        // In Forth anything can be a word, so first we see if it's defined in the dictionary.  If
+        // it is, we either compile or execute the word depending on if it's an immediate.
+        auto [found, word] = dictionary.find(token.text);
 
-        if (iter != dictionary.end())
+        if (found)
         {
-            if (iter->second.immediate)
+            if (word.immediate)
             {
-                auto index = iter->second.handler_index;
-                handlers[index]();
+                word_handlers[word.handler_index]();
             }
             else
             {
                 construction_stack.top().code.push_back({
-                        .id = OpCode::Id::exec,
-                        .value = (double)iter->second.handler_index
+                        .id = OperationCode::Id::execute,
+                        .value = (int64_t)word.handler_index
                     });
             }
         }
         else
         {
+            // We didn't find a word, so try to process the token as the tokenizer found it.
             switch (token.type)
             {
                 case Token::Type::number:
                     {
                         Value value;
-
 
                         if (token.text.find('.') != std::string::npos)
                         {
@@ -1367,7 +890,6 @@ namespace
                         }
                         else if ((token.text[0] == '0') && (token.text[1] == 'x'))
                         {
-                            size_t pos = 2;
                             value = std::stoll(token.text, nullptr, 16);
                         }
                         else
@@ -1376,7 +898,7 @@ namespace
                         }
 
                         construction_stack.top().code.push_back({
-                                .id = OpCode::Id::push_constant_value,
+                                .id = OperationCode::Id::push_constant_value,
                                 .value = value
                             });
                     }
@@ -1384,7 +906,7 @@ namespace
 
                 case Token::Type::string:
                     construction_stack.top().code.push_back({
-                            .id = OpCode::Id::push_constant_value,
+                            .id = OperationCode::Id::push_constant_value,
                             .value = token.text
                         });
                     break;
@@ -1404,92 +926,47 @@ namespace
             const Token& token = input_tokens[current_token];
             compile_token(token);
         }
-    }
-
-
-    void execute_code(const ByteCode& code)
-    {
-        if (is_showing_exec_code)
-        {
-            std::cout << "-------------------------------------" << std::endl;
-        }
-
-        for (size_t pc = 0; pc < code.size(); ++pc)
-        {
-            const OpCode& op = code[pc];
-
-            if (is_showing_exec_code)
-            {
-                std::cout << std::setw(4) << pc << " - " << op << std::endl;
-            }
-
-            switch (op.id)
-            {
-                case OpCode::Id::nop:
-                    break;
-
-                case OpCode::Id::push_constant_value:
-                    push(op.value);
-                    break;
-
-                case OpCode::Id::exec:
-                    handlers[as_numeric<int64_t>(op.value)]();
-                    break;
-
-                case OpCode::Id::jump:
-                    pc += as_numeric<int64_t>(op.value) - 1;
-                    break;
-
-                case OpCode::Id::jump_if_zero:
-                    {
-                        auto top = pop();
-                        auto value = as_numeric<bool>(top);
-
-                        if (!value)
-                        {
-                            pc += as_numeric<int64_t>(op.value) - 1;
-                        }
-                    }
-                    break;
-
-                case OpCode::Id::jump_if_not_zero:
-                    {
-                        auto top = pop();
-                        auto value = as_numeric<bool>(top);
-
-                        if (value)
-                        {
-                            pc += as_numeric<int64_t>(op.value) - 1;
-                        }
-                    }
-                    break;
-            }
-        }
-
-        if (is_showing_exec_code)
-        {
-            std::cout << "=====================================" << std::endl;
-        }
-    }
-
-
-    void process_source(const std::string& source)
-    {
-        construction_stack.push({});
-
-        input_tokens = tokenize(source);
-        compile_token_list(input_tokens);
-
-        // If the construction stack isn't 1 deep we have a problem.
 
         if (is_showing_bytecode)
         {
-            std::cout << construction_stack.top().code;
+            std::cerr << construction_stack.top().code;
         }
+    }
+
+
+    // REPL and source file handling.
+
+    void set_wd(const std::filesystem::path& path)
+    {
+        std::filesystem::current_path(path);
+        current_path.push(path);
+    }
+
+
+    void reset_wd()
+    {
+        current_path.pop();
+        std::filesystem::current_path(current_path.top());
+    }
+
+
+    void process_source(SourceBuffer& buffer)
+    {
+        construction_stack.push({});
+
+        input_tokens = tokenize(buffer);
+        compile_token_list(input_tokens);
 
         execute_code(construction_stack.top().code);
 
         construction_stack.pop();
+    }
+
+
+    void process_source(const std::string& source_text)
+    {
+        SourceBuffer source(source_text);
+        process_source(source);
     }
 
 
@@ -1500,17 +977,10 @@ namespace
         auto base_path = source_path;
         base_path.remove_filename();
 
+        SourceBuffer source(path);
+
         set_wd(base_path);
-
-        std::ifstream source_file(source_path);
-
-        auto begin = std::istreambuf_iterator<char>(source_file);
-        auto end = std::istreambuf_iterator<char>();
-
-        auto new_source = std::string(begin, end);
-
-        process_source(new_source);
-
+        process_source(source);
         reset_wd();
     }
 
@@ -1519,8 +989,8 @@ namespace
     {
         std::cout << "Strange Forth REPL." << std::endl;
 
-        while (   (repl_quit == false)
-                && (std::cin))
+        while (   (is_interpreter_quitting == false)
+               && (std::cin))
         {
             try
             {
@@ -1541,6 +1011,93 @@ namespace
     }
 
 
+    // All of the built in words are defined here.
+
+    void add_word(const std::string& word, std::function<void()> handler,
+                  bool immediate = false) noexcept
+    {
+        dictionary.insert(word, {
+                .immediate = immediate,
+                .handler_index = word_handlers.insert(handler)
+            });
+    }
+
+
+    void word_quit() noexcept
+    {
+        is_interpreter_quitting = true;
+
+        if (!stack.empty())
+        {
+            auto value = pop();
+            exit_code = as_numeric<int64_t>(value);
+        }
+    }
+
+
+    void word_reset() noexcept
+    {
+        // Clear the current context and remake a new blank one.
+        release_context();
+        mark_context();
+    }
+
+
+    void word_include()
+    {
+        auto top = pop();
+        std::filesystem::path file_path = as_string(top);
+
+        if (!std::filesystem::exists(file_path))
+        {
+            throw_error(current_location, "The file " + file_path.string() + " can not be found.");
+        }
+
+        process_source(file_path);
+    }
+
+
+    void word_exit_success() noexcept
+    {
+        push(EXIT_SUCCESS);
+    }
+
+
+    void word_exit_failure() noexcept
+    {
+        push(EXIT_FAILURE);
+    }
+
+
+    void word_true() noexcept
+    {
+        push(true);
+    }
+
+
+    void word_false() noexcept
+    {
+        push(false);
+    }
+
+
+    // Gather up all the native words and make them available to the interpreter.
+
+    void init_builtin_words() noexcept
+    {
+        // Words for changing interpreter state.
+        add_word("quit", word_quit);                  // ( <optional> exit_value -- )
+        add_word("reset", word_reset);                // ( -- )
+        add_word("include", word_include);            // ( source_path -- <result_from_script> )
+
+        // Some built in constants.
+        add_word("exit_success", word_exit_success);  // ( -- exit_success )
+        add_word("exit_failure", word_exit_failure);  // ( -- exit_fail )
+        add_word("true", word_true);                  // ( -- true )
+        add_word("false", word_false);                // ( -- false )
+    }
+
+
 }
 
 
@@ -1549,99 +1106,18 @@ int main(int argc, char* argv[])
 {
     try
     {
-        add_word("quit", word_quit);
-
-        add_word("word", word_word);
-
-        add_word("dup", word_dup);
-        add_word("drop", word_drop);
-        add_word("swap", word_swap);
-        add_word("over", word_over);
-        add_word("rot", word_rot);
-
-        add_word(".", word_print);
-        add_word("cr", word_newline);
-        add_word(".hex", word_hex);
-
-        add_word("+", word_add);
-        add_word("-", word_subtract);
-        add_word("*", word_multiply);
-        add_word("/", word_divide);
-
-        add_word("and", word_and);
-        add_word("or", word_or);
-        add_word("xor", word_xor);
-        add_word("not", word_not);
-        add_word("<<", word_left_shift);
-        add_word(">>", word_right_shift);
-
-        add_word("=", word_equal);
-        add_word("<>", word_not_equal);
-        add_word(">=", word_greater_equal);
-        add_word("<=", word_less_equal);
-        add_word(">", word_greater);
-        add_word("<", word_less);
-
-        add_word("variable", word_variable, true);
-        add_word("@", word_read_variable);
-        add_word("!", word_write_variable);
-
-        add_word("#", word_data_definition, true);
-        add_word("#@", word_read_field);
-        add_word("#!", word_write_field);
-
-        add_word(":", word_start_function, true);
-        add_word(";", word_end_function, true);
-        add_word("immediate", word_immediate, true);
-
-        add_word("if", word_if, true);
-        add_word("case", word_case, true);
-        add_word("begin", word_loop, true);
-
-        add_word(".s", word_print_stack);
-        add_word(".w", word_print_dictionary);
-
-        add_word("show_bytecode", word_show_bytecode);
-        add_word("show_exec_code", word_show_exec_code);
-
-        add_word("true",  []() { push(true);  });
-        add_word("false", []() { push(false); });
-
-        add_word("include", word_include);
-
-        // file_open
-        // file_close
-        // file!
-        // file@
-        //
-
         current_path.push(std::filesystem::current_path());
 
-        auto base_path = std::filesystem::canonical(argv[0]).remove_filename();
-        process_source(base_path / "std.f");
+        init_builtin_words();
+        mark_context();
 
-        if (argc == 2)
-        {
-            std::filesystem::path source_path = argv[1];
-
-            if (!std::filesystem::exists(source_path))
-            {
-                throw std::runtime_error(std::string("File ") + source_path.string() +
-                                         " does not exist.");
-            }
-
-            process_source(std::filesystem::canonical(source_path));
-        }
-        else
-        {
-            process_repl();
-        }
+        process_repl();
     }
     catch (const std::exception& e)
     {
-        std::cerr << "Fatal: " << e.what() << std::endl;
+        std::cerr << e.what() << std::endl;
         return EXIT_FAILURE;
     }
 
-    return EXIT_SUCCESS;
+    return exit_code;
 }
