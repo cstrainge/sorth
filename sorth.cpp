@@ -9,7 +9,7 @@
 // interpreter, and also makes use of exceptions and features available in newer versions of C++ as
 // opposed to mostly being implemented in assembly.
 //
-// The knock on effects of these decisions is that this version of Form may be slower than other
+// The knock on effects of these decisions is that this version of Forth may be slower than other
 // compiled versions.  The intention of this is for this version to act more as a scripting language
 // rather than as a compiler/executable generator with optional REPL.
 
@@ -119,7 +119,7 @@ namespace
 
         if (path)
         {
-            stream << *path << ":";
+            stream << path->string() << ":";
         }
 
         stream << location.get_line() << ":" << location.get_column();
@@ -824,7 +824,7 @@ namespace
 
             if (is_showing_run_code)
             {
-                std::cout << std::setw(6) << pc << " - " << operation << std::endl;
+                std::cout << std::setw(6) << pc << " " << operation << std::endl;
             }
 
             switch (operation.id)
@@ -1134,24 +1134,44 @@ namespace
     }
 
 
+    void word_show_bytecode()
+    {
+        auto top = pop();
+        auto enable = as_numeric<bool>(top);
+
+        is_showing_bytecode = enable;
+    }
+
+
+    void word_show_run_code()
+    {
+        auto top = pop();
+        auto enable = as_numeric<bool>(top);
+
+        is_showing_run_code = enable;
+    }
+
+
     // Gather up all the native words and make them available to the interpreter.
 
     void init_builtin_words() noexcept
     {
         // Words for changing interpreter state.
-        add_word("quit", word_quit);                  // ( <optional> exit_value -- )
-        add_word("reset", word_reset);                // ( -- )
-        add_word("include", word_include);            // ( source_path -- <result_from_script> )
+        add_word("quit", word_quit);                   // ( <optional> exit_value -- )
+        add_word("reset", word_reset);                 // ( -- )
+        add_word("include", word_include);             // ( source_path -- <result_from_script> )
 
         // Some built in constants.
-        add_word("exit_success", word_exit_success);  // ( -- exit_success )
-        add_word("exit_failure", word_exit_failure);  // ( -- exit_fail )
-        add_word("true", word_true);                  // ( -- true )
-        add_word("false", word_false);                // ( -- false )
+        add_word("exit_success", word_exit_success);   // ( -- exit_success )
+        add_word("exit_failure", word_exit_failure);   // ( -- exit_fail )
+        add_word("true", word_true);                   // ( -- true )
+        add_word("false", word_false);                 // ( -- false )
 
         // Debug support.
-        add_word(".s", word_print_stack);
-        add_word(".w", word_print_dictionary);
+        add_word(".s", word_print_stack);              // ( -- )
+        add_word(".w", word_print_dictionary);         // ( -- )
+        add_word("show_bytecode", word_show_bytecode); // ( enable -- )
+        add_word("show_run_code", word_show_run_code); // ( enable -- )
     }
 
 
@@ -1163,12 +1183,37 @@ int main(int argc, char* argv[])
 {
     try
     {
+        // Keep track of the current working directory.  We'll be changing it as we load scripts.
         current_path.push(std::filesystem::current_path());
 
+        std::filesystem::path std_path = std::filesystem::canonical(argv[0]).remove_filename()
+                                         / "std.f";
+
+        // Initialize the language built-in words.
         init_builtin_words();
+        process_source(std_path);
+
+        // Mark the context for easy reset in the repl.
         mark_context();
 
-        process_repl();
+        if (argc == 2)
+        {
+            // Looks like we're running a script from the command line.
+            std::filesystem::path source_path = argv[1];
+
+            if (!std::filesystem::exists(source_path))
+            {
+                throw std::runtime_error(std::string("File ") + source_path.string() +
+                                         " does not exist.");
+            }
+
+            process_source(std::filesystem::canonical(source_path));
+        }
+        else
+        {
+            // Run the repl.
+            process_repl();
+        }
     }
     catch (const std::exception& e)
     {
