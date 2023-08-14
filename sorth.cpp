@@ -363,48 +363,6 @@ namespace
     }
 
 
-    // All of the types that ther interpreter can natively understand are represented in the value
-    // variant.  With int64_t being defined first, all values will default to the integer value of
-    // zero.
-    using Value = std::variant<int64_t, double, bool, std::string, Token, Location>;
-    using ValueStack = std::list<Value>;
-
-
-    // Let's make sure we can convert values to text for displaying to the user among various other
-    // uses like writing to a text file.
-    template <typename variant>
-    inline void value_print_if(std::ostream& stream, const Value& variant_value) noexcept
-    {
-        if (const variant* value = std::get_if<variant>(&variant_value))
-        {
-            stream << *value;
-        }
-    }
-
-
-    template <>
-    inline void value_print_if<bool>(std::ostream& stream, const Value& variant_value) noexcept
-    {
-        if (const bool* value = std::get_if<bool>(&variant_value))
-        {
-            stream << std::boolalpha << *value;
-        }
-    }
-
-
-    std::ostream& operator <<(std::ostream& stream, const Value& value) noexcept
-    {
-        value_print_if<int64_t>(stream, value);
-        value_print_if<double>(stream, value);
-        value_print_if<bool>(stream, value);
-        value_print_if<std::string>(stream, value);
-        value_print_if<Token>(stream, value);
-        //value_print_if<DataObjectPtr>(stream, value);
-
-        return stream;
-    }
-
-
     // The contextual list allows the interpreter to keep track of various contexts or scopes.
     // Variables and other forms of data are kept track of by indexable lists.  The idea being that
     // the list can expand as new items are added.  We extend this concept with contexts or scopes
@@ -606,6 +564,48 @@ namespace
 
             std::cout << std::endl;
         }
+
+        return stream;
+    }
+
+
+    // All of the types that the interpreter can natively understand are represented in the value
+    // variant.  With int64_t being defined first, all values will default to the integer value of
+    // zero.
+    using Value = std::variant<int64_t, double, bool, std::string, Token, Location>;
+    using ValueStack = std::list<Value>;
+
+
+    // Let's make sure we can convert values to text for displaying to the user among various other
+    // uses like writing to a text file.
+    template <typename variant>
+    inline void value_print_if(std::ostream& stream, const Value& variant_value) noexcept
+    {
+        if (const variant* value = std::get_if<variant>(&variant_value))
+        {
+            stream << *value;
+        }
+    }
+
+
+    template <>
+    inline void value_print_if<bool>(std::ostream& stream, const Value& variant_value) noexcept
+    {
+        if (const bool* value = std::get_if<bool>(&variant_value))
+        {
+            stream << std::boolalpha << *value;
+        }
+    }
+
+
+    std::ostream& operator <<(std::ostream& stream, const Value& value) noexcept
+    {
+        value_print_if<int64_t>(stream, value);
+        value_print_if<double>(stream, value);
+        value_print_if<bool>(stream, value);
+        value_print_if<std::string>(stream, value);
+        value_print_if<Token>(stream, value);
+        //value_print_if<DataObjectPtr>(stream, value);
 
         return stream;
     }
@@ -951,9 +951,12 @@ namespace
     };
 
     using ConstructionStack = std::stack<Construction>;
+    using ConstructionList = std::vector<Construction>;
 
 
     ConstructionStack construction_stack;
+    ConstructionList saved_blocks;
+
     size_t current_token;
     bool new_word_is_immediate = false;
 
@@ -1168,6 +1171,181 @@ namespace
     }
 
 
+    void word_def_variable()
+    {
+        auto top = pop();
+
+        construction_stack.top().code.push_back({
+                .id = OperationCode::Id::def_variable,
+                .value = as_string(top)
+            });
+    }
+
+
+    void word_def_constant()
+    {
+        construction_stack.top().code.push_back({
+                .id = OperationCode::Id::def_constant,
+                .value = pop()
+            });
+    }
+
+
+    void word_execute()
+    {
+        construction_stack.top().code.push_back({
+                .id = OperationCode::Id::execute,
+                .value = pop()
+            });
+    }
+
+
+    void word_push_constant_value()
+    {
+        construction_stack.top().code.push_back({
+                .id = OperationCode::Id::push_constant_value,
+                .value = pop()
+            });
+    }
+
+
+    void word_jump()
+    {
+        construction_stack.top().code.push_back({
+                .id = OperationCode::Id::jump,
+                .value = pop()
+            });
+    }
+
+
+    void word_jump_if_zero()
+    {
+        construction_stack.top().code.push_back({
+                .id = OperationCode::Id::jump_if_zero,
+                .value = pop()
+            });
+    }
+
+
+    void word_jump_if_not_zero()
+    {
+        construction_stack.top().code.push_back({
+                .id = OperationCode::Id::jump_if_not_zero,
+                .value = pop()
+            });
+    }
+
+
+    void word_jump_target()
+    {
+        construction_stack.top().code.push_back({
+                .id = OperationCode::Id::jump_target,
+                .value = pop()
+            });
+    }
+
+
+    void word_new_code_block()
+    {
+        construction_stack.push({});
+    }
+
+
+    void word_merge_stack_code_block()
+    {
+        auto top_code = construction_stack.top().code;
+        construction_stack.pop();
+
+        construction_stack.top().code.insert(construction_stack.top().code.end(),
+                                             top_code.begin(),
+                                             top_code.end());
+    }
+
+
+    void word_resolve_code_jumps()
+    {
+        auto is_jump = [](const OperationCode& code) -> bool
+            {
+                return    (code.id == OperationCode::Id::jump)
+                       || (code.id == OperationCode::Id::jump_if_not_zero)
+                       || (code.id == OperationCode::Id::jump_if_zero);
+            };
+
+        auto& top_code = construction_stack.top().code;
+
+        std::list<size_t> jump_indicies;
+        std::unordered_map<std::string, size_t> jump_targets;
+
+        for (size_t i = 0; i < top_code.size(); ++i)
+        {
+            if (is_jump(top_code[i]))
+            {
+                jump_indicies.push_back(i);
+            }
+            else if (top_code[i].id == OperationCode::Id::jump_target)
+            {
+                jump_targets.insert({ as_string(top_code[i].value), i });
+                top_code[i].value = 0;
+            }
+        }
+
+        for (auto jump_index : jump_indicies)
+        {
+            auto& jump_op = top_code[jump_index];
+
+            auto jump_name = as_string(jump_op.value);
+            auto iter = jump_targets.find(jump_name);
+
+            throw_error_if(iter == jump_targets.end(),
+                           current_location,
+                           "Jump target " + jump_name + " not found.");
+
+            auto target_index = iter->second;
+
+            jump_op.value = (int64_t)target_index - (int64_t)jump_index;
+        }
+    }
+
+
+    void word_compile_until_words()
+    {
+        auto count = as_numeric<int64_t>(pop());
+        std::vector<std::string> word_list;
+
+        for (int64_t i = 0; i < count; ++i)
+        {
+            word_list.push_back(as_string(pop()));
+        }
+
+        auto is_one_of_words = [&](const std::string& match) -> std::tuple<bool, std::string>
+            {
+                for (const auto& word : word_list)
+                {
+                    if (word == match)
+                    {
+                        return { true, word };
+                    }
+                }
+
+                return { false, "" };
+            };
+
+        for (++current_token; current_token < input_tokens.size(); ++current_token)
+        {
+            auto& token = input_tokens[current_token];
+            auto [found, word] = is_one_of_words(token.text);
+
+            if (found)
+            {
+                push(word);
+                return;
+            }
+
+            compile_token(token);
+        }
+    }
+
+
     void word_start_word()
     {
         ++current_token;
@@ -1251,6 +1429,67 @@ namespace
         auto value = pop();
 
         variables[index] = value;
+    }
+
+
+    void word_unique_str()
+    {
+        static int32_t index = 0;
+
+        std::stringstream stream;
+
+        stream << "unique-" << std::setw(4) << std::setfill('0') << std::hex << index;
+        push(stream.str());
+
+        ++index;
+    }
+
+
+    void word_dup()
+    {
+        Value next = pop();
+
+        push(next);
+        push(next);
+    }
+
+
+    void word_drop()
+    {
+        pop();
+    }
+
+
+    void word_swap()
+    {
+        auto a = pop();
+        auto b = pop();
+
+        push(a);
+        push(b);
+    }
+
+
+    void word_over()
+    {
+        auto a = pop();
+        auto b = pop();
+
+        push(a);
+        push(b);
+        push(a);
+    }
+
+
+    void word_rot()
+    {
+        auto c = pop();
+        auto b = pop();
+        auto a = pop();
+
+        push(c);
+        push(a);
+        push(b);
     }
 
 
@@ -1338,37 +1577,61 @@ namespace
     void init_builtin_words() noexcept
     {
         // Words for changing interpreter state.
-        add_word("quit", word_quit);                   // ( <optional> exit_value -- )
-        add_word("reset", word_reset);                 // ( -- )
-        add_word("include", word_include);             // ( source_path -- <result_from_script> )
+        add_word("quit", word_quit);
+        add_word("reset", word_reset);
+        add_word("include", word_include);
+
+        // Words for compiling new bytecode.
+        add_word("op.def_variable", word_def_variable);
+        add_word("op.def_constant", word_def_constant);
+        add_word("op.execute", word_execute);
+        add_word("op.push_constant_value", word_push_constant_value);
+        add_word("op.jump", word_jump);
+        add_word("op.jump_if_zero", word_jump_if_zero);
+        add_word("op.jump_if_not_zero", word_jump_if_not_zero);
+        add_word("op.jump_target", word_jump_target);
+
+        add_word("code.new_block", word_new_code_block);
+        add_word("code.merge_stack_block", word_merge_stack_code_block);
+        add_word("code.resolve_jumps", word_resolve_code_jumps);
+        add_word("code.compile_until_words", word_compile_until_words);
 
         // Creating new words.
-        add_word(":", word_start_word, true);          // ( -- )
-        add_word(";", word_end_word, true);            // ( -- )
-        add_word("immediate", word_immediate, true);   // ( -- )
+        add_word(":", word_start_word, true);
+        add_word(";", word_end_word, true);
+        add_word("immediate", word_immediate, true);
 
         // Data words.
-        add_word("var", word_variable, true);          // ( -- )
-        add_word("const", word_const, true);           // ( value -- )
-        add_word("@", word_read_variable);             // ( index -- value )
-        add_word("!", word_write_variable);            // ( value index -- )
+        add_word("variable", word_variable, true);
+        add_word("const", word_const, true);
+        add_word("@", word_read_variable);
+        add_word("!", word_write_variable);
+
+        add_word("unique_str", word_unique_str);
+
+        // Stack words.
+        add_word("dup", word_dup);
+        add_word("drop", word_drop);
+        add_word("swap", word_swap);
+        add_word("over", word_over);
+        add_word("rot", word_rot);
 
         // Some built in constants.
-        add_word("exit_success", word_exit_success);   // ( -- exit_success )
-        add_word("exit_failure", word_exit_failure);   // ( -- exit_fail )
-        add_word("true", word_true);                   // ( -- true )
-        add_word("false", word_false);                 // ( -- false )
+        add_word("exit_success", word_exit_success);
+        add_word("exit_failure", word_exit_failure);
+        add_word("true", word_true);
+        add_word("false", word_false);
 
         // Debug and printing support.
-        add_word(".", word_print);                     // ( value -- )
-        add_word("?", word_print_variable);            // ( index -- )
-        add_word("cr", word_print_nl);                 // ( -- )
+        add_word(".", word_print);
+        add_word("?", word_print_variable);
+        add_word("cr", word_print_nl);
 
-        add_word(".s", word_print_stack);              // ( -- )
-        add_word(".w", word_print_dictionary);         // ( -- )
+        add_word(".s", word_print_stack);
+        add_word(".w", word_print_dictionary);
 
-        add_word("show_bytecode", word_show_bytecode); // ( enable -- )
-        add_word("show_run_code", word_show_run_code); // ( enable -- )
+        add_word("show_bytecode", word_show_bytecode);
+        add_word("show_run_code", word_show_run_code);
     }
 
 
