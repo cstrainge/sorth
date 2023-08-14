@@ -1126,6 +1126,69 @@ namespace
     }
 
 
+    // Helpers for some of the words.
+
+    void math_op(std::function<double(double, double)> dop,
+                 std::function<int64_t(int64_t, int64_t)> iop)
+    {
+        Value b = pop();
+        Value a = pop();
+        Value result;
+
+        if (either_is<double>(a, b))
+        {
+            result = dop(as_numeric<double>(a), as_numeric<double>(b));
+        }
+        else
+        {
+            result = iop(as_numeric<int64_t>(a), as_numeric<int64_t>(b));
+        }
+
+        push(result);
+    }
+
+
+    void logic_bit_op(std::function<int64_t(int64_t, int64_t)> op)
+    {
+        auto b = pop();
+        auto a = pop();
+        auto result = op(as_numeric<int64_t>(a), as_numeric<int64_t>(b));
+
+        push(result);
+    }
+
+
+    void string_or_numeric_op(std::function<void(double,double)> dop,
+                              std::function<void(int64_t,int64_t)> iop,
+                              std::function<void(std::string,std::string)> sop)
+    {
+        auto b = pop();
+        auto a = pop();
+
+        if (either_is<std::string>(a, b))
+        {
+            auto str_a = as_string(a);
+            auto str_b = as_string(b);
+
+            sop(str_a, str_b);
+        }
+        else if (either_is<double>(a, b))
+        {
+            auto a_num = as_numeric<double>(a);
+            auto b_num = as_numeric<double>(b);
+
+            dop(a_num, b_num);
+        }
+        else
+        {
+            auto a_num = as_numeric<int64_t>(a);
+            auto b_num = as_numeric<int64_t>(b);
+
+            iop(a_num, b_num);
+        }
+    }
+
+
     // All of the built in words are defined here.
 
     void add_word(const std::string& word, std::function<void()> handler, bool immediate) noexcept
@@ -1445,6 +1508,124 @@ namespace
     }
 
 
+    void word_add()
+    {
+        string_or_numeric_op([](auto a, auto b) { push(a + b); },
+                             [](auto a, auto b) { push(a + b); },
+                             [](auto a, auto b) { push(a + b); });
+    }
+
+
+    void word_subtract()
+    {
+        math_op([](auto a, auto b) -> auto { return a - b; },
+                [](auto a, auto b) -> auto { return a - b; });
+    }
+
+
+    void word_multiply()
+    {
+        math_op([](auto a, auto b) -> auto { return a * b; },
+                [](auto a, auto b) -> auto { return a * b; });
+    }
+
+
+    void word_divide()
+    {
+        math_op([](auto a, auto b) -> auto { return a / b; },
+                [](auto a, auto b) -> auto { return a / b; });
+    }
+
+
+    void word_and()
+    {
+        logic_bit_op([](auto a, auto b) { return a & b; });
+    }
+
+
+    void word_or()
+    {
+        logic_bit_op([](auto a, auto b) { return a | b; });
+    }
+
+
+    void word_xor()
+    {
+        logic_bit_op([](auto a, auto b) { return a ^ b; });
+    }
+
+
+    void word_not()
+    {
+        auto top = pop();
+        auto value = as_numeric<int64_t>(top);
+
+        value = ~value;
+
+        push(value);
+    }
+
+
+    void word_left_shift()
+    {
+        logic_bit_op([](auto value, auto amount) { return value << amount; });
+    }
+
+
+    void word_right_shift()
+    {
+        logic_bit_op([](auto value, auto amount) { return value >> amount; });
+    }
+
+
+    void word_equal()
+    {
+        string_or_numeric_op([](auto a, auto b) { push((bool)(a == b)); },
+                             [](auto a, auto b) { push((bool)(a == b)); },
+                             [](auto a, auto b) { push((bool)(a == b)); });
+    }
+
+
+    void word_not_equal()
+    {
+        string_or_numeric_op([](auto a, auto b) { push((bool)(a != b)); },
+                             [](auto a, auto b) { push((bool)(a != b)); },
+                             [](auto a, auto b) { push((bool)(a != b)); });
+    }
+
+
+    void word_greater_equal()
+    {
+        string_or_numeric_op([](auto a, auto b) { push((bool)(a >= b)); },
+                             [](auto a, auto b) { push((bool)(a >= b)); },
+                             [](auto a, auto b) { push((bool)(a >= b)); });
+    }
+
+
+    void word_less_equal()
+    {
+        string_or_numeric_op([](auto a, auto b) { push((bool)(a <= b)); },
+                             [](auto a, auto b) { push((bool)(a <= b)); },
+                             [](auto a, auto b) { push((bool)(a <= b)); });
+    }
+
+
+    void word_greater()
+    {
+        string_or_numeric_op([](auto a, auto b) { push((bool)(a > b)); },
+                             [](auto a, auto b) { push((bool)(a > b)); },
+                             [](auto a, auto b) { push((bool)(a > b)); });
+    }
+
+
+    void word_less()
+    {
+        string_or_numeric_op([](auto a, auto b) { push((bool)(a < b)); },
+                             [](auto a, auto b) { push((bool)(a < b)); },
+                             [](auto a, auto b) { push((bool)(a < b)); });
+    }
+
+
     void word_dup()
     {
         Value next = pop();
@@ -1539,6 +1720,14 @@ namespace
     }
 
 
+    void word_hex()
+    {
+        auto int_value = as_numeric<int64_t>(pop());
+
+        std::cout << std::hex << int_value << std::dec << " ";
+    }
+
+
     void word_print_stack() noexcept
     {
         for (const auto& value : stack)
@@ -1609,6 +1798,28 @@ namespace
 
         add_word("unique_str", word_unique_str);
 
+        // Math ops.
+        add_word("+", word_add);
+        add_word("-", word_subtract);
+        add_word("*", word_multiply);
+        add_word("/", word_divide);
+
+        // Bitwise operator words.
+        add_word("and", word_and);
+        add_word("or", word_or);
+        add_word("xor", word_xor);
+        add_word("not", word_not);
+        add_word("<<", word_left_shift);
+        add_word(">>", word_right_shift);
+
+        // Equality words.
+        add_word("=", word_equal);
+        add_word("<>", word_not_equal);
+        add_word(">=", word_greater_equal);
+        add_word("<=", word_less_equal);
+        add_word(">", word_greater);
+        add_word("<", word_less);
+
         // Stack words.
         add_word("dup", word_dup);
         add_word("drop", word_drop);
@@ -1626,6 +1837,7 @@ namespace
         add_word(".", word_print);
         add_word("?", word_print_variable);
         add_word("cr", word_print_nl);
+        add_word(".hex", word_hex);
 
         add_word(".s", word_print_stack);
         add_word(".w", word_print_dictionary);
