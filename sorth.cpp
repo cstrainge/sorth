@@ -1315,7 +1315,11 @@ namespace
         if (!stack.empty())
         {
             auto value = pop();
-            exit_code = as_numeric<int64_t>(value);
+
+            if (is_numeric(value))
+            {
+                exit_code = as_numeric<int64_t>(value);
+            }
         }
     }
 
