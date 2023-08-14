@@ -68,8 +68,67 @@
 ;
 
 
-: .cr . cr ;
-: ? @ .cr ;
+: begin immediate
+    variable top_label
+    unique_str top_label !
 
-: q    quit ;
-: exit quit ;
+    code.new_block
+
+    top_label @ op.jump_target
+
+    "while" "until" 2 code.compile_until_words
+
+    "until" =
+    if
+        top_label @ op.jump_if_zero
+    else
+        variable end_label
+        unique_str end_label !
+
+        end_label @ op.jump_if_zero
+
+        "repeat" 1 code.compile_until_words
+        drop
+
+        top_label @ op.jump
+        end_label @ op.jump_target
+    then
+
+    code.resolve_jumps
+    code.merge_stack_block
+;
+
+
+: ( immediate begin word ")" = until ;
+
+
+( The standard library of words for Sorth. )
+
+( Simple increment and decrements. )
+: ++ ( value -- incremented ) 1 + ;
+: -- ( value -- decremented ) 1 - ;
+
+
+( Lets save some typing. )
+: .cr  ( value -- ) . cr ;
+: ?    ( value -- ) @ .cr ;
+: .sp  ( count -- ) begin -- dup 0 >= while "" . repeat drop ;
+: .hcr ( value -- ) .hex cr ;
+
+
+( Handy comparisons. )
+: 0>  ( value -- test_result ) 0 >  ;
+: 0=  ( value -- test_result ) 0 =  ;
+: 0<  ( value -- test_result ) 0 <  ;
+: 0>= ( value -- test_result ) 0 >= ;
+: 0<= ( value -- test_result ) 0 <= ;
+
+
+( Increment and decrement variables. )
+: +! ( value variable -- ) over @ + swap ! ;
+: -! ( value variable -- ) over @ - swap ! ;
+
+
+( Alternate ways to exit the interpreter. )
+: q    ( -- ) quit ;
+: exit ( -- ) quit ;
