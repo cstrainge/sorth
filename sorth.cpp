@@ -825,7 +825,7 @@ namespace
                   bool immediate = false) noexcept;
 
 
-    void execute_code(ByteCode& code)
+    void execute_code(const ByteCode& code)
     {
         if (is_showing_run_code)
         {
@@ -834,7 +834,7 @@ namespace
 
         for (size_t pc = 0; pc < code.size(); ++pc)
         {
-            OperationCode& operation = code[pc];
+            const OperationCode& operation = code[pc];
 
             if (is_showing_run_code)
             {
@@ -867,11 +867,12 @@ namespace
                 case OperationCode::Id::execute:
                     if (is_string(operation.value))
                     {
-                        auto [found, word] = dictionary.find(as_string(operation.value));
+                        auto name = as_string(operation.value);
+                        auto [found, word] = dictionary.find(name);
 
                         if (!found)
                         {
-                            throw_error(current_location, "Word not found.");
+                            throw_error(current_location, "Word '" + name + "' not found.");
                         }
 
                         word_handlers[word.handler_index]();
@@ -918,6 +919,7 @@ namespace
 
     ConstructionStack construction_stack;
     size_t current_token;
+    bool new_word_is_immediate = false;
 
     TokenList input_tokens;
 
@@ -982,7 +984,11 @@ namespace
                     break;
 
                 case Token::Type::word:
-                    throw_error(token.location, "Word '" + token.text + "' not found.");
+                    // This word wasn't found, so leave it for resolution at run time.
+                    construction_stack.top().code.push_back({
+                            .id = OperationCode::Id::execute,
+                            .value = token.text
+                        });
                     break;
             }
         }
@@ -1126,6 +1132,49 @@ namespace
     }
 
 
+    void word_start_word()
+    {
+        ++current_token;
+        auto name = input_tokens[current_token].text;
+
+        construction_stack.push({ .name = name });
+
+        new_word_is_immediate = false;
+    }
+
+
+    void word_end_word()
+    {
+        auto construction = construction_stack.top();
+        construction_stack.pop();
+
+        if (is_showing_bytecode)
+        {
+            std::cerr << "Defined word " << construction.name << std::endl
+                      << construction.code << std::endl;
+        }
+
+        add_word(construction.name, [=]()
+            {
+                struct ContextManager
+                {
+                    ContextManager()  { mark_context(); }
+                    ~ContextManager() { release_context(); }
+                };
+
+                ContextManager manager;
+                execute_code(construction.code);
+            },
+            new_word_is_immediate);
+    }
+
+
+    void word_immediate()
+    {
+        new_word_is_immediate = true;
+    }
+
+
     void word_variable()
     {
         ++current_token;
@@ -1256,6 +1305,11 @@ namespace
         add_word("quit", word_quit);                   // ( <optional> exit_value -- )
         add_word("reset", word_reset);                 // ( -- )
         add_word("include", word_include);             // ( source_path -- <result_from_script> )
+
+        // Creating new words.
+        add_word(":", word_start_word, true);          // ( -- )
+        add_word(";", word_end_word, true);            // ( -- )
+        add_word("immediate", word_immediate, true);   // ( -- )
 
         // Data words.
         add_word("var", word_variable, true);          // ( -- )
