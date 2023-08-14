@@ -1094,9 +1094,14 @@ namespace
 
         SourceBuffer source(path);
 
-        set_wd(base_path);
+        struct WdSetter
+        {
+            WdSetter(const std::filesystem::path& path) { set_wd(path); }
+            ~WdSetter() { reset_wd(); }
+        };
+
+        WdSetter setter(base_path);
         process_source(source);
-        reset_wd();
     }
 
 
