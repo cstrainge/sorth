@@ -614,6 +614,8 @@ namespace
     using WordFunction = std::function<void()>;
     using WordList = ContextualList<WordFunction>;
 
+    using VariableList = ContextualList<Value>;
+
 
     // All of the interpreter's internal state is kept here.  This state is exposed as globals in
     // order to make it easier to define words both native and interpreted that can manipulate this
@@ -634,11 +636,14 @@ namespace
     Dictionary dictionary;   // All of the words known to the language.
     WordList word_handlers;  // The functions that are executed for those words.
 
+    VariableList variables;  // List of all the allocated variables.
+
 
     void mark_context()
     {
         dictionary.mark_context();
         word_handlers.mark_context();
+        variables.mark_context();
     }
 
 
@@ -646,6 +651,7 @@ namespace
     {
         dictionary.release_context();
         word_handlers.release_context();
+        variables.release_context();
     }
 
 
@@ -764,6 +770,8 @@ namespace
         enum class Id : unsigned char
         {
             nop,
+            def_variable,
+            def_constant,
             execute,
             push_constant_value,
             location
@@ -782,6 +790,8 @@ namespace
         switch (id)
         {
             case OperationCode::Id::nop:                 stream << "nop                "; break;
+            case OperationCode::Id::def_variable:        stream << "def_variable       "; break;
+            case OperationCode::Id::def_constant:        stream << "def_constant       "; break;
             case OperationCode::Id::execute:             stream << "execute            "; break;
             case OperationCode::Id::push_constant_value: stream << "push_constant_value"; break;
             case OperationCode::Id::location:            stream << "location           "; break;
@@ -811,6 +821,10 @@ namespace
     }
 
 
+    void add_word(const std::string& word, std::function<void()> handler,
+                  bool immediate = false) noexcept;
+
+
     void execute_code(ByteCode& code)
     {
         if (is_showing_run_code)
@@ -830,6 +844,24 @@ namespace
             switch (operation.id)
             {
                 case OperationCode::Id::nop:
+                    break;
+
+                case OperationCode::Id::def_variable:
+                    {
+                        auto name = as_string(operation.value);
+                        auto index = variables.insert({});
+
+                        add_word(name, [index]() { push((int64_t)index); });
+                    }
+                    break;
+
+                case OperationCode::Id::def_constant:
+                    {
+                        auto name = as_string(operation.value);
+                        auto value = pop();
+
+                        add_word(name, [value]() { push(value); });
+                    }
                     break;
 
                 case OperationCode::Id::execute:
@@ -1051,8 +1083,7 @@ namespace
 
     // All of the built in words are defined here.
 
-    void add_word(const std::string& word, std::function<void()> handler,
-                  bool immediate = false) noexcept
+    void add_word(const std::string& word, std::function<void()> handler, bool immediate) noexcept
     {
         dictionary.insert(word, {
                 .immediate = immediate,
@@ -1095,6 +1126,49 @@ namespace
     }
 
 
+    void word_variable()
+    {
+        ++current_token;
+        auto name = input_tokens[current_token].text;
+
+        construction_stack.top().code.push_back({
+                .id = OperationCode::Id::def_variable,
+                .value = name
+            });
+    }
+
+
+    void word_const()
+    {
+        ++current_token;
+        auto name = input_tokens[current_token].text;
+
+        construction_stack.top().code.push_back({
+                .id = OperationCode::Id::def_constant,
+                .value = name
+            });
+    }
+
+
+    void word_read_variable()
+    {
+        auto top = pop();
+        auto index = as_numeric<int64_t>(top);
+
+        push(variables[index]);
+    }
+
+
+    void word_write_variable()
+    {
+        auto top = pop();
+        auto index = as_numeric<int64_t>(top);
+        auto value = pop();
+
+        variables[index] = value;
+    }
+
+
     void word_exit_success() noexcept
     {
         push(EXIT_SUCCESS);
@@ -1116,6 +1190,28 @@ namespace
     void word_false() noexcept
     {
         push(false);
+    }
+
+
+    void word_print() noexcept
+    {
+        std::cout << pop() << " ";
+    }
+
+
+    void word_print_variable() noexcept
+    {
+        auto top = pop();
+        auto index = as_numeric<int64_t>(top);
+        auto value = variables[index];
+
+        std::cout << value << std::endl;
+    }
+
+
+    void word_print_nl() noexcept
+    {
+        std::cout << std::endl;
     }
 
 
@@ -1161,15 +1257,26 @@ namespace
         add_word("reset", word_reset);                 // ( -- )
         add_word("include", word_include);             // ( source_path -- <result_from_script> )
 
+        // Data words.
+        add_word("var", word_variable, true);          // ( -- )
+        add_word("const", word_const, true);           // ( value -- )
+        add_word("@", word_read_variable);             // ( index -- value )
+        add_word("!", word_write_variable);            // ( value index -- )
+
         // Some built in constants.
         add_word("exit_success", word_exit_success);   // ( -- exit_success )
         add_word("exit_failure", word_exit_failure);   // ( -- exit_fail )
         add_word("true", word_true);                   // ( -- true )
         add_word("false", word_false);                 // ( -- false )
 
-        // Debug support.
+        // Debug and printing support.
+        add_word(".", word_print);                     // ( value -- )
+        add_word("?", word_print_variable);            // ( index -- )
+        add_word("cr", word_print_nl);                 // ( -- )
+
         add_word(".s", word_print_stack);              // ( -- )
         add_word(".w", word_print_dictionary);         // ( -- )
+
         add_word("show_bytecode", word_show_bytecode); // ( enable -- )
         add_word("show_run_code", word_show_run_code); // ( enable -- )
     }
