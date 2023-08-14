@@ -769,11 +769,14 @@ namespace
     {
         enum class Id : unsigned char
         {
-            nop,
             def_variable,
             def_constant,
             execute,
             push_constant_value,
+            jump,
+            jump_if_zero,
+            jump_if_not_zero,
+            jump_target,
             location
         };
 
@@ -789,11 +792,14 @@ namespace
     {
         switch (id)
         {
-            case OperationCode::Id::nop:                 stream << "nop                "; break;
             case OperationCode::Id::def_variable:        stream << "def_variable       "; break;
             case OperationCode::Id::def_constant:        stream << "def_constant       "; break;
             case OperationCode::Id::execute:             stream << "execute            "; break;
             case OperationCode::Id::push_constant_value: stream << "push_constant_value"; break;
+            case OperationCode::Id::jump:                stream << "jump               "; break;
+            case OperationCode::Id::jump_if_zero:        stream << "jump_if_zero       "; break;
+            case OperationCode::Id::jump_if_not_zero:    stream << "jump_if_not_zero   "; break;
+            case OperationCode::Id::jump_target:         stream << "jump_target        "; break;
             case OperationCode::Id::location:            stream << "location           "; break;
         }
 
@@ -843,9 +849,6 @@ namespace
 
             switch (operation.id)
             {
-                case OperationCode::Id::nop:
-                    break;
-
                 case OperationCode::Id::def_variable:
                     {
                         auto name = as_string(operation.value);
@@ -890,6 +893,39 @@ namespace
 
                 case OperationCode::Id::push_constant_value:
                     push(operation.value);
+                    break;
+
+                case OperationCode::Id::jump:
+                    pc += as_numeric<int64_t>(operation.value) - 1;
+                    break;
+
+                case OperationCode::Id::jump_if_zero:
+                    {
+                        auto top = pop();
+                        auto value = as_numeric<bool>(top);
+
+                        if (!value)
+                        {
+                            pc += as_numeric<int64_t>(operation.value) - 1;
+                        }
+                    }
+                    break;
+
+                case OperationCode::Id::jump_if_not_zero:
+                    {
+                        auto top = pop();
+                        auto value = as_numeric<bool>(top);
+
+                        if (value)
+                        {
+                            pc += as_numeric<int64_t>(operation.value) - 1;
+                        }
+                    }
+                    break;
+
+                case OperationCode::Id::jump_target:
+                    // Nothing to do here.  This instruction just acts as a landing pad for the
+                    // jump instructions.
                     break;
 
                 case OperationCode::Id::location:
