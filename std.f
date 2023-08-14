@@ -102,7 +102,7 @@
 : ( immediate begin word ")" = until ;
 
 
-( The standard library of words for Sorth. )
+( Now we can have comments. )
 
 ( Simple increment and decrements. )
 : ++ ( value -- incremented ) 1 + ;
@@ -127,6 +127,11 @@
 ( Increment and decrement variables. )
 : +! ( value variable -- ) over @ + swap ! ;
 : -! ( value variable -- ) over @ - swap ! ;
+
+
+( Quicker data field access. )
+: #!! @ #! ;
+: #@@ @ #@ ;
 
 
 ( Alternate ways to exit the interpreter. )

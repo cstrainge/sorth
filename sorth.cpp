@@ -598,10 +598,65 @@ namespace
     // All of the types that the interpreter can natively understand are represented in the value
     // variant.  With int64_t being defined first, all values will default to the integer value of
     // zero.
-    using Value = std::variant<int64_t, double, bool, std::string, Token, Location>;
+
+    struct DataObject;
+    using DataObjectPtr = std::shared_ptr<DataObject>;
+
+
+    using Value = std::variant<int64_t, double, bool, std::string, Token, Location, DataObjectPtr>;
     using ValueStack = std::list<Value>;
+    using ValueList = std::vector<Value>;
 
     using VariableList = ContextualList<Value>;
+
+
+    // The base definition of a data object, useful for reflection and creation of the actual data
+    // objects.
+
+    struct DataObjectDefinition
+    {
+        using NameList = std::vector<std::string>;
+
+        std::string name;     // The name of the type.
+        NameList fieldNames;  // Names of all the fields.
+    };
+
+    using DataObjectDefinitionPtr = std::shared_ptr<DataObjectDefinition>;
+    using DefinitionList = ContextualList<DataObjectDefinitionPtr>;
+
+    struct DataObject
+    {
+        DataObjectDefinitionPtr definition;  // Reference of the base definition.
+        ValueList fields;                    // The actual values of the structure.
+    };
+
+
+    std::ostream& operator <<(std::ostream& stream, const Value& value) noexcept;
+
+
+    // When we print out a data structure we include the definition so that we can include field
+    // names along with the name of the type itself.
+    std::ostream& operator <<(std::ostream& stream, const DataObjectPtr& data) noexcept
+    {
+        if (data)
+        {
+            stream << "# " << data->definition->name << " ";
+
+            for (int64_t i = 0; i < data->fields.size(); ++i)
+            {
+                stream << data->definition->fieldNames[i] << ": "
+                       << data->fields[i] << " ";
+            }
+
+            stream << ";";
+        }
+        else
+        {
+            stream << "NULL";
+        }
+
+        return stream;
+    }
 
 
     // Let's make sure we can convert values to text for displaying to the user among various other
@@ -633,7 +688,7 @@ namespace
         value_print_if<bool>(stream, value);
         value_print_if<std::string>(stream, value);
         value_print_if<Token>(stream, value);
-        //value_print_if<DataObjectPtr>(stream, value);
+        value_print_if<DataObjectPtr>(stream, value);
 
         return stream;
     }
@@ -660,12 +715,15 @@ namespace
 
     VariableList variables;  // List of all the allocated variables.
 
+    DefinitionList definitions;  // List of all defined data structures.
+
 
     void mark_context()
     {
         dictionary.mark_context();
         word_handlers.mark_context();
         variables.mark_context();
+        definitions.mark_context();
     }
 
 
@@ -674,6 +732,7 @@ namespace
         dictionary.release_context();
         word_handlers.release_context();
         variables.release_context();
+        definitions.release_context();
     }
 
 
@@ -1563,9 +1622,85 @@ namespace
     }
 
 
-    void word_immediate()
+    void word_immediate() noexcept
     {
         new_word_is_immediate = true;
+    }
+
+
+    void word_data_definition()
+    {
+        DataObjectDefinition definition;
+
+        ++current_token;
+        DataObjectDefinitionPtr definition_ptr = std::make_shared<DataObjectDefinition>();
+        definition_ptr->name = input_tokens[current_token].text;
+
+        for (++current_token; current_token < input_tokens.size(); ++current_token)
+        {
+            if (input_tokens[current_token].text == ";")
+            {
+                break;
+            }
+
+            definition_ptr->fieldNames.push_back(input_tokens[current_token].text);
+        }
+
+        add_word(definition_ptr->name + ".new", [definition_ptr]()
+            {
+                DataObjectPtr new_object = std::make_shared<DataObject>();
+
+                new_object->definition = definition_ptr;
+                new_object->fields.resize(definition_ptr->fieldNames.size());
+
+                push(new_object);
+            });
+
+        for (int64_t i = 0; i < definition_ptr->fieldNames.size(); ++i)
+        {
+            add_word(definition_ptr->name + "." + definition_ptr->fieldNames[i],
+                [i]()
+                {
+                    push(i);
+                });
+        }
+    }
+
+
+    void word_read_field()
+    {
+        auto var = pop();
+
+        if (!std::holds_alternative<DataObjectPtr>(var))
+        {
+            throw_error(current_location, "Expected dtata object.");
+        }
+
+        auto object = std::get<DataObjectPtr>(var);
+
+        var = pop();
+        auto field_index = as_numeric<int64_t>(var);
+
+        push(object->fields[field_index]);
+    }
+
+
+    void word_write_field()
+    {
+        auto var = pop();
+
+        if (!std::holds_alternative<DataObjectPtr>(var))
+        {
+            throw_error(current_location, "Expected dtata object.");
+        }
+
+        auto object = std::get<DataObjectPtr>(var);
+
+        var = pop();
+        auto field_index = as_numeric<int64_t>(var);
+
+        var = pop();
+        object->fields[field_index] = var;
     }
 
 
@@ -1886,6 +2021,11 @@ namespace
         add_word(":", word_start_word, true);
         add_word(";", word_end_word, true);
         add_word("immediate", word_immediate, true);
+
+        // Data structure support.
+        add_word("#", word_data_definition, true);
+        add_word("#@", word_read_field);
+        add_word("#!", word_write_field);
 
         // Math ops.
         add_word("+", word_add);
