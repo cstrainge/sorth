@@ -442,6 +442,10 @@ namespace
     };
 
 
+    using WordFunction = std::function<void()>;
+    using WordList = ContextualList<WordFunction>;
+
+
     // The Forth dictionary.  Handlers for Forth words are not stored directly in the dictionary.
     // Instead they are stored in their own list and the index and any important flags are what is
     // stored in the dictionary directly.
@@ -452,9 +456,10 @@ namespace
 
     struct Word
     {
-        bool immediate = false;  // Should this word be executed at compile or at run time?
-                                 // True indicates that the word is executed at compile time.
-        size_t handler_index;    // Index of the handler to execute.
+        bool is_immediate;     // Should this word be executed at compile or at run time?  True
+                               // indicates that the word is executed at compile time.
+        bool is_scripted;      // Was this word defined in Forth?
+        size_t handler_index;  // Index of the handler to execute.
     };
 
 
@@ -521,8 +526,29 @@ namespace
             }
 
         protected:
+            friend std::vector<std::string> inverse_lookup_list(const Dictionary& dictionary,
+                                                                const WordList& word_handlers);
             friend std::ostream& operator <<(std::ostream& stream, const Dictionary& dictionary);
     };
+
+
+    std::vector<std::string> inverse_lookup_list(const Dictionary& dictionary,
+                                                 const WordList& word_handlers)
+    {
+        std::vector<std::string> name_list;
+
+        name_list.resize(word_handlers.size());
+
+        for (auto iter = dictionary.stack.begin(); iter != dictionary.stack.end(); ++iter)
+        {
+            for (auto word_iter = iter->begin(); word_iter != iter->end(); ++word_iter)
+            {
+                name_list[word_iter->second.handler_index] = word_iter->first;
+            }
+        }
+
+        return name_list;
+    }
 
 
     std::ostream& operator <<(std::ostream& stream, const Dictionary& dictionary)
@@ -557,7 +583,7 @@ namespace
             std::cout << std::setw(max) << word.first << " "
                       << std::setw(4) << word.second.handler_index;
 
-            if (word.second.immediate)
+            if (word.second.is_immediate)
             {
                 std::cout << " immediate";
             }
@@ -574,6 +600,8 @@ namespace
     // zero.
     using Value = std::variant<int64_t, double, bool, std::string, Token, Location>;
     using ValueStack = std::list<Value>;
+
+    using VariableList = ContextualList<Value>;
 
 
     // Let's make sure we can convert values to text for displaying to the user among various other
@@ -609,12 +637,6 @@ namespace
 
         return stream;
     }
-
-
-    using WordFunction = std::function<void()>;
-    using WordList = ContextualList<WordFunction>;
-
-    using VariableList = ContextualList<Value>;
 
 
     // All of the interpreter's internal state is kept here.  This state is exposed as globals in
@@ -771,6 +793,8 @@ namespace
         {
             def_variable,
             def_constant,
+            read_variable,
+            write_variable,
             execute,
             push_constant_value,
             jump,
@@ -794,6 +818,8 @@ namespace
         {
             case OperationCode::Id::def_variable:        stream << "def_variable       "; break;
             case OperationCode::Id::def_constant:        stream << "def_constant       "; break;
+            case OperationCode::Id::read_variable:       stream << "read_variable      "; break;
+            case OperationCode::Id::write_variable:      stream << "write_variable     "; break;
             case OperationCode::Id::execute:             stream << "execute            "; break;
             case OperationCode::Id::push_constant_value: stream << "push_constant_value"; break;
             case OperationCode::Id::jump:                stream << "jump               "; break;
@@ -828,7 +854,7 @@ namespace
 
 
     void add_word(const std::string& word, std::function<void()> handler,
-                  bool immediate = false) noexcept;
+                  bool is_immediate = false, bool is_scripted = false) noexcept;
 
 
     void execute_code(const ByteCode& code)
@@ -864,6 +890,22 @@ namespace
                         auto value = pop();
 
                         add_word(name, [value]() { push(value); });
+                    }
+                    break;
+
+                case OperationCode::Id::read_variable:
+                    {
+                        auto index = as_numeric<int64_t>(pop());
+                        push(variables[index]);
+                    }
+                    break;
+
+                case OperationCode::Id::write_variable:
+                    {
+                        auto index = as_numeric<int64_t>(pop());
+                        auto value = pop();
+
+                        variables[index] = value;
                     }
                     break;
 
@@ -974,7 +1016,7 @@ namespace
 
         if (found)
         {
-            if (word.immediate)
+            if (word.is_immediate)
             {
                 word_handlers[word.handler_index]();
             }
@@ -1196,10 +1238,12 @@ namespace
 
     // All of the built in words are defined here.
 
-    void add_word(const std::string& word, std::function<void()> handler, bool immediate) noexcept
+    void add_word(const std::string& word, std::function<void()> handler,
+                  bool is_immediate, bool is_scripted) noexcept
     {
         dictionary.insert(word, {
-                .immediate = immediate,
+                .is_immediate = is_immediate,
+                .is_scripted = is_scripted,
                 .handler_index = word_handlers.insert(handler)
             });
     }
@@ -1255,6 +1299,24 @@ namespace
         construction_stack.top().code.push_back({
                 .id = OperationCode::Id::def_constant,
                 .value = pop()
+            });
+    }
+
+
+    void word_read_variable()
+    {
+        construction_stack.top().code.push_back({
+                .id = OperationCode::Id::read_variable,
+                .value = 0
+            });
+    }
+
+
+    void word_write_variable()
+    {
+        construction_stack.top().code.push_back({
+                .id = OperationCode::Id::write_variable,
+                .value = 0
             });
     }
 
@@ -1401,9 +1463,10 @@ namespace
         for (++current_token; current_token < input_tokens.size(); ++current_token)
         {
             auto& token = input_tokens[current_token];
+
             auto [found, word] = is_one_of_words(token.text);
 
-            if (found)
+            if ((found) && (token.type == Token::Type::word))
             {
                 push(word);
                 return;
@@ -1411,6 +1474,14 @@ namespace
 
             compile_token(token);
         }
+
+        throw_error(input_tokens[current_token].location, "Matching keyword not found.");
+    }
+
+
+    void word_word()
+    {
+        push(input_tokens[++current_token]);
     }
 
 
@@ -1425,6 +1496,58 @@ namespace
     }
 
 
+    class ScriptWord
+    {
+        private:
+            struct ContextManager
+                {
+                    ContextManager()  { mark_context(); }
+                    ~ContextManager() { release_context(); }
+                };
+
+        private:
+            Construction definition;
+
+        public:
+            ScriptWord(const Construction& new_definition)
+            : definition(new_definition)
+            {
+            }
+
+        public:
+            void operator ()()
+            {
+                ContextManager manager;
+                execute_code(definition.code);
+            }
+
+        public:
+            void show(std::ostream& stream, const std::vector<std::string>& inverse_list)
+            {
+                stream << "Word: " << definition.name << std::endl;
+
+                for (size_t i = 0; i < definition.code.size(); ++i)
+                {
+                    stream << std::setw(6) << i << " ";
+
+                    if (   (definition.code[i].id == OperationCode::Id::execute)
+                        && (is_numeric(definition.code[i].value)))
+                    {
+                        auto index = as_numeric<int64_t>(definition.code[i].value);
+
+                        std::cout << definition.code[i].id
+                                  << " " << inverse_list[index]
+                                  << std::endl;
+                    }
+                    else
+                    {
+                        std::cout << definition.code[i] << std::endl;
+                    }
+                }
+            }
+    };
+
+
     void word_end_word()
     {
         auto construction = construction_stack.top();
@@ -1436,67 +1559,13 @@ namespace
                       << construction.code << std::endl;
         }
 
-        add_word(construction.name, [=]()
-            {
-                struct ContextManager
-                {
-                    ContextManager()  { mark_context(); }
-                    ~ContextManager() { release_context(); }
-                };
-
-                ContextManager manager;
-                execute_code(construction.code);
-            },
-            new_word_is_immediate);
+        add_word(construction.name, ScriptWord(construction), new_word_is_immediate, true);
     }
 
 
     void word_immediate()
     {
         new_word_is_immediate = true;
-    }
-
-
-    void word_variable()
-    {
-        ++current_token;
-        auto name = input_tokens[current_token].text;
-
-        construction_stack.top().code.push_back({
-                .id = OperationCode::Id::def_variable,
-                .value = name
-            });
-    }
-
-
-    void word_const()
-    {
-        ++current_token;
-        auto name = input_tokens[current_token].text;
-
-        construction_stack.top().code.push_back({
-                .id = OperationCode::Id::def_constant,
-                .value = name
-            });
-    }
-
-
-    void word_read_variable()
-    {
-        auto top = pop();
-        auto index = as_numeric<int64_t>(top);
-
-        push(variables[index]);
-    }
-
-
-    void word_write_variable()
-    {
-        auto top = pop();
-        auto index = as_numeric<int64_t>(top);
-        auto value = pop();
-
-        variables[index] = value;
     }
 
 
@@ -1709,16 +1778,6 @@ namespace
     }
 
 
-    void word_print_variable() noexcept
-    {
-        auto top = pop();
-        auto index = as_numeric<int64_t>(top);
-        auto value = variables[index];
-
-        std::cout << value << std::endl;
-    }
-
-
     void word_print_nl() noexcept
     {
         std::cout << std::endl;
@@ -1766,6 +1825,35 @@ namespace
     }
 
 
+    void word_show_word()
+    {
+        ++current_token;
+
+        auto name = input_tokens[current_token].text;
+        auto [ found, word ] = dictionary.find(name);
+
+        if (!found)
+        {
+            std::cerr << "Word " << name << " has not been defined." << std::endl;
+            return;
+        }
+
+        if (word.is_scripted)
+        {
+            auto& handler = word_handlers[word.handler_index];
+            auto script_handler = handler.target<ScriptWord>();
+
+            auto inverse_list = inverse_lookup_list(dictionary, word_handlers);
+
+            script_handler->show(std::cout, inverse_list);
+        }
+        else
+        {
+            std::cout << "Word " << name << " is a native function." << std::endl;
+        }
+    }
+
+
     // Gather up all the native words and make them available to the interpreter.
 
     void init_builtin_words() noexcept
@@ -1778,6 +1866,8 @@ namespace
         // Words for compiling new bytecode.
         add_word("op.def_variable", word_def_variable);
         add_word("op.def_constant", word_def_constant);
+        add_word("op.read_variable", word_read_variable);
+        add_word("op.write_variable", word_write_variable);
         add_word("op.execute", word_execute);
         add_word("op.push_constant_value", word_push_constant_value);
         add_word("op.jump", word_jump);
@@ -1790,18 +1880,12 @@ namespace
         add_word("code.resolve_jumps", word_resolve_code_jumps);
         add_word("code.compile_until_words", word_compile_until_words);
 
+        add_word("word", word_word);
+
         // Creating new words.
         add_word(":", word_start_word, true);
         add_word(";", word_end_word, true);
         add_word("immediate", word_immediate, true);
-
-        // Data words.
-        add_word("variable", word_variable, true);
-        add_word("const", word_const, true);
-        add_word("@", word_read_variable);
-        add_word("!", word_write_variable);
-
-        add_word("unique_str", word_unique_str);
 
         // Math ops.
         add_word("+", word_add);
@@ -1833,6 +1917,8 @@ namespace
         add_word("rot", word_rot);
 
         // Some built in constants.
+        add_word("unique_str", word_unique_str);
+
         add_word("exit_success", word_exit_success);
         add_word("exit_failure", word_exit_failure);
         add_word("true", word_true);
@@ -1840,7 +1926,6 @@ namespace
 
         // Debug and printing support.
         add_word(".", word_print);
-        add_word("?", word_print_variable);
         add_word("cr", word_print_nl);
         add_word(".hex", word_hex);
 
@@ -1849,6 +1934,7 @@ namespace
 
         add_word("show_bytecode", word_show_bytecode);
         add_word("show_run_code", word_show_run_code);
+        add_word("show_word", word_show_word, true);
     }
 
 
