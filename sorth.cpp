@@ -855,6 +855,7 @@ namespace
             read_variable,
             write_variable,
             execute,
+            word_index,
             push_constant_value,
             jump,
             jump_if_zero,
@@ -880,6 +881,7 @@ namespace
             case OperationCode::Id::read_variable:       stream << "read_variable      "; break;
             case OperationCode::Id::write_variable:      stream << "write_variable     "; break;
             case OperationCode::Id::execute:             stream << "execute            "; break;
+            case OperationCode::Id::word_index:          stream << "word_index         "; break;
             case OperationCode::Id::push_constant_value: stream << "push_constant_value"; break;
             case OperationCode::Id::jump:                stream << "jump               "; break;
             case OperationCode::Id::jump_if_zero:        stream << "jump_if_zero       "; break;
@@ -988,7 +990,21 @@ namespace
                     }
                     else
                     {
-                        throw_error(current_location, "Can no execute unexpected value type.");
+                        throw_error(current_location, "Can not execute unexpected value type.");
+                    }
+                    break;
+
+                case OperationCode::Id::word_index:
+                    {
+                        auto name = as_string(operation.value);
+                        auto [found, word] = dictionary.find(name);
+
+                        if (!found)
+                        {
+                            throw_error(current_location, "Word '" + name + "' not found.");
+                        }
+
+                        push((int64_t)word.handler_index);
                     }
                     break;
 
@@ -1548,6 +1564,18 @@ namespace
     }
 
 
+    void word_word_index()
+    {
+        ++current_token;
+        auto name = input_tokens[current_token].text;
+
+        construction_stack.top().code.push_back({
+                .id = OperationCode::Id::word_index,
+                .value = name
+            });
+    }
+
+
     void word_start_word()
     {
         ++current_token;
@@ -2020,6 +2048,7 @@ namespace
         add_word("code.compile_until_words", word_compile_until_words);
 
         add_word("word", word_word);
+        add_word("'", word_word_index, true);
 
         // Creating new words.
         add_word(":", word_start_word, true);
