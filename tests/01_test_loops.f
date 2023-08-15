@@ -14,7 +14,7 @@
 : loop_while ( -- )
     10 begin -- dup 0>=
     while
-        "Looping while." .
+        "Looping while:" .
         dup .cr
     repeat
 
