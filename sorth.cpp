@@ -1233,7 +1233,10 @@ namespace
 
     void process_repl()
     {
-        std::cout << "Strange Forth REPL." << std::endl;
+        std::cout << "Strange Forth REPL." << std::endl
+                  << std::endl
+                  << "Enter quit, q, or exit to quit the REPL." << std::endl
+                  << std::endl;
 
         while (   (is_interpreter_quitting == false)
                && (std::cin))
