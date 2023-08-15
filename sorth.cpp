@@ -929,6 +929,11 @@ namespace
         {
             const OperationCode& operation = code[pc];
 
+            if (is_interpreter_quitting)
+            {
+                break;
+            }
+
             if (is_showing_run_code)
             {
                 std::cout << std::setw(6) << pc << " " << operation << std::endl;
