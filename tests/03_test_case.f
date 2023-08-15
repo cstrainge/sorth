@@ -1,5 +1,6 @@
 
-: helloing
+( Just a really basic test of the case statement. )
+: hello_something
     "Hello" .
 
     case
@@ -14,7 +15,8 @@
 ;
 
 
-1 helloing
-2 helloing
-3 helloing
-1024 helloing
+( Ok, try out all the options... )
+1 hello_something
+2 hello_something
+3 hello_something
+1024 hello_something
