@@ -110,36 +110,40 @@
     unique_str next_label !
 
     code.new_block
+    code.new_block
 
     begin
-        ` dup op.execute
-
         "of" "endcase" 2 code.compile_until_words
 
         "of" =
         if
+            true code.insert_at_front
+            ` dup op.execute
+            false code.insert_at_front
+
             ` = op.execute
             next_label @ op.jump_if_zero
+            ` drop op.execute
 
             "endof" 1 code.compile_until_words
             drop
-
-            ` swap op.execute
-            ` drop op.execute
 
             end_label @ op.jump
 
             next_label @ op.jump_target
             unique_str next_label !
-        else
-            ` swap op.execute
-            ` drop op.execute
 
-            ` swap op.execute
+            code.merge_stack_block
+            code.new_block
+        else
+            true code.insert_at_front
             ` drop op.execute
+            false code.insert_at_front
 
             end_label @ op.jump_target
             true done !
+
+            code.merge_stack_block
         then
 
         done @
