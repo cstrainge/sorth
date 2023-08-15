@@ -1707,7 +1707,7 @@ namespace
 
         if (!std::holds_alternative<DataObjectPtr>(var))
         {
-            throw_error(current_location, "Expected dtata object.");
+            throw_error(current_location, "Expected data object.");
         }
 
         auto object = std::get<DataObjectPtr>(var);
@@ -1725,7 +1725,7 @@ namespace
 
         if (!std::holds_alternative<DataObjectPtr>(var))
         {
-            throw_error(current_location, "Expected dtata object.");
+            throw_error(current_location, "Expected data object.");
         }
 
         auto object = std::get<DataObjectPtr>(var);
