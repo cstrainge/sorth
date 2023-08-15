@@ -99,65 +99,123 @@
 ;
 
 
+: ( immediate begin word ")" = until ;
+
+( Now that we've defined comments, we can begin to document the code.  So far we've defined a few  )
+( base words.  Thier implmentations are to simply generate an instruction that will perform their  )
+( function into the bytecode stream being generated. )
+
+( Next we define the 'if' statment.  The first one is just a basic version where else blocks are   )
+( manditory.  Right after that we redefine 'if' to have a more flexible implementation.  Note that )
+( we use the previous definition to assist us in creating the new one. )
+
+( Building on that we define the two forms of the 'begin' loop. 'begin until' and 'begin repeat'.  )
+( Once we had those things in place, we were able to define the comment block. )
+
+
+( Case statement of the form:                                                                   )
+
+(     case                                                                                      )
+(         <test> of                                                                             )
+(             <body>                                                                            )
+(             endof                                                                             )
+(                                                                                               )
+(         <test> of                                                                             )
+(             <body>                                                                            )
+(             endof                                                                             )
+(         ...                                                                                   )
+(                                                                                               )
+(         <default body>                                                                        )
+(     endcase                                                                                   )
+
+( Where it's expected to have an input value left on the stack, and each test block generates a )
+( value that's compared against that input for equality. )
+
 : case immediate
     variable done
     false done !
 
+    ( End of loop label. )
     variable end_label
     unique_str end_label !
 
+    ( Label for the next case statement or the beginning of the default block. )
     variable next_label
     unique_str next_label !
 
+    ( We create 2 code blocks on the construction stack.  The top one will hold the current case )
+    ( or default block.  The bottom one is where we will consolidate everything for final        )
+    ( resolution back into the base block we are generating for. )
     code.new_block
     code.new_block
 
     begin
+        ( Ok, compile either the case of test or the end case block.  We won't know for sure which )
+        ( it is until we hit the next keyword. )
         "of" "endcase" 2 code.compile_until_words
 
         "of" =
         if
+            ( We've just compiled the case of test.  We need to duplicate and preserve the input )
+            ( value before the test code burns it up.  So, insert the call to dup at the         )
+            ( begginning of the currrent code block. )
             true code.insert_at_front
             ` dup op.execute
             false code.insert_at_front
 
+            ( Now, check to see if the value the case test left on the stack is equal to the input )
+            ( we were given before the case statement began executing. )
             ` = op.execute
+
+            ( If the test fails, jump to the next case test.  If it succedes we drop the input )
+            ( value as it isn't needed anymore. )
             next_label @ op.jump_if_zero
             ` drop op.execute
 
+            ( Compile the body of the case block itself. )
             "endof" 1 code.compile_until_words
             drop
 
+            ( Once the block is done executing, jump to the end of the whole statement. )
             end_label @ op.jump
 
+            ( Now that we're outside of the case block, we can mark the beginning of the next one. )
+            ( Note that we also generate a new unique id for the next case block, should we find   )
+            ( one. )
             next_label @ op.jump_target
             unique_str next_label !
 
+            ( Merge this block into the base one, and create a new one for the next section we )
+            ( find. )
             code.merge_stack_block
             code.new_block
         else
+            ( Looks like we've found the default case block.  Again, we need to insert an          )
+            ( instruction before the user code.  In this case it's to drop the input value as it's )
+            ( not needed anymore. )
             true code.insert_at_front
             ` drop op.execute
             false code.insert_at_front
 
+            ( We can now mark a jump target for the end of the entire case statement.  We also )
+            ( note that we are done with the loop here. )
             end_label @ op.jump_target
             true done !
 
+            ( Merge the last block into the base code. )
             code.merge_stack_block
         then
 
+        ( A simple loop until done loop. )
         done @
     until
 
+    ( Ok, resolve all of the jump symbols and merge this block back into the base code being )
+    ( compiled by the interpreter. )
     code.resolve_jumps
     code.merge_stack_block
 ;
 
-
-: ( immediate begin word ")" = until ;
-
-
-( Now we can have comments. )
 
 ( Simple increment and decrements. )
 : ++ ( value -- incremented ) 1 + ;
