@@ -99,6 +99,57 @@
 ;
 
 
+: case immediate
+    variable done
+    false done !
+
+    variable end_label
+    unique_str end_label !
+
+    variable next_label
+    unique_str next_label !
+
+    code.new_block
+
+    begin
+        ` dup op.execute
+
+        "of" "endcase" 2 code.compile_until_words
+
+        "of" =
+        if
+            ` = op.execute
+            next_label @ op.jump_if_zero
+
+            "endof" 1 code.compile_until_words
+            drop
+
+            ` swap op.execute
+            ` drop op.execute
+
+            end_label @ op.jump
+
+            next_label @ op.jump_target
+            unique_str next_label !
+        else
+            ` swap op.execute
+            ` drop op.execute
+
+            ` swap op.execute
+            ` drop op.execute
+
+            end_label @ op.jump_target
+            true done !
+        then
+
+        done @
+    until
+
+    code.resolve_jumps
+    code.merge_stack_block
+;
+
+
 : ( immediate begin word ")" = until ;
 
 
