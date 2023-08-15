@@ -113,33 +113,33 @@
 ( Once we had those things in place, we were able to define the comment block. )
 
 
-( Case statement of the form:                                                                   )
+( Case statement of the form:                                                                      )
 
-(     case                                                                                      )
-(         <test> of                                                                             )
-(             <body>                                                                            )
-(             endof                                                                             )
-(                                                                                               )
-(         <test> of                                                                             )
-(             <body>                                                                            )
-(             endof                                                                             )
-(         ...                                                                                   )
-(                                                                                               )
-(         <default body>                                                                        )
-(     endcase                                                                                   )
+(     case                                                                                         )
+(         <test> of                                                                                )
+(             <body>                                                                               )
+(             endof                                                                                )
+(                                                                                                  )
+(         <test> of                                                                                )
+(             <body>                                                                               )
+(             endof                                                                                )
+(         ...                                                                                      )
+(                                                                                                  )
+(         <default body>                                                                           )
+(     endcase                                                                                      )
 
-( Where it's expected to have an input value left on the stack, and each test block generates a )
+( Where it's expected to have an input value left on the stack, and each test block generates a    )
 ( value that's compared against that input for equality. )
 
 : case immediate
     variable done
     false done !
 
-    ( End of loop label. )
+    ( Label marking end of the entire case statement. )
     variable end_label
     unique_str end_label !
 
-    ( Label for the next case statement or the beginning of the default block. )
+    ( Label for the next of statement test or the beginning of the default block. )
     variable next_label
     unique_str next_label !
 
