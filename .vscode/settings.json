@@ -10,5 +10,10 @@
         "endcase",
         "endof",
         "sorth"
-    ]
+    ],
+
+    "files.exclude":
+    {
+        "**/sorth": true
+    }
 }
