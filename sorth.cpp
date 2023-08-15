@@ -81,28 +81,28 @@ namespace
             }
 
         public:
-            const PathPtr& get_path() const noexcept
+            const PathPtr& get_path() const
             {
                 return source_path;
             }
 
-            size_t get_line() const noexcept
+            size_t get_line() const
             {
                 return line;
             }
 
-            size_t get_column() const noexcept
+            size_t get_column() const
             {
                 return column;
             }
 
         public:
-            void next() noexcept
+            void next()
             {
                 ++column;
             }
 
-            void next_line() noexcept
+            void next_line()
             {
                 ++line;
                 column = 1;
@@ -190,13 +190,13 @@ namespace
             }
 
         public:
-            operator bool() const noexcept
+            operator bool() const
             {
                 return position < source.size();
             }
 
         public:
-            char peek_next() const noexcept
+            char peek_next() const
             {
                 if (position >= source.size())
                 {
@@ -206,7 +206,7 @@ namespace
                 return source[position];
             }
 
-            char next() noexcept
+            char next()
             {
                 auto next = peek_next();
 
@@ -218,13 +218,13 @@ namespace
                 return next;
             }
 
-            Location current_location() const noexcept
+            Location current_location() const
             {
                 return source_location;
             }
 
         private:
-            void increment_position(char next) noexcept
+            void increment_position(char next)
             {
                 ++position;
 
@@ -261,7 +261,7 @@ namespace
     };
 
 
-    std::ostream& operator <<(std::ostream& stream, Token token) noexcept
+    std::ostream& operator <<(std::ostream& stream, Token token)
     {
         stream << token.location << ": " << token.text;
 
@@ -392,7 +392,7 @@ namespace
             }
 
         public:
-            size_t size() const noexcept
+            size_t size() const
             {
                 return stack.front().start_index + stack.front().items.size();
             }
@@ -423,7 +423,7 @@ namespace
             }
 
         public:
-            void mark_context() noexcept
+            void mark_context()
             {
                 size_t start_index = 0;
 
@@ -435,7 +435,7 @@ namespace
                 stack.push_front({ .items = {}, .start_index = start_index });
             }
 
-            void release_context() noexcept
+            void release_context()
             {
                 stack.pop_front();
             }
@@ -479,7 +479,7 @@ namespace
             }
 
         public:
-            void insert(const std::string& text, const Word& value) noexcept
+            void insert(const std::string& text, const Word& value)
             {
                 auto& current_dictionary = stack.front();
                 auto iter = current_dictionary.find(text);
@@ -510,7 +510,7 @@ namespace
             }
 
         public:
-            void mark_context() noexcept
+            void mark_context()
             {
                 // Create a new dictionary.
                 stack.push_front({});
@@ -631,12 +631,12 @@ namespace
     };
 
 
-    std::ostream& operator <<(std::ostream& stream, const Value& value) noexcept;
+    std::ostream& operator <<(std::ostream& stream, const Value& value) ;
 
 
     // When we print out a data structure we include the definition so that we can include field
     // names along with the name of the type itself.
-    std::ostream& operator <<(std::ostream& stream, const DataObjectPtr& data) noexcept
+    std::ostream& operator <<(std::ostream& stream, const DataObjectPtr& data)
     {
         if (data)
         {
@@ -662,7 +662,7 @@ namespace
     // Let's make sure we can convert values to text for displaying to the user among various other
     // uses like writing to a text file.
     template <typename variant>
-    inline void value_print_if(std::ostream& stream, const Value& variant_value) noexcept
+    inline void value_print_if(std::ostream& stream, const Value& variant_value)
     {
         if (const variant* value = std::get_if<variant>(&variant_value))
         {
@@ -672,7 +672,7 @@ namespace
 
 
     template <>
-    inline void value_print_if<bool>(std::ostream& stream, const Value& variant_value) noexcept
+    inline void value_print_if<bool>(std::ostream& stream, const Value& variant_value)
     {
         if (const bool* value = std::get_if<bool>(&variant_value))
         {
@@ -681,7 +681,7 @@ namespace
     }
 
 
-    std::ostream& operator <<(std::ostream& stream, const Value& value) noexcept
+    std::ostream& operator <<(std::ostream& stream, const Value& value)
     {
         value_print_if<int64_t>(stream, value);
         value_print_if<double>(stream, value);
@@ -872,7 +872,7 @@ namespace
     using ByteCode = std::vector<OperationCode>;  // Operations to be executed by the interpreter.
 
 
-    std::ostream& operator <<(std::ostream& stream, const OperationCode::Id id) noexcept
+    std::ostream& operator <<(std::ostream& stream, const OperationCode::Id id)
     {
         switch (id)
         {
@@ -894,7 +894,7 @@ namespace
     }
 
 
-    std::ostream& operator <<(std::ostream& stream, const OperationCode& op) noexcept
+    std::ostream& operator <<(std::ostream& stream, const OperationCode& op)
     {
         stream << op.id << " " << op.value;
 
@@ -915,7 +915,7 @@ namespace
 
 
     void add_word(const std::string& word, std::function<void()> handler,
-                  bool is_immediate = false, bool is_scripted = false) noexcept;
+                  bool is_immediate = false, bool is_scripted = false) ;
 
 
     void execute_code(const ByteCode& code)
@@ -1240,9 +1240,13 @@ namespace
 
                 std::cout << "ok" << std::endl;
             }
-            catch (const std::exception& e)
+            catch (const std::runtime_error& e)
             {
                 std::cerr << e.what() << std::endl;
+            }
+            catch (...)
+            {
+                std::cerr << "Unknown exception." << std::endl;
             }
         }
     }
@@ -1314,7 +1318,7 @@ namespace
     // All of the built in words are defined here.
 
     void add_word(const std::string& word, std::function<void()> handler,
-                  bool is_immediate, bool is_scripted) noexcept
+                  bool is_immediate, bool is_scripted)
     {
         dictionary.insert(word, {
                 .is_immediate = is_immediate,
@@ -1324,7 +1328,7 @@ namespace
     }
 
 
-    void word_quit() noexcept
+    void word_quit()
     {
         is_interpreter_quitting = true;
 
@@ -1340,7 +1344,7 @@ namespace
     }
 
 
-    void word_reset() noexcept
+    void word_reset()
     {
         // Clear the current context and remake a new blank one.
         release_context();
@@ -1505,13 +1509,11 @@ namespace
             auto jump_name = as_string(jump_op.value);
             auto iter = jump_targets.find(jump_name);
 
-            throw_error_if(iter == jump_targets.end(),
-                           current_location,
-                           "Jump target " + jump_name + " not found.");
-
-            auto target_index = iter->second;
-
-            jump_op.value = (int64_t)target_index - (int64_t)jump_index;
+            if (iter != jump_targets.end())
+            {
+                auto target_index = iter->second;
+                jump_op.value = (int64_t)target_index - (int64_t)jump_index;
+            }
         }
     }
 
@@ -1654,7 +1656,7 @@ namespace
     }
 
 
-    void word_immediate() noexcept
+    void word_immediate()
     {
         new_word_is_immediate = true;
     }
@@ -1915,37 +1917,37 @@ namespace
     }
 
 
-    void word_exit_success() noexcept
+    void word_exit_success()
     {
         push(EXIT_SUCCESS);
     }
 
 
-    void word_exit_failure() noexcept
+    void word_exit_failure()
     {
         push(EXIT_FAILURE);
     }
 
 
-    void word_true() noexcept
+    void word_true()
     {
         push(true);
     }
 
 
-    void word_false() noexcept
+    void word_false()
     {
         push(false);
     }
 
 
-    void word_print() noexcept
+    void word_print()
     {
         std::cout << pop() << " ";
     }
 
 
-    void word_print_nl() noexcept
+    void word_print_nl()
     {
         std::cout << std::endl;
     }
@@ -1959,7 +1961,7 @@ namespace
     }
 
 
-    void word_print_stack() noexcept
+    void word_print_stack()
     {
         for (const auto& value : stack)
         {
@@ -1968,7 +1970,7 @@ namespace
     }
 
 
-    void word_print_dictionary() noexcept
+    void word_print_dictionary()
     {
         std::cout << dictionary;
     }
@@ -2023,7 +2025,7 @@ namespace
 
     // Gather up all the native words and make them available to the interpreter.
 
-    void init_builtin_words() noexcept
+    void init_builtin_words()
     {
         // Words for changing interpreter state.
         add_word("quit", word_quit);
@@ -2048,7 +2050,7 @@ namespace
         add_word("code.compile_until_words", word_compile_until_words);
 
         add_word("word", word_word);
-        add_word("'", word_word_index, true);
+        add_word("`", word_word_index, true);
 
         // Creating new words.
         add_word(":", word_start_word, true);
@@ -2151,9 +2153,14 @@ int main(int argc, char* argv[])
             process_repl();
         }
     }
-    catch (const std::exception& e)
+    catch (const std::runtime_error& e)
     {
         std::cerr << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
+    catch (...)
+    {
+        std::cerr << "Unknown exception." << std::endl;
         return EXIT_FAILURE;
     }
 
