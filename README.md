@@ -258,9 +258,6 @@ Include another file your script or load it's contents into the running REPL.
 Will load and execute the contents of `my_file.f` at that point in the script.
 
 
-word
-`
-
 ### Math and Logical Operations
 
 `+` `-` `*` `/`
