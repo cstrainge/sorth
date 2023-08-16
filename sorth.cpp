@@ -689,6 +689,7 @@ namespace
         value_print_if<std::string>(stream, value);
         value_print_if<Token>(stream, value);
         value_print_if<DataObjectPtr>(stream, value);
+        value_print_if<Location>(stream, value);
 
         return stream;
     }
@@ -861,7 +862,7 @@ namespace
             jump_if_zero,
             jump_if_not_zero,
             jump_target,
-            location
+            source_location
         };
 
         Id id;
@@ -887,7 +888,7 @@ namespace
             case OperationCode::Id::jump_if_zero:        stream << "jump_if_zero       "; break;
             case OperationCode::Id::jump_if_not_zero:    stream << "jump_if_not_zero   "; break;
             case OperationCode::Id::jump_target:         stream << "jump_target        "; break;
-            case OperationCode::Id::location:            stream << "location           "; break;
+            case OperationCode::Id::source_location:     stream << "source_location    "; break;
         }
 
         return stream;
@@ -1050,7 +1051,7 @@ namespace
                     // jump instructions.
                     break;
 
-                case OperationCode::Id::location:
+                case OperationCode::Id::source_location:
                     current_location = std::get<Location>(operation.value);
                     break;
             }
@@ -1102,10 +1103,16 @@ namespace
         {
             if (word.is_immediate)
             {
+                current_location = token.location;
                 word_handlers[word.handler_index]();
             }
             else
             {
+                construction_stack.top().code.push_back({
+                        .id = OperationCode::Id::source_location,
+                        .value = token.location,
+                    });
+
                 construction_stack.top().code.push_back({
                         .id = OperationCode::Id::execute,
                         .value = (int64_t)word.handler_index
@@ -1150,6 +1157,10 @@ namespace
 
                 case Token::Type::word:
                     // This word wasn't found, so leave it for resolution at run time.
+                    construction_stack.top().code.push_back({
+                            .id = OperationCode::Id::source_location,
+                            .value = token.location,
+                        });
                     construction_stack.top().code.push_back({
                             .id = OperationCode::Id::execute,
                             .value = token.text
@@ -1477,6 +1488,26 @@ namespace
         insert_user_instruction({
                 .id = OperationCode::Id::jump_target,
                 .value = pop()
+            });
+    }
+
+
+    void word_source_location()
+    {
+        Value value = pop();
+
+        if (std::holds_alternative<Token>(value))
+        {
+            value = std::get<Token>(value).location;
+        }
+        else if (!std::holds_alternative<Location>(value))
+        {
+            throw_error(current_location, "Expected a location to set.");
+        }
+
+        insert_user_instruction({
+                .id = OperationCode::Id::source_location,
+                .value = value
             });
     }
 
@@ -1855,6 +1886,8 @@ namespace
         string_or_numeric_op([](auto a, auto b) { push((bool)(a == b)); },
                              [](auto a, auto b) { push((bool)(a == b)); },
                              [](auto a, auto b) { push((bool)(a == b)); });
+
+        // TODO: Extend equal to allow structs to be compared.
     }
 
 

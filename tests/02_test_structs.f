@@ -5,17 +5,20 @@
 
 ( Create a variable to hold an instance of foo. )
 variable fp
-foo.new fp !
 
-( Print out what we have so far. )
+( The raw value we get from variable creation. )
+"New variable:         " . fp ?
+
+( Create an instance of the struct foo and store it in our variable. )
+foo.new fp !
 "Unitialized struct:   " . fp ?
 
 ( Assign some values to the first two fields. )
-1024 foo.a fp #!!
+1024           foo.a fp #!!
 "Hello world!" foo.b fp #!!
 
 ( Create an instance of bar and write it into foo.c )
-bar.new foo.c fp #!!
+bar.new        foo.c fp #!!
 
 ( Now fill out the rest of foo.c's bar fields. )
 150 bar.x foo.c fp #@@ #!
