@@ -25,6 +25,7 @@
 #include <variant>
 #include <unordered_map>
 #include <cassert>
+#include <optional>
 
 
 
@@ -861,12 +862,12 @@ namespace
             jump,
             jump_if_zero,
             jump_if_not_zero,
-            jump_target,
-            source_location
+            jump_target
         };
 
         Id id;
         Value value;
+        std::optional<Location> location;
     };
 
 
@@ -888,7 +889,6 @@ namespace
             case OperationCode::Id::jump_if_zero:        stream << "jump_if_zero       "; break;
             case OperationCode::Id::jump_if_not_zero:    stream << "jump_if_not_zero   "; break;
             case OperationCode::Id::jump_target:         stream << "jump_target        "; break;
-            case OperationCode::Id::source_location:     stream << "source_location    "; break;
         }
 
         return stream;
@@ -938,6 +938,11 @@ namespace
             if (is_showing_run_code)
             {
                 std::cout << std::setw(6) << pc << " " << operation << std::endl;
+            }
+
+            if (operation.location)
+            {
+                current_location = operation.location.value();
             }
 
             switch (operation.id)
@@ -1050,10 +1055,6 @@ namespace
                     // Nothing to do here.  This instruction just acts as a landing pad for the
                     // jump instructions.
                     break;
-
-                case OperationCode::Id::source_location:
-                    current_location = std::get<Location>(operation.value);
-                    break;
             }
         }
 
@@ -1109,13 +1110,9 @@ namespace
             else
             {
                 construction_stack.top().code.push_back({
-                        .id = OperationCode::Id::source_location,
-                        .value = token.location,
-                    });
-
-                construction_stack.top().code.push_back({
                         .id = OperationCode::Id::execute,
-                        .value = (int64_t)word.handler_index
+                        .value = (int64_t)word.handler_index,
+                        .location = token.location
                     });
             }
         }
@@ -1158,12 +1155,9 @@ namespace
                 case Token::Type::word:
                     // This word wasn't found, so leave it for resolution at run time.
                     construction_stack.top().code.push_back({
-                            .id = OperationCode::Id::source_location,
-                            .value = token.location,
-                        });
-                    construction_stack.top().code.push_back({
                             .id = OperationCode::Id::execute,
-                            .value = token.text
+                            .value = token.text,
+                            .location = token.location
                         });
                     break;
             }
@@ -1224,12 +1218,12 @@ namespace
 
     void process_source(const std::filesystem::path& path)
     {
-        auto source_path = std::filesystem::canonical(path);
+        auto full_source_path = std::filesystem::canonical(path);
 
-        auto base_path = source_path;
+        auto base_path = full_source_path;
         base_path.remove_filename();
 
-        SourceBuffer source(path);
+        SourceBuffer source(full_source_path);
 
         struct WdSetter
         {
@@ -1488,26 +1482,6 @@ namespace
         insert_user_instruction({
                 .id = OperationCode::Id::jump_target,
                 .value = pop()
-            });
-    }
-
-
-    void word_source_location()
-    {
-        Value value = pop();
-
-        if (std::holds_alternative<Token>(value))
-        {
-            value = std::get<Token>(value).location;
-        }
-        else if (!std::holds_alternative<Location>(value))
-        {
-            throw_error(current_location, "Expected a location to set.");
-        }
-
-        insert_user_instruction({
-                .id = OperationCode::Id::source_location,
-                .value = value
             });
     }
 
@@ -2208,7 +2182,7 @@ int main(int argc, char* argv[])
                                          " does not exist.");
             }
 
-            process_source(std::filesystem::canonical(source_path));
+            process_source(source_path);
         }
         else
         {
