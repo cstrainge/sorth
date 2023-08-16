@@ -233,23 +233,13 @@ Hello everything else!
 
 ### Interpreter Control
 
-`quit`
+`quit` - Quits the interpreter.  If there is a number at the top of the stack, that will be the exit value
+returned by the process.  For example to indicate failure from your script you would call `exit_failure quit`.
 
-Quits the interpreter.  If there is a number at the top of the stack, that will be the exit value
-returned by the process.
-
-For example to indicate failure from your script you would call `exit_failure quit`.
-
-
-`reset`
-
-Used in the REPL.  Call reset to clear the REPL back to it's default state as if it had just started
+`reset` - Used in the REPL.  Call reset to clear the REPL back to it's default state as if it had just started
 up.  This word takes no parameters.
 
-
-`include`
-
-Include another file your script or load it's contents into the running REPL.
+`include` - Include another file your script or load it's contents into the running REPL.
 
 ```
 "my_file.f" include
