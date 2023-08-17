@@ -1587,7 +1587,29 @@ namespace
             compile_token(token);
         }
 
-        throw_error(input_tokens[current_token].location, "Matching keyword not found.");
+        std::string message;
+
+        if (count == 1)
+        {
+            message = "Missing word " + word_list[0] + " in source.";
+        }
+        else
+        {
+            std::stringstream stream;
+
+            stream << "Missing matching word, expected one of [ ";
+
+            for (auto word : word_list)
+            {
+                stream << word << " ";
+            }
+
+            stream << "]";
+
+            message = stream.str();
+        }
+
+        throw_error(input_tokens[current_token].location, message);
     }
 
 
