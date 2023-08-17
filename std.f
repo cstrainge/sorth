@@ -56,7 +56,6 @@
 
         if_fail_label @ op.jump_target
 
-
         "then" 1 code.compile_until_words
         drop
 
@@ -100,6 +99,7 @@
 
 
 : ( immediate begin word ")" = until ;
+
 
 ( Now that we've defined comments, we can begin to document the code.  So far we've defined a few  )
 ( base words.  Thier implmentations are to simply generate an instruction that will perform their  )
