@@ -352,7 +352,8 @@ namespace
                 text = get_while([&](char next) -> bool { return is_whitespace(next) == false; });
             }
 
-            if (is_numeric(text))
+            if (   (type != Token::Type::string)
+                && (is_numeric(text)))
             {
                 type = Token::Type::number;
             }
@@ -1098,7 +1099,9 @@ namespace
     {
         // In Forth anything can be a word, so first we see if it's defined in the dictionary.  If
         // it is, we either compile or execute the word depending on if it's an immediate.
-        auto [found, word] = dictionary.find(token.text);
+        auto [found, word] = token.type != Token::Type::string
+                             ? dictionary.find(token.text)
+                             : std::tuple<bool, Word>{ false, {} };
 
         if (found)
         {
