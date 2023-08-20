@@ -250,3 +250,9 @@
 ( Alternate ways to exit the interpreter. )
 : q    ( -- ) quit ;
 : exit ( -- ) quit ;
+
+
+( Quick hack to let scripts be executable from the command line. )
+
+: #!/usr/bin/env ;
+: sorth ;
