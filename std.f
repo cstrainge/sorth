@@ -252,6 +252,27 @@
 : exit ( -- ) quit ;
 
 
+( Helper words for reading/writing byte buffers. )
+
+: buffer.i8!!  @ 1 buffer.int! ;
+: buffer.i16!! @ 2 buffer.int! ;
+: buffer.i32!! @ 4 buffer.int! ;
+: buffer.i64!! @ 8 buffer.int! ;
+
+: buffer.i8@@  @ 1 true buffer.int@ ;
+: buffer.i16@@ @ 2 true buffer.int@ ;
+: buffer.i32@@ @ 4 true buffer.int@ ;
+: buffer.i64@@ @ 8 true buffer.int@ ;
+
+: buffer.u8@@  @ 1 false buffer.int@ ;
+: buffer.u16@@ @ 2 false buffer.int@ ;
+: buffer.u32@@ @ 4 false buffer.int@ ;
+: buffer.u64@@ @ 8 false buffer.int@ ;
+
+: buffer.position!! @ buffer.position! ;
+: buffer.position@@ @ buffer.position@ ;
+
+
 ( Quick hack to let scripts be executable from the command line. )
 
 : #!/usr/bin/env ;

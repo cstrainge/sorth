@@ -604,12 +604,142 @@ namespace
     struct DataObject;
     using DataObjectPtr = std::shared_ptr<DataObject>;
 
+    class ByteBuffer;
+    using ByteBufferPtr = std::shared_ptr<ByteBuffer>;
 
-    using Value = std::variant<int64_t, double, bool, std::string, Token, Location, DataObjectPtr>;
+
+    using Value = std::variant<int64_t, double, bool, std::string, Token, Location, DataObjectPtr,
+                               ByteBufferPtr>;
+
     using ValueStack = std::list<Value>;
     using ValueList = std::vector<Value>;
 
     using VariableList = ContextualList<Value>;
+
+
+    class Array
+    {
+        private:
+            std::vector<Value> items;
+
+        public:
+            Array(int64_t size)
+            {
+                items.resize(size);
+            }
+
+        public:
+            inline int64_t size() const
+            {
+                return items.size();
+            }
+
+            inline Value& operator [](int64_t index)
+            {
+                return items[index];
+            }
+
+            inline void grow(const Value& value)
+            {
+                items.push_back(value);
+            }
+    };
+
+
+    class ByteBuffer
+    {
+        private:
+            std::vector<unsigned char> bytes;
+            int64_t position;
+
+        public:
+            ByteBuffer(int64_t size)
+            : position(0)
+            {
+                bytes.resize(size);
+            }
+
+        public:
+            int64_t size() const
+            {
+                return bytes.size();
+            }
+
+            int64_t postion() const
+            {
+                return position;
+            }
+
+            void set_position(int64_t new_position)
+            {
+                position = new_position;
+            }
+
+        public:
+            void write_int(int64_t byte_size, int64_t value)
+            {
+                void* data_ptr =(&bytes[position]);
+                memcpy(data_ptr, &value, byte_size);
+
+                position += byte_size;
+            }
+
+            int64_t read_int(int64_t byte_size, bool is_signed)
+            {
+                int64_t value = 0;
+                void* data_ptr =(&bytes[position]);
+                memcpy(&value, data_ptr, byte_size);
+
+                if (is_signed)
+                {
+                    auto bit_size = byte_size * 8;
+                    auto sign_flag = 1 << (bit_size - 1);
+
+                    if ((value & sign_flag) != 0)
+                    {
+                        uint64_t negative_bits = 0xffffffffffffffff << (64 - bit_size);
+                        value = value | negative_bits;
+                    }
+                }
+
+                position += byte_size;
+
+                return value;
+            }
+
+        private:
+            friend std::ostream& operator <<(std::ostream& stream, const ByteBuffer& buffer);
+    };
+
+
+    std::ostream& operator <<(std::ostream& stream, const ByteBuffer& buffer)
+    {
+        stream << "          00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f";
+
+        for (size_t i = 0; i < buffer.bytes.size(); ++i)
+        {
+            if ((i == 0) || ((i % 16) == 0))
+            {
+                stream << std::endl << std::setw(8) << std::setfill('0') << std::hex
+                       << i << "  ";
+            }
+
+            stream << std::setw(2) << std::setfill('0') << std::hex
+                   << (uint32_t)buffer.bytes[i] << " ";
+        }
+
+        stream << std::dec;
+
+        return stream;
+    }
+
+
+    std::ostream& operator <<(std::ostream& stream, const ByteBufferPtr& buffer_ptr)
+    {
+        stream << *buffer_ptr;
+
+        return stream;
+    }
 
 
     // The base definition of a data object, useful for reflection and creation of the actual data
@@ -692,6 +822,8 @@ namespace
         value_print_if<Token>(stream, value);
         value_print_if<DataObjectPtr>(stream, value);
         value_print_if<Location>(stream, value);
+
+        value_print_if<ByteBufferPtr>(stream, value);
 
         return stream;
     }
@@ -1797,6 +1929,93 @@ namespace
     }
 
 
+    void word_buffer_new()
+    {
+        auto size = as_numeric<int64_t>(pop());
+        auto buffer = std::make_shared<ByteBuffer>(size);
+
+        push(buffer);
+    }
+
+
+    void word_buffer_write_int()
+    {
+        auto byte_size = as_numeric<int64_t>(pop());
+        auto buffer_value = pop();
+
+        if (!std::holds_alternative<ByteBufferPtr>(buffer_value))
+        {
+            throw_error(current_location, "Expected a byte buffer.");
+        }
+
+        auto buffer = std::get<ByteBufferPtr>(buffer_value);
+        auto value = as_numeric<int64_t>(pop());
+
+        if ((buffer->postion() + byte_size) >= buffer->size())
+        {
+            // TODO: Add more information here...
+            throw_error(current_location, "Byte buffer index out of range.");
+        }
+
+        buffer->write_int(byte_size, value);
+    }
+
+
+    void word_buffer_read_int()
+    {
+        auto is_signed = as_numeric<bool>(pop());
+        auto byte_size = as_numeric<int64_t>(pop());
+        auto buffer_value = pop();
+
+        if (!std::holds_alternative<ByteBufferPtr>(buffer_value))
+        {
+            throw_error(current_location, "Expected a byte buffer.");
+        }
+
+        auto buffer = std::get<ByteBufferPtr>(buffer_value);
+
+        if ((buffer->postion() + byte_size) >= buffer->size())
+        {
+            // TODO: Add more information here...
+            throw_error(current_location, "Byte buffer index out of range.");
+        }
+
+        push(buffer->read_int(byte_size, is_signed));
+    }
+
+
+    void word_buffer_set_postion()
+    {
+        auto buffer_value = pop();
+
+        if (!std::holds_alternative<ByteBufferPtr>(buffer_value))
+        {
+            throw_error(current_location, "Expected a byte buffer.");
+        }
+
+        auto buffer = std::get<ByteBufferPtr>(buffer_value);
+        auto new_position = as_numeric<int64_t>(pop());
+
+        buffer->set_position(new_position);
+    }
+
+
+    void word_buffer_get_postion()
+    {
+        auto buffer_value = pop();
+
+        if (!std::holds_alternative<ByteBufferPtr>(buffer_value))
+        {
+            throw_error(current_location, "Expected a byte buffer.");
+        }
+
+        auto buffer = std::get<ByteBufferPtr>(buffer_value);
+        auto new_position = as_numeric<int64_t>(pop());
+
+        push(buffer->postion());
+    }
+
+
     void word_unique_str()
     {
         static int32_t index = 0;
@@ -2123,6 +2342,15 @@ namespace
         add_word("#", word_data_definition, true);
         add_word("#@", word_read_field);
         add_word("#!", word_write_field);
+
+        // ByteBuffer operations.
+        add_word("buffer.new", word_buffer_new);
+
+        add_word("buffer.int!", word_buffer_write_int);
+        add_word("buffer.int@", word_buffer_read_int);
+
+        add_word("buffer.position!", word_buffer_set_postion);
+        add_word("buffer.position@", word_buffer_get_postion);
 
         // Math ops.
         add_word("+", word_add);

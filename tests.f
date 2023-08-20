@@ -24,3 +24,9 @@ cr
 "tests/03_test_case.f" include
 
 cr
+
+"--- Testing byte buffers. ---" .cr
+
+"tests/04_test_buffers.f" include
+
+cr
