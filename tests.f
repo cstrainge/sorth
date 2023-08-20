@@ -1,3 +1,5 @@
+#!/usr/bin/env sorth
+
 
 "--- Testing ifs and words. ---" .cr
 
