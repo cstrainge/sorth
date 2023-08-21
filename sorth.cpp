@@ -710,6 +710,46 @@ namespace
                 return value;
             }
 
+            void write_float(int64_t byte_size, double value)
+            {
+                void* data_ptr =(&bytes[position]);
+
+                if (byte_size == 4)
+                {
+                    float float_value = (float)value;
+
+                    memcpy(data_ptr, &float_value, 4);
+                }
+                else
+                {
+                    memcpy(data_ptr, &value, 8);
+                }
+
+                position += byte_size;
+            }
+
+            double read_float(int64_t byte_size)
+            {
+                double new_value = 0.0;
+                void* data_ptr =(&bytes[position]);
+
+                if (byte_size == 4)
+                {
+                    float float_value = 0.0;
+
+                    memcpy(&float_value, data_ptr, 4);
+                    new_value = float_value;
+                }
+                else
+                {
+                    memcpy(&new_value, data_ptr, 8);
+                }
+
+                position += byte_size;
+
+                return new_value;
+            }
+
         private:
             friend std::ostream& operator <<(std::ostream& stream, const ByteBuffer& buffer);
     };
@@ -978,6 +1018,32 @@ namespace
         }
 
         throw_error(current_location, "No string conversion for value.");
+    }
+
+
+    ByteBufferPtr as_byte_buffer(Value value)
+    {
+        if (!std::holds_alternative<ByteBufferPtr>(value))
+        {
+            throw_error(current_location, "Expected a byte buffer.");
+        }
+
+        return std::get<ByteBufferPtr>(value);
+    }
+
+
+    void check_buffer_index(const ByteBufferPtr& buffer, int64_t byte_size)
+    {
+        if ((buffer->postion() + byte_size) > buffer->size())
+        {
+            std::stringstream stream;
+
+            stream << "Writing a value of size " << byte_size << " at a position of "
+                   << buffer->postion() << " would exceed the buffer limit, "
+                   << buffer->size() << ".";
+
+            throw_error(current_location, stream.str());
+        }
     }
 
 
@@ -1944,22 +2010,10 @@ namespace
     void word_buffer_write_int()
     {
         auto byte_size = as_numeric<int64_t>(pop());
-        auto buffer_value = pop();
-
-        if (!std::holds_alternative<ByteBufferPtr>(buffer_value))
-        {
-            throw_error(current_location, "Expected a byte buffer.");
-        }
-
-        auto buffer = std::get<ByteBufferPtr>(buffer_value);
+        auto buffer = as_byte_buffer(pop());
         auto value = as_numeric<int64_t>(pop());
 
-        if ((buffer->postion() + byte_size) > buffer->size())
-        {
-            // TODO: Add more information here...
-            throw_error(current_location, "Byte buffer index out of range.");
-        }
-
+        check_buffer_index(buffer, byte_size);
         buffer->write_int(byte_size, value);
     }
 
@@ -1968,22 +2022,31 @@ namespace
     {
         auto is_signed = as_numeric<bool>(pop());
         auto byte_size = as_numeric<int64_t>(pop());
-        auto buffer_value = pop();
+        auto buffer = as_byte_buffer(pop());
 
-        if (!std::holds_alternative<ByteBufferPtr>(buffer_value))
-        {
-            throw_error(current_location, "Expected a byte buffer.");
-        }
-
-        auto buffer = std::get<ByteBufferPtr>(buffer_value);
-
-        if ((buffer->postion() + byte_size) > buffer->size())
-        {
-            // TODO: Add more information here...
-            throw_error(current_location, "Byte buffer index out of range.");
-        }
-
+        check_buffer_index(buffer, byte_size);
         push(buffer->read_int(byte_size, is_signed));
+    }
+
+
+    void word_buffer_write_float()
+    {
+        auto byte_size = as_numeric<int64_t>(pop());
+        auto buffer = as_byte_buffer(pop());
+        auto value = as_numeric<double>(pop());
+
+        check_buffer_index(buffer, byte_size);
+        buffer->write_float(byte_size, value);
+    }
+
+
+    void word_buffer_read_float()
+    {
+        auto byte_size = as_numeric<int64_t>(pop());
+        auto buffer = as_byte_buffer(pop());
+
+        check_buffer_index(buffer, byte_size);
+        push(buffer->read_float(byte_size));
     }
 
 
@@ -2351,6 +2414,9 @@ namespace
 
         add_word("buffer.int!", word_buffer_write_int);
         add_word("buffer.int@", word_buffer_read_int);
+
+        add_word("buffer.float!", word_buffer_write_float);
+        add_word("buffer.float@", word_buffer_read_float);
 
         add_word("buffer.position!", word_buffer_set_postion);
         add_word("buffer.position@", word_buffer_get_postion);

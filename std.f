@@ -269,6 +269,12 @@
 : buffer.u32@@ @ 4 false buffer.int@ ;
 : buffer.u64@@ @ 8 false buffer.int@ ;
 
+: buffer.f32!! @ 4 buffer.float! ;
+: buffer.f64!! @ 8 buffer.float! ;
+
+: buffer.f32@@ @ 4 buffer.float@ ;
+: buffer.f64@@ @ 8 buffer.float@ ;
+
 : buffer.position!! @ buffer.position! ;
 : buffer.position@@ @ buffer.position@ ;
 
