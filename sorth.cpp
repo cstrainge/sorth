@@ -119,6 +119,9 @@ namespace
     };
 
 
+    extern Location current_location;
+
+
     // We format errors more like gcc so that code editors have an easier time of jumping to the
     // location the error actually occurred.
 
@@ -281,6 +284,85 @@ namespace
     using TokenList = std::vector<Token>;
 
 
+    char process_escape_literal(SourceBuffer& source_code)
+    {
+        char next = source_code.next();
+
+        switch (next)
+        {
+            case 'n':
+                next = '\n';
+                break;
+
+            case 't':
+                next = '\t';
+                break;
+
+            case '0':
+                {
+                    Location start = source_code.current_location();
+                    std::string number_string;
+
+                    while (source_code)
+                    {
+                        next = source_code.peek_next();
+
+                        if ((next >= '0') && (next <= '9'))
+                        {
+                            number_string += next;
+                            source_code.next();
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+
+                    auto numeric = std::stoi(number_string);
+
+                    throw_error_if(numeric >= 256, start, "Numeric literal out of range.");
+
+                    next = (char)numeric;
+                }
+                break;
+        }
+
+        return next;
+    }
+
+
+    std::string process_string(SourceBuffer& source_code)
+    {
+        Location start = source_code.current_location();
+
+        std::string new_string;
+        char next = 0;
+
+        source_code.next();
+
+        while (source_code)
+        {
+            next = source_code.next();
+
+            if (next == '"')
+            {
+                break;
+            }
+
+            if (next == '\\')
+            {
+                next = process_escape_literal(source_code);
+
+            }
+            new_string += next;
+        }
+
+        throw_error_if(next != '"', start, "Missing end of string literal.");
+
+        return new_string;
+    }
+
+
     TokenList tokenize(SourceBuffer& source_code)
     {
         TokenList tokens;
@@ -350,10 +432,7 @@ namespace
             if (source_code.peek_next() == '"')
             {
                 type = Token::Type::string;
-
-                source_code.next();
-                text = get_while([&](char next) -> bool { return next != '"'; });
-                source_code.next();
+                text = process_string(source_code);
             }
             else
             {
@@ -2621,7 +2700,15 @@ int main(int argc, char* argv[])
 
         // Initialize the language built-in words.
         init_builtin_words();
-        process_source(std_path);
+
+        if (std::filesystem::exists(std_path))
+        {
+            process_source(std_path);
+        }
+        else
+        {
+            std::cerr << "Standard lib, " + std_path.string() + " is missing." << std::endl;
+        }
 
         // Mark the context for easy reset in the repl.
         mark_context();
