@@ -279,6 +279,11 @@
 : buffer.position@@ @ buffer.position@ ;
 
 
+( Define a user prompt for the REPL. )
+
+: prompt ">" . ;
+
+
 ( Quick hack to let scripts be executable from the command line. )
 
 : #!/usr/bin/env ;

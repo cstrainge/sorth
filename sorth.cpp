@@ -1630,7 +1630,14 @@ namespace
         {
             try
             {
-                std::cout << std::endl << "> ";
+                std::cout << std::endl;
+
+                auto [ found, word ] = dictionary.find("prompt");
+
+                if (found)
+                {
+                    word_handlers[word.handler_index].function();
+                }
 
                 std::string line;
                 std::getline(std::cin, line);
