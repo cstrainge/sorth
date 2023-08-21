@@ -604,12 +604,15 @@ namespace
     struct DataObject;
     using DataObjectPtr = std::shared_ptr<DataObject>;
 
+    class Array;
+    using ArrayPtr = std::shared_ptr<Array>;
+
     class ByteBuffer;
     using ByteBufferPtr = std::shared_ptr<ByteBuffer>;
 
 
     using Value = std::variant<int64_t, double, bool, std::string, Token, Location, DataObjectPtr,
-                               ByteBufferPtr>;
+                               ArrayPtr, ByteBufferPtr>;
 
     using ValueStack = std::list<Value>;
     using ValueList = std::vector<Value>;
@@ -1951,7 +1954,7 @@ namespace
         auto buffer = std::get<ByteBufferPtr>(buffer_value);
         auto value = as_numeric<int64_t>(pop());
 
-        if ((buffer->postion() + byte_size) >= buffer->size())
+        if ((buffer->postion() + byte_size) > buffer->size())
         {
             // TODO: Add more information here...
             throw_error(current_location, "Byte buffer index out of range.");
@@ -1974,7 +1977,7 @@ namespace
 
         auto buffer = std::get<ByteBufferPtr>(buffer_value);
 
-        if ((buffer->postion() + byte_size) >= buffer->size())
+        if ((buffer->postion() + byte_size) > buffer->size())
         {
             // TODO: Add more information here...
             throw_error(current_location, "Byte buffer index out of range.");
