@@ -30,3 +30,9 @@ cr
 "tests/04_test_buffers.f" include
 
 cr
+
+"--- Testing string literals. ---" .cr
+
+"tests/05_test_strings.f" include
+
+cr

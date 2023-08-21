@@ -281,7 +281,7 @@
 
 ( Define a user prompt for the REPL. )
 
-: prompt ">" . ;
+: prompt "\027[2:34m>\027[0:0m>" . ;
 
 
 ( Quick hack to let scripts be executable from the command line. )
