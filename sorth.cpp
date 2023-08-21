@@ -320,7 +320,9 @@ namespace
 
                     auto numeric = std::stoi(number_string);
 
-                    throw_error_if(numeric >= 256, start, "Numeric literal out of range.");
+                    throw_error_if(numeric >= 256,
+                                   start,
+                                   "Numeric character literal out of range.");
 
                     next = (char)numeric;
                 }
