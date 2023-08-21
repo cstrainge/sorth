@@ -24,6 +24,7 @@
 #include <vector>
 #include <variant>
 #include <unordered_map>
+#include <map>
 #include <cassert>
 #include <optional>
 
@@ -555,8 +556,10 @@ namespace
 
     std::ostream& operator <<(std::ostream& stream, const Dictionary& dictionary)
     {
-        // First merge all the sub-dictionaries into one.
-        Dictionary::SubDictionary new_dictionary;
+        // First merge all the sub-dictionaries into one sorted dictionary.  Note that words will
+        // appear only once.  Even if they are redefined at higher scopes.  Only the newest version
+        // will be displayed.
+        std::map<std::string, Word> new_dictionary;
 
         for (auto iter = dictionary.stack.begin(); iter != dictionary.stack.end(); ++iter)
         {
@@ -583,7 +586,7 @@ namespace
         for (const auto& word : new_dictionary)
         {
             std::cout << std::setw(max) << word.first << " "
-                      << std::setw(4) << word.second.handler_index;
+                      << std::setw(6) << word.second.handler_index;
 
             if (word.second.is_immediate)
             {
