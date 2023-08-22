@@ -12,7 +12,7 @@ if
     "The 10 is greater than 0!" .cr
 then
 
- "What about failed ifs?" .cr
+"What about failed ifs?" .cr
 
 10 0 <
 if
