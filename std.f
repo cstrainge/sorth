@@ -5,7 +5,7 @@
 : ! immediate op.write_variable ;
 
 
-: const immediate word op.def_constant ;
+: constant immediate word op.def_constant ;
 
 
 : if immediate
