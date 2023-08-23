@@ -8,6 +8,8 @@ variable bytes
 -1 bytes buffer.i32!!
 1024.28 bytes buffer.f32!!
 2048.56 bytes buffer.f64!!
+"Hello world." 12 bytes buffer.string!!
+
 
 ( Show the buffer as it is now. )
 bytes ?
@@ -18,15 +20,20 @@ bytes ?
 
 
 ( Read the values back from the buffer. )
+cr
+
 "i32:" . bytes buffer.i32@@ .cr
 "f32:" . bytes buffer.f32@@ .cr
 "f64:" . bytes buffer.f64@@ .cr
+"Str:" . 12 bytes buffer.string@@ .cr
 
 
 ( Move the buffer back to position 0 and read the first value again this time as an unsigned int. )
 0 bytes buffer.position!!
 
 "u32:" . bytes buffer.u32@@ .cr
+
+cr
 
 
 ( Recreate the buffer, but make it only 8 bytes this time.  Make sure we can fill the whole thing. )

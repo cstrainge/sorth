@@ -849,6 +849,28 @@ namespace
                 return new_value;
             }
 
+            void write_string(const std::string& string, int64_t max_size)
+            {
+                void* data_ptr =(&bytes[position]);
+
+                strncpy((char*)data_ptr, string.c_str(), max_size);
+                position += string.size();
+            }
+
+            std::string read_string(int64_t max_size)
+            {
+                void* data_ptr =(&bytes[position]);
+                char buffer[max_size + 1];
+
+                memset(buffer, 0, max_size + 1);
+                memcpy(buffer, data_ptr, max_size);
+
+                std::string new_string = buffer;
+                position += new_string.size();
+
+                return new_string;
+            }
+
         private:
             friend std::ostream& operator <<(std::ostream& stream, const ByteBuffer& buffer);
     };
@@ -2266,6 +2288,27 @@ namespace
     }
 
 
+    void word_buffer_write_string()
+    {
+        auto max_size = as_numeric<int64_t>(pop());
+        auto buffer = as_byte_buffer(pop());
+        auto value = as_string(pop());
+
+        check_buffer_index(buffer, max_size);
+        buffer->write_string(value, max_size);
+    }
+
+
+    void word_buffer_read_string()
+    {
+        auto max_size = as_numeric<int64_t>(pop());
+        auto buffer = as_byte_buffer(pop());
+
+        check_buffer_index(buffer, max_size);
+        push(buffer->read_string(max_size));
+    }
+
+
     void word_buffer_set_postion()
     {
         auto buffer_value = pop();
@@ -2631,6 +2674,9 @@ namespace
 
         ADD_NATIVE_WORD("buffer.float!", word_buffer_write_float);
         ADD_NATIVE_WORD("buffer.float@", word_buffer_read_float);
+
+        ADD_NATIVE_WORD("buffer.string!", word_buffer_write_string);
+        ADD_NATIVE_WORD("buffer.string@", word_buffer_read_string);
 
         ADD_NATIVE_WORD("buffer.position!", word_buffer_set_postion);
         ADD_NATIVE_WORD("buffer.position@", word_buffer_get_postion);

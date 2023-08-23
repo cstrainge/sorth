@@ -275,6 +275,9 @@
 : buffer.f32@@ @ 4 buffer.float@ ;
 : buffer.f64@@ @ 8 buffer.float@ ;
 
+: buffer.string!! @ swap buffer.string! ;
+: buffer.string@@ @ swap buffer.string@ ;
+
 : buffer.position!! @ buffer.position! ;
 : buffer.position@@ @ buffer.position@ ;
 
