@@ -854,7 +854,7 @@ namespace
                 void* data_ptr =(&bytes[position]);
 
                 strncpy((char*)data_ptr, string.c_str(), max_size);
-                position += string.size();
+                position += max_size;
             }
 
             std::string read_string(int64_t max_size)
@@ -866,7 +866,7 @@ namespace
                 memcpy(buffer, data_ptr, max_size);
 
                 std::string new_string = buffer;
-                position += new_string.size();
+                position += max_size;
 
                 return new_string;
             }
