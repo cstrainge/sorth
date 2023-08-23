@@ -47,3 +47,10 @@ cr
 0x10101010 bytes buffer.i32!!
 
 bytes ?
+
+cr
+
+0 bytes buffer.position!!
+
+"i32:" . bytes buffer.i32@@ .hcr
+"i32:" . bytes buffer.i32@@ .hcr
