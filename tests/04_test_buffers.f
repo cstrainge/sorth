@@ -10,7 +10,7 @@ variable bytes
 2048.56 bytes buffer.f64!!
 "Hello world." 16 bytes buffer.string!!
 "Something wicked this way comes." 32 bytes buffer.string!!
-"foo" 5 bytes buffer.string!!
+"foobarbaz" 6 bytes buffer.string!!
 
 
 ( Show the buffer as it is now. )
@@ -29,7 +29,7 @@ cr
 "f64:" . bytes buffer.f64@@ .cr
 "Str:" . 16 bytes buffer.string@@ .cr
 "Str:" . 32 bytes buffer.string@@ .cr
-"Str:" . 5 bytes buffer.string@@ .cr
+"Str:" . 6 bytes buffer.string@@ .cr
 
 
 ( Move the buffer back to position 0 and read the first value again this time as an unsigned int. )
