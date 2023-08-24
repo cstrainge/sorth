@@ -745,7 +745,28 @@ namespace
             {
                 items.push_back(value);
             }
+
+        private:
+            friend std::ostream& operator <<(std::ostream& stream, const ArrayPtr& array);
     };
+
+
+    std::ostream& operator <<(std::ostream& stream, const Value& value);
+
+
+    std::ostream& operator <<(std::ostream& stream, const ArrayPtr& array)
+    {
+        stream << "[ ";
+
+        for (auto item : array->items)
+        {
+            stream << item << " ";
+        }
+
+        stream << "]";
+
+        return stream;
+    }
 
 
     class ByteBuffer
@@ -927,9 +948,6 @@ namespace
     };
 
 
-    std::ostream& operator <<(std::ostream& stream, const Value& value) ;
-
-
     // When we print out a data structure we include the definition so that we can include field
     // names along with the name of the type itself.
     std::ostream& operator <<(std::ostream& stream, const DataObjectPtr& data)
@@ -986,7 +1004,7 @@ namespace
         value_print_if<Token>(stream, value);
         value_print_if<DataObjectPtr>(stream, value);
         value_print_if<Location>(stream, value);
-
+        value_print_if<ArrayPtr>(stream, value);
         value_print_if<ByteBufferPtr>(stream, value);
 
         return stream;
@@ -2236,6 +2254,75 @@ namespace
     }
 
 
+    ArrayPtr as_array(const Value& value)
+    {
+        throw_error_if(!std::holds_alternative<ArrayPtr>(value),
+                       current_location,
+                       "Expected an array object.");
+
+        return std::get<ArrayPtr>(value);
+    }
+
+
+    void throw_if_out_of_bounds(int64_t index, int64_t size, const std::string& type)
+    {
+        if ((index >= size) || (index < 0))
+        {
+            std::stringstream stream;
+
+            stream << type << " index, " << index << ", is out of bounds of the size " << size
+                   << ".";
+
+            throw_error(current_location, stream.str());
+        }
+    }
+
+
+    void word_array_new()
+    {
+        auto count = as_numeric<int64_t>(pop());
+        auto array_ptr = std::make_shared<Array>(count);
+
+        push(array_ptr);
+    }
+
+
+    void word_array_size()
+    {
+        auto array = as_array(pop());
+
+        push(array->size());
+    }
+
+
+    void word_array_write_index()
+    {
+        auto array = as_array(pop());
+        auto index = as_numeric<int64_t>(pop());
+        auto new_value = pop();
+
+        throw_if_out_of_bounds(index, array->size(), "Array");
+
+        (*array)[index] = new_value;
+    }
+
+
+    void word_array_read_index()
+    {
+        auto array = as_array(pop());
+        auto index = as_numeric<int64_t>(pop());
+
+        throw_if_out_of_bounds(index, array->size(), "Array");
+
+        push((*array)[index]);
+    }
+
+
+    void word_array_resize()
+    {
+    }
+
+
     void word_buffer_new()
     {
         auto size = as_numeric<int64_t>(pop());
@@ -2665,6 +2752,14 @@ namespace
         ADD_IMMEDIATE_WORD("#", word_data_definition);
         ADD_NATIVE_WORD("#@", word_read_field);
         ADD_NATIVE_WORD("#!", word_write_field);
+
+        // Array and string words.
+
+        ADD_NATIVE_WORD("[].new", word_array_new);
+        ADD_NATIVE_WORD("[].size", word_array_size);
+        ADD_NATIVE_WORD("[]!", word_array_write_index);
+        ADD_NATIVE_WORD("[]@", word_array_read_index);
+        ADD_NATIVE_WORD("[].resize", word_array_resize);
 
         // ByteBuffer operations.
         ADD_NATIVE_WORD("buffer.new", word_buffer_new);

@@ -252,6 +252,42 @@
 : exit ( -- ) quit ;
 
 
+( Array words. )
+
+: []!! @ []! ;
+: []@@ @ []@ ;
+
+
+: [ immediate
+
+    code.new_block
+
+    "]!" "]!!" "]@" "]@@" 4 code.compile_until_words
+
+    ` swap op.execute
+
+     case
+        "]!" of
+            ` []! op.execute
+            endof
+
+        "]!!" of
+            ` []!! op.execute
+            endof
+
+        "]@" of
+            ` []@ op.execute
+            endof
+
+        "]@@" of
+            ` []@@ op.execute
+            endof
+    endcase
+
+    code.merge_stack_block
+;
+
+
 ( Helper words for reading/writing byte buffers. )
 
 : buffer.i8!!  @ 1 buffer.int! ;

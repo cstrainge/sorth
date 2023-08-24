@@ -36,3 +36,9 @@ cr
 "tests/05_test_strings.f" include
 
 cr
+
+"--- Testing arrays. ---" .cr
+
+"tests/06_test_arrays.f" include
+
+cr
