@@ -247,11 +247,6 @@
 : #@@ @ #@ ;
 
 
-( Alternate ways to exit the interpreter. )
-: q    ( -- ) quit ;
-: exit ( -- ) quit ;
-
-
 ( Array words. )
 
 : []!! @ []! ;
@@ -267,21 +262,10 @@
     ` swap op.execute
 
      case
-        "]!" of
-            ` []! op.execute
-            endof
-
-        "]!!" of
-            ` []!! op.execute
-            endof
-
-        "]@" of
-            ` []@ op.execute
-            endof
-
-        "]@@" of
-            ` []@@ op.execute
-            endof
+        "]!"  of  ` []!  op.execute  endof
+        "]!!" of  ` []!! op.execute  endof
+        "]@"  of  ` []@  op.execute  endof
+        "]@@" of  ` []@@ op.execute  endof
     endcase
 
     code.merge_stack_block
@@ -321,6 +305,11 @@
 ( Define a user prompt for the REPL. )
 
 : prompt "\027[2:34m>\027[0:0m>" . ;
+
+
+( Alternate ways to exit the interpreter. )
+: q    ( -- ) quit ;
+: exit ( -- ) quit ;
 
 
 ( Quick hack to let scripts be executable from the command line. )
