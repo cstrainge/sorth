@@ -4,16 +4,21 @@
 : @ immediate op.read_variable ;
 : ! immediate op.write_variable ;
 
+: variable! immediate
+    word dup
+
+    op.def_variable
+    op.execute
+    op.write_variable
+;
+
 
 : constant immediate word op.def_constant ;
 
 
 : if immediate
-    variable else_label
-    unique_str else_label !
-
-    variable end_label
-    unique_str end_label !
+    unique_str variable! else_label
+    unique_str variable! end_label
 
     code.new_block
 
@@ -36,8 +41,7 @@
 
 
 : if immediate
-    variable if_fail_label
-    unique_str if_fail_label !
+    unique_str variable! if_fail_label
 
     code.new_block
 
@@ -49,8 +53,7 @@
     if
         if_fail_label @ op.jump_target
     else
-        variable then_label
-        unique_str then_label !
+        unique_str variable! then_label
 
         then_label @ op.jump
 
@@ -68,8 +71,7 @@
 
 
 : begin immediate
-    variable top_label
-    unique_str top_label !
+    unique_str variable! top_label
 
     code.new_block
 
@@ -81,8 +83,7 @@
     if
         top_label @ op.jump_if_zero
     else
-        variable end_label
-        unique_str end_label !
+        unique_str variable! end_label
 
         end_label @ op.jump_if_zero
 
@@ -132,16 +133,13 @@
 ( value that's compared against that input for equality. )
 
 : case immediate
-    variable done
-    false done !
+    false variable! done
 
     ( Label marking end of the entire case statement. )
-    variable end_label
-    unique_str end_label !
+    unique_str variable! end_label
 
     ( Label for the next of statement test or the beginning of the default block. )
-    variable next_label
-    unique_str next_label !
+    unique_str variable! next_label
 
     ( We create 2 code blocks on the construction stack.  The top one will hold the current case )
     ( or default block.  The bottom one is where we will consolidate everything for final        )
@@ -254,7 +252,6 @@
 
 
 : [ immediate
-
     code.new_block
 
     "]!" "]!!" "]@" "]@@" 4 code.compile_until_words
