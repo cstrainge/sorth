@@ -367,7 +367,9 @@ resolve and print the names for all execute instructions.  For example `show_wor
 something like:
 
 ```
-Word: if
+Word, 80 -> if, is user defined.
+Defined at: std.f:43:3.
+Word is immediate.
      0  execute              61 -> unique_str
      1  def_variable         if_fail_label
      2  execute              std.f:44:26: if_fail_label

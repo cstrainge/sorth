@@ -1349,8 +1349,6 @@ namespace
         public:
             void show(std::ostream& stream, const std::vector<std::string>& inverse_list)
             {
-                stream << "Word: " << name << std::endl;
-
                 for (size_t i = 0; i < code.size(); ++i)
                 {
                     stream << std::setw(6) << i << "  ";
@@ -1361,8 +1359,15 @@ namespace
                         auto index = as_numeric<int64_t>(code[i].value);
 
                         stream << code[i].id
-                               << "  " << index << " -> " << inverse_list[index]
-                               << std::endl;
+                               << "  " << index;
+
+
+                        if (inverse_list[index] != "")
+                        {
+                            stream << " -> " << inverse_list[index];
+                        }
+
+                        stream << std::endl;
                     }
                     else
                     {
@@ -2705,8 +2710,19 @@ namespace
 
         if (!found)
         {
-            std::cerr << "Word " << name << " has not been defined." << std::endl;
+            std::cerr << "Word, " << name << ", has not been defined." << std::endl;
             return;
+        }
+
+        std::cout << "Word, " << word.handler_index << " -> " << name
+                  << (word.is_scripted ? ", is user defined." : ", is a native word.")
+                  << std::endl
+                  << "Defined at: " << word_handlers[word.handler_index].definition_location
+                  << "." << std::endl;
+
+        if (word.is_immediate)
+        {
+            std::cout << "Word is immediate." << std::endl;
         }
 
         if (word.is_scripted)
@@ -2717,10 +2733,6 @@ namespace
             auto inverse_list = inverse_lookup_list(dictionary, word_handlers);
 
             script_handler->show(std::cout, inverse_list);
-        }
-        else
-        {
-            std::cout << "Word " << name << " is a native function." << std::endl;
         }
     }
 
