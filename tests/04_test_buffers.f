@@ -1,7 +1,6 @@
 
 ( Create a byte buffer of 50 bytes. )
-variable bytes
-70 buffer.new bytes !
+70 buffer.new variable! bytes
 
 
 ( Write a few values into the buffer. )

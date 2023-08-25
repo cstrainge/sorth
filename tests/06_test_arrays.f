@@ -1,6 +1,5 @@
 
-variable my_array
-5 [].new my_array !
+5 [].new variable! my_array
 
 "Original:" . my_array @ .cr
 
