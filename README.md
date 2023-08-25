@@ -370,7 +370,7 @@ something like:
 Word: if
      0  execute              61 -> unique_str
      1  def_variable         if_fail_label
-     2  execute              /Users/cstrainge/workdir/sorth/std.f:44:26: if_fail_label
+     2  execute              std.f:44:26: if_fail_label
      3  write_variable
      4  execute              13 -> code.new_block
      5  execute              if_fail_label
@@ -390,7 +390,7 @@ Word: if
     19  jump_target
     20  execute              61 -> unique_str
     21  def_variable         then_label
-    22  execute              /Users/cstrainge/workdir/sorth/std.f:56:30: then_label
+    22  execute              std.f:56:30: then_label
     23  write_variable
     24  execute              then_label
     25  read_variable
