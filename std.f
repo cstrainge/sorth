@@ -250,6 +250,8 @@
 : []!! @ []! ;
 : []@@ @ []@ ;
 
+: [].resize! @ [].resize ;
+
 
 : [ immediate
     code.new_block

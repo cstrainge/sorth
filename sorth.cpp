@@ -741,9 +741,9 @@ namespace
                 return items[index];
             }
 
-            inline void grow(const Value& value)
+            inline void resize(int64_t new_size)
             {
-                items.push_back(value);
+                items.resize((size_t)new_size);
             }
 
         private:
@@ -2337,6 +2337,10 @@ namespace
 
     void word_array_resize()
     {
+        auto array = as_array(pop());
+        auto new_size = as_numeric<int64_t>(pop());
+
+        array->resize(new_size);
     }
 
 
