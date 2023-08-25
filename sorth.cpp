@@ -1285,7 +1285,19 @@ namespace
 
     std::ostream& operator <<(std::ostream& stream, const OperationCode& op)
     {
-        stream << op.id << " " << op.value;
+        auto doesnt_have_parameter = [](OperationCode::Id id)
+            {
+                return    (id == OperationCode::Id::read_variable)
+                       || (id == OperationCode::Id::write_variable)
+                       || (id == OperationCode::Id::jump_target);
+            };
+
+        stream << op.id;
+
+        if (!doesnt_have_parameter(op.id))
+        {
+            stream << "  " << op.value;
+        }
 
         return stream;
     }
@@ -1296,7 +1308,7 @@ namespace
         for (size_t i = 0; i < code.size(); ++i)
         {
             const auto& op = code[i];
-            stream << std::setw(6) << i << " " << op << std::endl;
+            stream << std::setw(6) << i << "  " << op << std::endl;
         }
 
         return stream;
@@ -1341,7 +1353,7 @@ namespace
 
                 for (size_t i = 0; i < code.size(); ++i)
                 {
-                    stream << std::setw(6) << i << " ";
+                    stream << std::setw(6) << i << "  ";
 
                     if (   (code[i].id == OperationCode::Id::execute)
                         && (is_numeric(code[i].value)))
@@ -1349,7 +1361,7 @@ namespace
                         auto index = as_numeric<int64_t>(code[i].value);
 
                         stream << code[i].id
-                               << " " << inverse_list[index]
+                               << "  " << index << " -> " << inverse_list[index]
                                << std::endl;
                     }
                     else
