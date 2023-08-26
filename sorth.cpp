@@ -696,6 +696,12 @@ namespace
     }
 
 
+    // The bytecode that the interpreter understands.
+    struct OperationCode;
+
+    using ByteCode = std::vector<OperationCode>;  // Operations to be executed by the interpreter.
+
+
     // All of the types that the interpreter can natively understand are represented in the value
     // variant.  With int64_t being defined first, all values will default to the integer value of
     // zero.
@@ -711,12 +717,94 @@ namespace
 
 
     using Value = std::variant<int64_t, double, bool, std::string, Token, Location, DataObjectPtr,
-                               ArrayPtr, ByteBufferPtr>;
+                               ArrayPtr, ByteBufferPtr, ByteCode>;
+
+    std::ostream& operator <<(std::ostream& stream, const Value& value);
 
     using ValueStack = std::list<Value>;
     using ValueList = std::vector<Value>;
 
     using VariableList = ContextualList<Value>;
+
+
+    // Pre-declaring the op-codes so that we can assign a bytecode block into a value.  This can be
+    // really useful for immediate words that need to do fancier code manipulation.  Words like
+    // [ make use of this.
+
+    struct OperationCode
+    {
+        enum class Id : unsigned char
+        {
+            def_variable,
+            def_constant,
+            read_variable,
+            write_variable,
+            execute,
+            word_index,
+            push_constant_value,
+            jump,
+            jump_if_zero,
+            jump_if_not_zero,
+            jump_target
+        };
+
+        Id id;
+        Value value;
+        std::optional<Location> location;
+    };
+
+
+    std::ostream& operator <<(std::ostream& stream, const OperationCode::Id id)
+    {
+        switch (id)
+        {
+            case OperationCode::Id::def_variable:        stream << "def_variable       "; break;
+            case OperationCode::Id::def_constant:        stream << "def_constant       "; break;
+            case OperationCode::Id::read_variable:       stream << "read_variable      "; break;
+            case OperationCode::Id::write_variable:      stream << "write_variable     "; break;
+            case OperationCode::Id::execute:             stream << "execute            "; break;
+            case OperationCode::Id::word_index:          stream << "word_index         "; break;
+            case OperationCode::Id::push_constant_value: stream << "push_constant_value"; break;
+            case OperationCode::Id::jump:                stream << "jump               "; break;
+            case OperationCode::Id::jump_if_zero:        stream << "jump_if_zero       "; break;
+            case OperationCode::Id::jump_if_not_zero:    stream << "jump_if_not_zero   "; break;
+            case OperationCode::Id::jump_target:         stream << "jump_target        "; break;
+        }
+
+        return stream;
+    }
+
+
+    std::ostream& operator <<(std::ostream& stream, const OperationCode& op)
+    {
+        auto doesnt_have_parameter = [](OperationCode::Id id)
+            {
+                return    (id == OperationCode::Id::read_variable)
+                       || (id == OperationCode::Id::write_variable)
+                       || (id == OperationCode::Id::jump_target);
+            };
+
+        stream << op.id;
+
+        if (!doesnt_have_parameter(op.id))
+        {
+            stream << "  " << op.value;
+        }
+
+        return stream;
+    }
+
+
+    std::ostream& operator <<(std::ostream& stream, const ByteCode& code)
+    {
+        for (size_t i = 0; i < code.size(); ++i)
+        {
+            const auto& op = code[i];
+            stream << std::setw(6) << i << "  " << op << std::endl;
+        }
+
+        return stream;
+    }
 
 
     class Array
@@ -749,9 +837,6 @@ namespace
         private:
             friend std::ostream& operator <<(std::ostream& stream, const ArrayPtr& array);
     };
-
-
-    std::ostream& operator <<(std::ostream& stream, const Value& value);
 
 
     std::ostream& operator <<(std::ostream& stream, const ArrayPtr& array)
@@ -1006,6 +1091,7 @@ namespace
         value_print_if<Location>(stream, value);
         value_print_if<ArrayPtr>(stream, value);
         value_print_if<ByteBufferPtr>(stream, value);
+        value_print_if<ByteCode>(stream, value);
 
         return stream;
     }
@@ -1235,85 +1321,6 @@ namespace
 
     // Pieces of the bytecode interpreter itself.  Here we define the raw operations of the
     // interpreter and the functions that execute those operations.
-
-    struct OperationCode
-    {
-        enum class Id : unsigned char
-        {
-            def_variable,
-            def_constant,
-            read_variable,
-            write_variable,
-            execute,
-            word_index,
-            push_constant_value,
-            jump,
-            jump_if_zero,
-            jump_if_not_zero,
-            jump_target
-        };
-
-        Id id;
-        Value value;
-        std::optional<Location> location;
-    };
-
-
-    using ByteCode = std::vector<OperationCode>;  // Operations to be executed by the interpreter.
-
-
-    std::ostream& operator <<(std::ostream& stream, const OperationCode::Id id)
-    {
-        switch (id)
-        {
-            case OperationCode::Id::def_variable:        stream << "def_variable       "; break;
-            case OperationCode::Id::def_constant:        stream << "def_constant       "; break;
-            case OperationCode::Id::read_variable:       stream << "read_variable      "; break;
-            case OperationCode::Id::write_variable:      stream << "write_variable     "; break;
-            case OperationCode::Id::execute:             stream << "execute            "; break;
-            case OperationCode::Id::word_index:          stream << "word_index         "; break;
-            case OperationCode::Id::push_constant_value: stream << "push_constant_value"; break;
-            case OperationCode::Id::jump:                stream << "jump               "; break;
-            case OperationCode::Id::jump_if_zero:        stream << "jump_if_zero       "; break;
-            case OperationCode::Id::jump_if_not_zero:    stream << "jump_if_not_zero   "; break;
-            case OperationCode::Id::jump_target:         stream << "jump_target        "; break;
-        }
-
-        return stream;
-    }
-
-
-    std::ostream& operator <<(std::ostream& stream, const OperationCode& op)
-    {
-        auto doesnt_have_parameter = [](OperationCode::Id id)
-            {
-                return    (id == OperationCode::Id::read_variable)
-                       || (id == OperationCode::Id::write_variable)
-                       || (id == OperationCode::Id::jump_target);
-            };
-
-        stream << op.id;
-
-        if (!doesnt_have_parameter(op.id))
-        {
-            stream << "  " << op.value;
-        }
-
-        return stream;
-    }
-
-
-    std::ostream& operator <<(std::ostream& stream, const ByteCode& code)
-    {
-        for (size_t i = 0; i < code.size(); ++i)
-        {
-            const auto& op = code[i];
-            stream << std::setw(6) << i << "  " << op << std::endl;
-        }
-
-        return stream;
-    }
-
 
     void execute_code(const std::string& name, const ByteCode& code);
 
@@ -2024,6 +2031,27 @@ namespace
         construction_stack.top().code.insert(construction_stack.top().code.end(),
                                              top_code.begin(),
                                              top_code.end());
+    }
+
+
+    void word_code_pop_stack_block()
+    {
+        auto top_code = construction_stack.top().code;
+        construction_stack.pop();
+
+        push(top_code);
+    }
+
+
+    void word_code_push_stack_block()
+    {
+        auto top = pop();
+
+        throw_error_if(!std::holds_alternative<ByteCode>(top),
+                       current_location,
+                       "Expected a byte code block.");
+
+        construction_stack.push({ .code = std::get<ByteCode>(top) });
     }
 
 
@@ -2764,6 +2792,8 @@ namespace
 
         ADD_NATIVE_WORD("code.new_block", word_new_code_block);
         ADD_NATIVE_WORD("code.merge_stack_block", word_merge_stack_code_block);
+        ADD_NATIVE_WORD("code.pop_stack_block", word_code_pop_stack_block);
+        ADD_NATIVE_WORD("code.push_stack_block", word_code_push_stack_block);
         ADD_NATIVE_WORD("code.resolve_jumps", word_resolve_code_jumps);
         ADD_NATIVE_WORD("code.compile_until_words", word_compile_until_words);
         ADD_NATIVE_WORD("code.insert_at_front", word_code_insert_at_front);
