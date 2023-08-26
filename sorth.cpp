@@ -28,6 +28,10 @@
 #include <cassert>
 #include <optional>
 
+#include <stdlib.h>
+#include <termios.h>
+#include <unistd.h>
+
 
 
 namespace
@@ -717,7 +721,7 @@ namespace
 
 
     using Value = std::variant<int64_t, double, bool, std::string, Token, Location, DataObjectPtr,
-                               ArrayPtr, ByteBufferPtr, ByteCode>;
+                               ArrayPtr, ByteBufferPtr, ByteCode, std::runtime_error>;
 
     std::ostream& operator <<(std::ostream& stream, const Value& value);
 
@@ -742,6 +746,7 @@ namespace
             execute,
             word_index,
             push_constant_value,
+            mark_catch,
             jump,
             jump_if_zero,
             jump_if_not_zero,
@@ -765,6 +770,7 @@ namespace
             case OperationCode::Id::execute:             stream << "execute            "; break;
             case OperationCode::Id::word_index:          stream << "word_index         "; break;
             case OperationCode::Id::push_constant_value: stream << "push_constant_value"; break;
+            case OperationCode::Id::mark_catch:          stream << "mark_catch         "; break;
             case OperationCode::Id::jump:                stream << "jump               "; break;
             case OperationCode::Id::jump_if_zero:        stream << "jump_if_zero       "; break;
             case OperationCode::Id::jump_if_not_zero:    stream << "jump_if_not_zero   "; break;
@@ -1058,6 +1064,9 @@ namespace
     }
 
 
+    std::ostream& operator <<(std::ostream& stream, const std::runtime_error& error);
+
+
     // Let's make sure we can convert values to text for displaying to the user among various other
     // uses like writing to a text file.
     template <typename variant>
@@ -1092,6 +1101,7 @@ namespace
         value_print_if<ArrayPtr>(stream, value);
         value_print_if<ByteBufferPtr>(stream, value);
         value_print_if<ByteCode>(stream, value);
+        value_print_if<std::runtime_error>(stream, value);
 
         return stream;
     }
@@ -1144,6 +1154,23 @@ namespace
     VariableList variables;  // List of all the allocated variables.
 
     DefinitionList definitions;  // List of all defined data structures.
+
+
+
+    std::ostream& operator <<(std::ostream& stream, const std::runtime_error& error)
+    {
+        stream << std::endl
+               << error.what() << std::endl;
+
+        if (!call_stack.empty())
+        {
+            stream << std::endl
+                   << "Call stack:" << std::endl
+                   << call_stack << std::endl;
+        }
+
+        return stream;
+    }
 
 
 
@@ -1427,65 +1454,101 @@ namespace
             std::cout << "-------------------------------------" << std::endl;
         }
 
+        std::vector<int64_t> catch_locations;
+
         for (size_t pc = 0; pc < code.size(); ++pc)
         {
-            const OperationCode& operation = code[pc];
-
-            if (is_interpreter_quitting)
+            try
             {
-                break;
-            }
+                const OperationCode& operation = code[pc];
 
-            if (is_showing_run_code)
-            {
-                std::cout << std::setw(6) << pc << " " << operation << std::endl;
-            }
-
-            if (operation.location)
-            {
-                current_location = operation.location.value();
-                call_stack_push(name, operation.location.value());
-            }
-
-            switch (operation.id)
-            {
-                case OperationCode::Id::def_variable:
-                    {
-                        auto name = as_string(operation.value);
-                        auto index = variables.insert({});
-
-                        ADD_NATIVE_WORD(name, [index]() { push((int64_t)index); });
-                    }
+                if (is_interpreter_quitting)
+                {
                     break;
+                }
 
-                case OperationCode::Id::def_constant:
-                    {
-                        auto name = as_string(operation.value);
-                        auto value = pop();
+                if (is_showing_run_code)
+                {
+                    std::cout << std::setw(6) << pc << " " << operation << std::endl;
+                }
 
-                        ADD_NATIVE_WORD(name, [value]() { push(value); });
-                    }
-                    break;
+                if (operation.location)
+                {
+                    current_location = operation.location.value();
+                    call_stack_push(name, operation.location.value());
+                }
 
-                case OperationCode::Id::read_variable:
-                    {
-                        auto index = as_numeric<int64_t>(pop());
-                        push(variables[index]);
-                    }
-                    break;
+                switch (operation.id)
+                {
+                    case OperationCode::Id::def_variable:
+                        {
+                            auto name = as_string(operation.value);
+                            auto index = variables.insert({});
 
-                case OperationCode::Id::write_variable:
-                    {
-                        auto index = as_numeric<int64_t>(pop());
-                        auto value = pop();
+                            ADD_NATIVE_WORD(name, [index]() { push((int64_t)index); });
+                        }
+                        break;
 
-                        variables[index] = value;
-                    }
-                    break;
+                    case OperationCode::Id::def_constant:
+                        {
+                            auto name = as_string(operation.value);
+                            auto value = pop();
 
-                case OperationCode::Id::execute:
-                    {
-                        if (is_string(operation.value))
+                            ADD_NATIVE_WORD(name, [value]() { push(value); });
+                        }
+                        break;
+
+                    case OperationCode::Id::read_variable:
+                        {
+                            auto index = as_numeric<int64_t>(pop());
+                            push(variables[index]);
+                        }
+                        break;
+
+                    case OperationCode::Id::write_variable:
+                        {
+                            auto index = as_numeric<int64_t>(pop());
+                            auto value = pop();
+
+                            variables[index] = value;
+                        }
+                        break;
+
+                    case OperationCode::Id::execute:
+                        {
+                            if (is_string(operation.value))
+                            {
+                                auto name = as_string(operation.value);
+                                auto [found, word] = dictionary.find(name);
+
+                                if (!found)
+                                {
+                                    throw_error(current_location, "Word '" + name + "' not found.");
+                                }
+
+                                auto& word_handler = word_handlers[word.handler_index];
+
+                                call_stack_push(word_handler);
+                                word_handler.function();
+                                call_stack_pop();
+                            }
+                            else if (is_numeric(operation.value))
+                            {
+                                auto index = as_numeric<int64_t>(operation.value);
+                                auto& word_handler = word_handlers[index];
+
+                                call_stack_push(word_handler);
+                                word_handler.function();
+                                call_stack_pop();
+                            }
+                            else
+                            {
+                                throw_error(current_location, "Can not execute unexpected value type.");
+                            }
+                        }
+                        break;
+
+                    case OperationCode::Id::word_index:
                         {
                             auto name = as_string(operation.value);
                             auto [found, word] = dictionary.find(name);
@@ -1495,83 +1558,74 @@ namespace
                                 throw_error(current_location, "Word '" + name + "' not found.");
                             }
 
-                            auto& word_handler = word_handlers[word.handler_index];
-
-                            call_stack_push(word_handler);
-                            word_handler.function();
-                            call_stack_pop();
+                            push((int64_t)word.handler_index);
                         }
-                        else if (is_numeric(operation.value))
+                        break;
+
+                    case OperationCode::Id::push_constant_value:
+                        push(operation.value);
+                        break;
+
+                    case OperationCode::Id::mark_catch:
                         {
-                            auto index = as_numeric<int64_t>(operation.value);
-                            auto& word_handler = word_handlers[index];
+                            int64_t relative_jump = as_numeric<int64_t>(operation.value);
+                            int64_t absolute = pc + relative_jump;
 
-                            call_stack_push(word_handler);
-                            word_handler.function();
-                            call_stack_pop();
+                            catch_locations.push_back(absolute);
                         }
-                        else
+                        break;
+
+                    case OperationCode::Id::jump:
+                        pc += as_numeric<int64_t>(operation.value) - 1;
+                        break;
+
+                    case OperationCode::Id::jump_if_zero:
                         {
-                            throw_error(current_location, "Can not execute unexpected value type.");
+                            auto top = pop();
+                            auto value = as_numeric<bool>(top);
+
+                            if (!value)
+                            {
+                                pc += as_numeric<int64_t>(operation.value) - 1;
+                            }
                         }
-                    }
-                    break;
+                        break;
 
-                case OperationCode::Id::word_index:
-                    {
-                        auto name = as_string(operation.value);
-                        auto [found, word] = dictionary.find(name);
-
-                        if (!found)
+                    case OperationCode::Id::jump_if_not_zero:
                         {
-                            throw_error(current_location, "Word '" + name + "' not found.");
+                            auto top = pop();
+                            auto value = as_numeric<bool>(top);
+
+                            if (value)
+                            {
+                                pc += as_numeric<int64_t>(operation.value) - 1;
+                            }
                         }
+                        break;
 
-                        push((int64_t)word.handler_index);
-                    }
-                    break;
+                    case OperationCode::Id::jump_target:
+                        // Nothing to do here.  This instruction just acts as a landing pad for the
+                        // jump instructions.
+                        break;
+                }
 
-                case OperationCode::Id::push_constant_value:
-                    push(operation.value);
-                    break;
-
-                case OperationCode::Id::jump:
-                    pc += as_numeric<int64_t>(operation.value) - 1;
-                    break;
-
-                case OperationCode::Id::jump_if_zero:
-                    {
-                        auto top = pop();
-                        auto value = as_numeric<bool>(top);
-
-                        if (!value)
-                        {
-                            pc += as_numeric<int64_t>(operation.value) - 1;
-                        }
-                    }
-                    break;
-
-                case OperationCode::Id::jump_if_not_zero:
-                    {
-                        auto top = pop();
-                        auto value = as_numeric<bool>(top);
-
-                        if (value)
-                        {
-                            pc += as_numeric<int64_t>(operation.value) - 1;
-                        }
-                    }
-                    break;
-
-                case OperationCode::Id::jump_target:
-                    // Nothing to do here.  This instruction just acts as a landing pad for the
-                    // jump instructions.
-                    break;
+                if (operation.location)
+                {
+                    call_stack_pop();
+                }
             }
-
-            if (operation.location)
+            catch (const std::runtime_error& error)
             {
-                call_stack_pop();
+                if (!catch_locations.empty())
+                {
+                    pc = catch_locations.back() - 1;
+                    catch_locations.pop_back();
+                    push(error);
+                }
+                else
+                {
+                    throw error;
+                }
             }
         }
 
@@ -1791,13 +1845,9 @@ namespace
 
                 std::cout << "ok" << std::endl;
             }
-            catch (const std::runtime_error& e)
+            catch (const std::runtime_error& error)
             {
-                std::cerr << std::endl
-                          << e.what() << std::endl
-                          << std::endl
-                          << "Call stack:" << std::endl
-                          << call_stack << std::endl;
+                std::cerr << error;
             }
             catch (...)
             {
@@ -1963,7 +2013,7 @@ namespace
     }
 
 
-    void word_execute()
+    void word_op_execute()
     {
         insert_user_instruction({
                 .id = OperationCode::Id::execute,
@@ -1976,6 +2026,15 @@ namespace
     {
         insert_user_instruction({
                 .id = OperationCode::Id::push_constant_value,
+                .value = pop()
+            });
+    }
+
+
+    void word_op_mark_catch()
+    {
+        insert_user_instruction({
+                .id = OperationCode::Id::mark_catch,
                 .value = pop()
             });
     }
@@ -2061,7 +2120,8 @@ namespace
             {
                 return    (code.id == OperationCode::Id::jump)
                        || (code.id == OperationCode::Id::jump_if_not_zero)
-                       || (code.id == OperationCode::Id::jump_if_zero);
+                       || (code.id == OperationCode::Id::jump_if_zero)
+                       || (code.id == OperationCode::Id::mark_catch);
             };
 
         auto& top_code = construction_stack.top().code;
@@ -2168,6 +2228,12 @@ namespace
     }
 
 
+    void word_code_process_source()
+    {
+        process_source(as_string(pop()));
+    }
+
+
     void word_word()
     {
         push(input_tokens[++current_token]);
@@ -2183,6 +2249,28 @@ namespace
                 .id = OperationCode::Id::word_index,
                 .value = name
             });
+    }
+
+
+    void word_execute()
+    {
+        auto index = as_numeric<int64_t>(pop());
+
+        if ((index < 0) || (index >= word_handlers.size()))
+        {
+            std::stringstream message;
+
+            message << "Word index, " << index << ", is out of range.";
+            throw_error(current_location, message.str());
+        }
+
+        word_handlers[index].function();
+    }
+
+
+    void word_throw()
+    {
+        throw_error(current_location, as_string(pop()));
     }
 
 
@@ -2682,6 +2770,31 @@ namespace
     }
 
 
+    void word_term_raw_mode()
+    {
+        // This part requires posix.  If we want to work on another os, this needs to be ported.
+        static struct termios orig_termios;
+        static bool is_in_raw_mode = false;
+
+        auto requested_on = as_numeric<bool>(pop());
+
+        if (requested_on && (!is_in_raw_mode))
+        {
+            struct termios raw = orig_termios;
+
+            is_in_raw_mode = true;
+
+            tcgetattr(STDIN_FILENO, &orig_termios);
+            raw.c_lflag &= ~(ECHO | ICANON);
+            tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
+        }
+        else if ((!requested_on) && is_in_raw_mode)
+        {
+            tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
+        }
+    }
+
+
     void word_print()
     {
         std::cout << pop() << " ";
@@ -2699,6 +2812,15 @@ namespace
         auto int_value = as_numeric<int64_t>(pop());
 
         std::cout << std::hex << int_value << std::dec << " ";
+    }
+
+
+    void word_key()
+    {
+        char next[2] = { 0 };
+
+        read(STDIN_FILENO, next, 1);
+        push(std::string(next));
     }
 
 
@@ -2783,8 +2905,9 @@ namespace
         ADD_NATIVE_WORD("op.def_constant", word_def_constant);
         ADD_NATIVE_WORD("op.read_variable", word_read_variable);
         ADD_NATIVE_WORD("op.write_variable", word_write_variable);
-        ADD_NATIVE_WORD("op.execute", word_execute);
+        ADD_NATIVE_WORD("op.execute", word_op_execute);
         ADD_NATIVE_WORD("op.push_constant_value", word_push_constant_value);
+        ADD_NATIVE_WORD("op.mark_catch", word_op_mark_catch);
         ADD_NATIVE_WORD("op.jump", word_jump);
         ADD_NATIVE_WORD("op.jump_if_zero", word_jump_if_zero);
         ADD_NATIVE_WORD("op.jump_if_not_zero", word_jump_if_not_zero);
@@ -2798,8 +2921,13 @@ namespace
         ADD_NATIVE_WORD("code.compile_until_words", word_compile_until_words);
         ADD_NATIVE_WORD("code.insert_at_front", word_code_insert_at_front);
 
+        ADD_NATIVE_WORD("code.process_source", word_code_process_source);
+
         ADD_NATIVE_WORD("word", word_word);
         ADD_IMMEDIATE_WORD("`", word_word_index);
+        ADD_NATIVE_WORD("execute", word_execute);
+
+        ADD_NATIVE_WORD("throw", word_throw);
 
         // Creating new words.
         ADD_IMMEDIATE_WORD(":", word_start_word);
@@ -2871,10 +2999,14 @@ namespace
         ADD_NATIVE_WORD("true", word_true);
         ADD_NATIVE_WORD("false", word_false);
 
-        // Debug and printing support.
+        // Debug, printing, and input words.
+        ADD_NATIVE_WORD("term.raw_mode", word_term_raw_mode);
+
         ADD_NATIVE_WORD(".", word_print);
         ADD_NATIVE_WORD("cr", word_print_nl);
         ADD_NATIVE_WORD(".hex", word_hex);
+
+        ADD_NATIVE_WORD("key", word_key);
 
         ADD_NATIVE_WORD(".s", word_print_stack);
         ADD_NATIVE_WORD(".w", word_print_dictionary);
@@ -2933,14 +3065,9 @@ int main(int argc, char* argv[])
             process_repl();
         }
     }
-    catch (const std::runtime_error& e)
+    catch (const std::runtime_error& error)
     {
-        std::cerr << std::endl
-                  << e.what() << std::endl
-                  << std::endl
-                  << "Call stack:" << std::endl
-                  << call_stack << std::endl;
-
+        std::cerr << error;
         return EXIT_FAILURE;
     }
     catch (...)

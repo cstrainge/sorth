@@ -329,6 +329,26 @@
 ;
 
 
+( A try/catch block for exception handling. )
+: try immediate
+    unique_str variable! catch_label
+    unique_str variable! end_catch_label
+
+    code.new_block
+
+    catch_label @ op.mark_catch
+    "catch" 1 code.compile_until_words
+    end_catch_label @ op.jump
+
+    catch_label @ op.jump_target
+    "endcatch" 1 code.compile_until_words
+    end_catch_label @ op.jump_target
+
+    code.resolve_jumps
+    code.merge_stack_block
+;
+
+
 ( Helper words for reading/writing byte buffers. )
 : buffer.i8!!  @ 1 buffer.int! ;
 : buffer.i16!! @ 2 buffer.int! ;
