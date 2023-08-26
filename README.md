@@ -67,8 +67,8 @@ Calling words in Forth is done by writing it's name in your script or on the REP
 documentation for the word should describe what the word will take form the stack and what it'll
 put back.
 
-Math is handled in a similar way.  Values are poped off of the stack, the math is performed and the
-result is pushed back on.  For example to add two numbers and print out the result with a carrage
+Math is handled in a similar way.  Values are popped off of the stack, the math is performed and the
+result is pushed back on.  For example to add two numbers and print out the result with a carriage
 return:
 
 ```
@@ -281,7 +281,7 @@ print the hex value `100` on the console.
 
 `=` `<>` `>=` `<=` `>` `<`
 
-Standard equality operations.  The top two values are poped off of the stack and compared.  A
+Standard equality operations.  The top two values are popped off of the stack and compared.  A
 boolean result is then pushed back onto the stack.
 
 
@@ -362,7 +362,7 @@ ok
 boolean `show_run_code` - Will show the interpreter's bytecode as its being executed.
 
 `show_word` word_name - Will print the bytecode for a given word.  (If it's not a word defined in
-C++).  Normally only word indicies are stored in the byte code.  But this word will attempt to
+C++).  Normally only word indices are stored in the byte code.  But this word will attempt to
 resolve and print the names for all execute instructions.  For example `show_word if` will produce
 something like:
 
