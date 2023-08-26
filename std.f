@@ -246,7 +246,6 @@
 
 
 ( Array words. )
-
 : []!! @ []! ;
 : []@@ @ []@ ;
 
@@ -254,25 +253,83 @@
 
 
 : [ immediate
+    1 variable! index_count
+    1 [].new variable! index_blocks
+
+    variable command
+
+    false variable! found_end_bracket
+    true variable! is_writing
+
     code.new_block
 
-    "]!" "]!!" "]@" "]@@" 4 code.compile_until_words
+    begin
+        "," "]!" "]!!" "]@" "]@@" 5 code.compile_until_words
 
-    ` swap op.execute
+        code.pop_stack_block index_count @ -- index_blocks []!!
 
-     case
-        "]!"  of  ` []!  op.execute  endof
-        "]!!" of  ` []!! op.execute  endof
-        "]@"  of  ` []@  op.execute  endof
-        "]@@" of  ` []@@ op.execute  endof
-    endcase
+        case
+            "," of
+                index_count @ ++ index_count !
 
-    code.merge_stack_block
+                code.new_block
+                index_count @ index_blocks [].resize!
+            endof
+
+            "]!"  of  ` []!  command !  true found_end_bracket !  endof
+            "]!!" of  ` []!! command !  true found_end_bracket !  endof
+            "]@"  of  ` []@  command !  true found_end_bracket !  false is_writing !  endof
+            "]@@" of  ` []@@ command !  true found_end_bracket !  false is_writing !  endof
+        endcase
+
+        found_end_bracket @
+    until
+
+
+    index_count @ 1 =
+    if
+        0 index_blocks []@@ code.push_stack_block
+
+        ` swap op.execute
+        command @ op.execute
+
+        code.merge_stack_block
+    else
+        index_count @ -- variable! i
+
+        begin
+            i @ index_blocks []@@ code.push_stack_block
+
+            is_writing @
+            if
+                true code.insert_at_front
+                ` over op.execute
+                false code.insert_at_front
+            else
+                true code.insert_at_front
+                ` dup op.execute
+                false code.insert_at_front
+            then
+
+            ` swap op.execute
+            command @ op.execute
+
+            is_writing @ true <>
+            if
+                ` swap op.execute
+            then
+
+            code.merge_stack_block
+
+            i @ -- i !
+            i @ 0<
+        until
+        ` drop op.execute
+    then
 ;
 
 
 ( Helper words for reading/writing byte buffers. )
-
 : buffer.i8!!  @ 1 buffer.int! ;
 : buffer.i16!! @ 2 buffer.int! ;
 : buffer.i32!! @ 4 buffer.int! ;
@@ -302,7 +359,6 @@
 
 
 ( Define a user prompt for the REPL. )
-
 : prompt "\027[2:34m>\027[0:0m>" . ;
 
 
@@ -312,6 +368,5 @@
 
 
 ( Quick hack to let scripts be executable from the command line. )
-
 : #!/usr/bin/env ;
 : sorth ;
