@@ -382,6 +382,30 @@
 : prompt "\027[2:34m>\027[0:0m>" . ;
 
 
+( Implemntation of the language's REPL. )
+: repl
+    "Strange Forth REPL." .cr
+    cr
+    "Enter quit, q, or exit to quit the REPL." .cr
+    cr
+
+    begin
+        true
+    while
+        try
+            cr ` prompt execute
+
+            readline
+            code.execute_source
+
+            "ok" .cr
+        catch
+            .cr
+        endcatch
+    repeat
+;
+
+
 ( Alternate ways to exit the interpreter. )
 : q    ( -- ) quit ;
 : exit ( -- ) quit ;
