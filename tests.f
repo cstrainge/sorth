@@ -42,3 +42,9 @@ cr
 "tests/06_test_arrays.f" include
 
 cr
+
+"--- Testing exceptions. ---" .cr
+
+"tests/07_test_exception.f" include
+
+cr
