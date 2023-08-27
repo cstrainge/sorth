@@ -2,7 +2,8 @@
 {
     "files.associations":
     {
-        "*.sorth": "forth"
+        "*.sorth": "forth",
+        "*.h": "cpp"
     },
 
     "cSpell.words":
