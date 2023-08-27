@@ -18,10 +18,11 @@ rather than as a compiler/executable generator with optional REPL.
 Compile with:
 
 ```
-clang++ -std=c++20 sorth.cpp -o sorth
+./build
 ```
 
-Or use `g++` with the same parameters.
+If you don't have clang installed, replace `clang++` with `g++` in the bash script.  It's planned to
+move to a proper build system at a later date.
 
 To enter the REPL simply run the `sorth` executable.  Pass a file name to run that file as a script.
 
