@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+clang++ \
+-std=c++20 \
+./src/sorth.cpp \
+./src/interpreter.cpp \
+./src/builtin_words.cpp \
+./src/location.cpp \
+./src/error.cpp \
+./src/source_buffer.cpp \
+./src/tokenize.cpp \
+./src/dictionary.cpp \
+./src/operation_code.cpp \
+./src/value.cpp \
+./src/array.cpp \
+./src/byte_buffer.cpp \
+./src/data_object.cpp \
+./src/code_constructor.cpp \
+-o sorth

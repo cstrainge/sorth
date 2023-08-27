@@ -1,7 +1,7 @@
 
 5 [].new variable! my_array
 
-"Original:      " . my_array ?
+"Original:       " . my_array ?
 
 10 my_array [ 0 ]!!
 20 my_array [ 1 ]!!
