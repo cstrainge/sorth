@@ -201,7 +201,6 @@ namespace sorth
 
     void word_quit(InterpreterPtr& interpreter)
     {
-        std::cout << "Is quitting!!!" << std::endl;
         interpreter->halt();
     }
 

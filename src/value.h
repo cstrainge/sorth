@@ -32,7 +32,6 @@ namespace sorth
                                DataObjectPtr,
                                ArrayPtr,
                                ByteBufferPtr,
-                               std::runtime_error,
                                internal::Token,
                                internal::Location,
                                internal::ByteCode>;

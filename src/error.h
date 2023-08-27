@@ -15,7 +15,4 @@ namespace sorth::internal
     void throw_error_if(bool condition, const Location& location, const std::string& message);
 
 
-    std::ostream& operator <<(std::ostream& stream, const std::runtime_error& error);
-
-
 }

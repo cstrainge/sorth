@@ -38,7 +38,6 @@ namespace sorth
         value_print_if<DataObjectPtr>(stream, value);
         value_print_if<ArrayPtr>(stream, value);
         value_print_if<ByteBufferPtr>(stream, value);
-        value_print_if<std::runtime_error>(stream, value);
         value_print_if<internal::Token>(stream, value);
         value_print_if<internal::Location>(stream, value);
         value_print_if<internal::ByteCode>(stream, value);

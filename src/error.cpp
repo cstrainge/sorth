@@ -32,20 +32,4 @@ namespace sorth::internal
     }
 
 
-    std::ostream& operator <<(std::ostream& stream, const std::runtime_error& error)
-    {
-        stream << std::endl
-               << error.what() << std::endl;
-
-        /*if (!call_stack.empty())
-        {
-            stream << std::endl
-                   << "Call stack:" << std::endl
-                   << call_stack << std::endl;
-        }*/
-
-        return stream;
-    }
-
-
 }

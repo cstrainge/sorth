@@ -438,7 +438,7 @@ namespace sorth
                     {
                         pc = catch_locations.back() - 1;
                         catch_locations.pop_back();
-                        push(error);
+                        push(error.what());
                     }
                     else
                     {
