@@ -398,12 +398,17 @@
 : prompt "\027[2:34m>\027[0:0m>" . ;
 
 
+: repl.exit_handler cr "Goodbye." .cr ;
+
+
 ( Implemntation of the language's REPL. )
 : repl
     "Strange Forth REPL." .cr
     cr
     "Enter quit, q, or exit to quit the REPL." .cr
     cr
+
+    at_exit repl.exit_handler
 
     begin
         ( Loop forever, because when the user enters the quit command the interpreter will exit )
