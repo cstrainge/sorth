@@ -64,6 +64,9 @@ namespace sorth
             public:
                 virtual Location get_current_location() const override;
 
+                virtual bool& showing_run_code() override;
+                virtual bool& showing_bytecode() override;
+
                 virtual void halt() override;
 
                 virtual std::tuple<bool, Word> find_word(const std::string& word) override;
@@ -113,6 +116,7 @@ namespace sorth
           is_showing_bytecode(false),
           is_showing_run_code(false)
         {
+            code_constructor = CodeConstructor {};
         }
 
 
@@ -141,8 +145,6 @@ namespace sorth
 
         void InterpreterImpl::process_source(SourceBuffer& buffer)
         {
-            code_constructor = CodeConstructor {};
-
             code_constructor->interpreter = shared_from_this();
             code_constructor->stack.push({});
             code_constructor->input_tokens = tokenize(buffer);
@@ -150,10 +152,17 @@ namespace sorth
 
             auto code = code_constructor->stack.top().code;
 
-            code_constructor->stack.pop();
-            code_constructor.reset();
+            auto name = buffer.current_location().get_path()->filename().string();
 
-            execute_code(buffer.current_location().get_path()->filename().string(), code);
+            if (is_showing_bytecode)
+            {
+                std::cout << "--------[" << name << "]-------------" << std::endl
+                          << code << std::endl;
+            }
+
+            execute_code(name, code);
+
+            code_constructor->stack.pop();
         }
 
 
@@ -193,6 +202,7 @@ namespace sorth
 
         OptionalConstructor& InterpreterImpl::constructor()
         {
+            throw_error_if(!code_constructor, current_location, "Code constructor is unavailable.");
             return code_constructor;
         }
 
@@ -200,6 +210,17 @@ namespace sorth
         Location InterpreterImpl::get_current_location() const
         {
             return current_location;
+        }
+
+        bool& InterpreterImpl::showing_run_code()
+        {
+            return is_showing_run_code;
+        }
+
+
+        bool& InterpreterImpl::showing_bytecode()
+        {
+            return is_showing_bytecode;
         }
 
 
@@ -478,6 +499,11 @@ namespace sorth
                         throw error;
                     }
                 }
+            }
+
+            if (is_showing_run_code)
+            {
+                std::cout << "=====================================" << std::endl;
             }
         }
 

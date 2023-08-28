@@ -508,7 +508,6 @@ namespace sorth
         for (++current_token; current_token < input_tokens.size(); ++current_token)
         {
             auto& token = input_tokens[current_token];
-
             auto [found, word] = is_one_of_words(token.text);
 
             if ((found) && (token.type == Token::Type::word))
@@ -622,18 +621,19 @@ namespace sorth
         auto construction = interpreter->constructor()->stack.top();
         interpreter->constructor()->stack.pop();
 
-        /*if (is_showing_bytecode)
+        auto new_word = ScriptWord(construction.name, construction.code, construction.location);
+
+        if (interpreter->showing_bytecode())
         {
-            std::cerr << "Defined word " << construction.name << std::endl
-                      << construction.code << std::endl;
-        }*/
+            std::cout << "--------[" << construction.name << "]-------------" << std::endl;
+            auto inverse_list = interpreter->get_inverse_lookup_list();
+            new_word.show(std::cout, interpreter, inverse_list);
+        }
 
         bool is_scripted = true;
 
         interpreter->add_word(construction.name,
-                              ScriptWord(construction.name,
-                                         construction.code,
-                                         construction.location),
+                              new_word,
                               construction.location,
                               construction.is_immediate,
                               is_scripted);
@@ -1156,11 +1156,13 @@ namespace sorth
 
     void word_show_bytecode(InterpreterPtr& interpreter)
     {
+        interpreter->showing_bytecode() = as_numeric<bool>(interpreter, interpreter->pop());
     }
 
 
     void word_show_run_code(InterpreterPtr& interpreter)
     {
+        interpreter->showing_run_code() = as_numeric<bool>(interpreter, interpreter->pop());
     }
 
 
