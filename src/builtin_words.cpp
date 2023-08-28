@@ -295,12 +295,42 @@ namespace sorth
     }
 
 
+    void word_mark_loop_exit(InterpreterPtr& interpreter)
+    {
+        insert_user_instruction(interpreter,
+            {
+                .id = OperationCode::Id::mark_loop_exit,
+                .value = interpreter->pop()
+            });
+    }
+
+
+    void word_unmark_loop_exit(InterpreterPtr& interpreter)
+    {
+        insert_user_instruction(interpreter,
+            {
+                .id = OperationCode::Id::unmark_loop_exit,
+                .value = 0
+            });
+    }
+
+
     void word_op_mark_catch(InterpreterPtr& interpreter)
     {
         insert_user_instruction(interpreter,
             {
                 .id = OperationCode::Id::mark_catch,
                 .value = interpreter->pop()
+            });
+    }
+
+
+    void word_op_unmark_catch(InterpreterPtr& interpreter)
+    {
+        insert_user_instruction(interpreter,
+            {
+                .id = OperationCode::Id::unmark_catch,
+                .value = 0
             });
     }
 
@@ -331,6 +361,16 @@ namespace sorth
             {
                 .id = OperationCode::Id::jump_if_not_zero,
                 .value = interpreter->pop()
+            });
+    }
+
+
+    void word_jump_loop_exit(InterpreterPtr& interpreter)
+    {
+        insert_user_instruction(interpreter,
+            {
+                .id = OperationCode::Id::jump_loop_exit,
+                .value = 0
             });
     }
 
@@ -388,6 +428,7 @@ namespace sorth
                 return    (code.id == OperationCode::Id::jump)
                        || (code.id == OperationCode::Id::jump_if_not_zero)
                        || (code.id == OperationCode::Id::jump_if_zero)
+                       || (code.id == OperationCode::Id::mark_loop_exit)
                        || (code.id == OperationCode::Id::mark_catch);
             };
 
@@ -1166,10 +1207,14 @@ namespace sorth
         ADD_NATIVE_WORD(interpreter, "op.write_variable", word_op_write_variable);
         ADD_NATIVE_WORD(interpreter, "op.execute", word_op_execute);
         ADD_NATIVE_WORD(interpreter, "op.push_constant_value", word_op_push_constant_value);
+        ADD_NATIVE_WORD(interpreter, "op.mark_loop_exit", word_mark_loop_exit);
+        ADD_NATIVE_WORD(interpreter, "op.unmark_loop_exit", word_unmark_loop_exit);
         ADD_NATIVE_WORD(interpreter, "op.mark_catch", word_op_mark_catch);
+        ADD_NATIVE_WORD(interpreter, "op.unmark_catch", word_op_unmark_catch);
         ADD_NATIVE_WORD(interpreter, "op.jump", word_op_jump);
         ADD_NATIVE_WORD(interpreter, "op.jump_if_zero", word_op_jump_if_zero);
         ADD_NATIVE_WORD(interpreter, "op.jump_if_not_zero", word_op_jump_if_not_zero);
+        ADD_NATIVE_WORD(interpreter, "op.jump_loop_exit", word_jump_loop_exit);
         ADD_NATIVE_WORD(interpreter, "op.jump_target", word_op_jump_target);
 
         ADD_NATIVE_WORD(interpreter, "code.new_block", word_code_new_block);

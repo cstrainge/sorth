@@ -17,10 +17,14 @@ namespace sorth::internal
             execute,
             word_index,
             push_constant_value,
+            mark_loop_exit,
+            unmark_loop_exit,
             mark_catch,
+            unmark_catch,
             jump,
             jump_if_zero,
             jump_if_not_zero,
+            jump_loop_exit,
             jump_target
         };
 

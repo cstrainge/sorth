@@ -264,6 +264,7 @@ namespace sorth
             }
 
             std::vector<int64_t> catch_locations;
+            std::vector<int64_t> loop_locations;
 
             for (size_t pc = 0; pc < code.size(); ++pc)
             {
@@ -383,6 +384,23 @@ namespace sorth
                             push(operation.value);
                             break;
 
+                        case OperationCode::Id::mark_loop_exit:
+                            {
+                                int64_t relative_jump = as_numeric<int64_t>(shared_from_this(),
+                                                                            operation.value);
+                                int64_t absolute = pc + relative_jump;
+
+                                loop_locations.push_back(absolute);
+                            }
+                            break;
+
+                        case OperationCode::Id::unmark_loop_exit:
+                            throw_error_if(loop_locations.empty(), current_location,
+                                           "Clearing a loop exit without an enclosing loop.");
+
+                            loop_locations.pop_back();
+                            break;
+
                         case OperationCode::Id::mark_catch:
                             {
                                 int64_t relative_jump = as_numeric<int64_t>(shared_from_this(),
@@ -391,6 +409,12 @@ namespace sorth
 
                                 catch_locations.push_back(absolute);
                             }
+                            break;
+
+                        case OperationCode::Id::unmark_catch:
+                            throw_error_if(catch_locations.empty(), current_location,
+                                           "Clearing a catch exit without an enclosing try/catch.");
+                            catch_locations.pop_back();
                             break;
 
                         case OperationCode::Id::jump:
@@ -421,9 +445,17 @@ namespace sorth
                             }
                             break;
 
+                        case OperationCode::Id::jump_loop_exit:
+                            if (!loop_locations.empty())
+                            {
+                                pc = loop_locations.back() - 1;
+                                loop_locations.pop_back();
+                            }
+                            break;
+
                         case OperationCode::Id::jump_target:
-                            // Nothing to do here.  This instruction just acts as a landing pad for the
-                            // jump instructions.
+                            // Nothing to do here.  This instruction just acts as a landing pad for
+                            // the jump instructions.
                             break;
                     }
 

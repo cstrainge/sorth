@@ -338,6 +338,8 @@
 
     catch_label @ op.mark_catch
     "catch" 1 code.compile_until_words
+
+    op.unmark_catch
     end_catch_label @ op.jump
 
     catch_label @ op.jump_target
