@@ -12,7 +12,8 @@
         "endcase",
         "endof",
         "Forths",
-        "sorth"
+        "sorth",
+        "unmark"
     ],
 
     "files.exclude":
