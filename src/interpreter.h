@@ -48,6 +48,7 @@ namespace sorth
             virtual void print_dictionary(std::ostream& stream) = 0;
             virtual void print_stack(std::ostream& stream) = 0;
 
+            virtual bool is_stack_empty() const = 0;
             virtual void push(const Value& value) = 0;
             virtual Value pop() = 0;
 

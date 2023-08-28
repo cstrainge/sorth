@@ -201,6 +201,17 @@ namespace sorth
 
     void word_quit(InterpreterPtr& interpreter)
     {
+        if (!interpreter->is_stack_empty())
+        {
+            auto value = interpreter->pop();
+
+            if (is_numeric(value))
+            {
+                auto exit_code = as_numeric<int64_t>(interpreter, value);
+                interpreter->set_exit_code(exit_code);
+            }
+        }
+
         interpreter->halt();
     }
 

@@ -78,6 +78,7 @@ namespace sorth
                 virtual void print_dictionary(std::ostream& stream) override;
                 virtual void print_stack(std::ostream& stream) override;
 
+                virtual bool is_stack_empty() const override;
                 virtual void push(const Value& value) override;
                 virtual Value pop() override;
 
@@ -493,6 +494,12 @@ namespace sorth
             {
                 stream << value << std::endl;
             }
+        }
+
+
+        bool InterpreterImpl::is_stack_empty() const
+        {
+            return stack.empty();
         }
 
 
