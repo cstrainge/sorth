@@ -422,7 +422,7 @@
 
             ( Get the text from the user and execute it.  We are just using a really simple )
             ( implementaion of readline for now. )
-            readline
+            term.readline
             code.execute_source
 
             ( If we got here, everything is fine. )

@@ -1184,15 +1184,33 @@ namespace sorth
     }
 
 
-    void word_print(InterpreterPtr& interpreter)
+    void word_term_flush(InterpreterPtr& interpreter)
     {
-        std::cout << interpreter->pop() << " ";
+        std::cout << std::flush;
     }
 
 
-    void word_flush(InterpreterPtr& interpreter)
+    void word_term_key(InterpreterPtr& interpreter)
     {
-        std::cout << std::flush;
+        char next[2] = { 0 };
+
+        read(STDIN_FILENO, next, 1);
+        interpreter->push(std::string(next));
+    }
+
+
+    void word_term_read_line(InterpreterPtr& interpreter)
+    {
+        std::string line;
+        std::getline(std::cin, line);
+
+        interpreter->push(line);
+    }
+
+
+    void word_print(InterpreterPtr& interpreter)
+    {
+        std::cout << interpreter->pop() << " ";
     }
 
 
@@ -1207,24 +1225,6 @@ namespace sorth
         auto int_value = as_numeric<int64_t>(interpreter, interpreter->pop());
 
         std::cout << std::hex << int_value << std::dec << " ";
-    }
-
-
-    void word_key(InterpreterPtr& interpreter)
-    {
-        char next[2] = { 0 };
-
-        read(STDIN_FILENO, next, 1);
-        interpreter->push(std::string(next));
-    }
-
-
-    void word_read_line(InterpreterPtr& interpreter)
-    {
-        std::string line;
-        std::getline(std::cin, line);
-
-        interpreter->push(line);
     }
 
 
@@ -1405,14 +1405,13 @@ namespace sorth
 
         // Debug, printing, input, and terminal control words.
         ADD_NATIVE_WORD(interpreter, "term.raw_mode", word_term_raw_mode);
+        ADD_NATIVE_WORD(interpreter, "term.flush", word_term_flush);
+        ADD_NATIVE_WORD(interpreter, "term.key", word_term_key);
+        ADD_NATIVE_WORD(interpreter, "term.readline", word_term_read_line);
 
         ADD_NATIVE_WORD(interpreter, ".", word_print);
-        ADD_NATIVE_WORD(interpreter, "flush", word_flush);
         ADD_NATIVE_WORD(interpreter, "cr", word_print_nl);
         ADD_NATIVE_WORD(interpreter, ".hex", word_hex);
-
-        ADD_NATIVE_WORD(interpreter, "key", word_key);
-        ADD_NATIVE_WORD(interpreter, "readline", word_read_line);
 
         ADD_NATIVE_WORD(interpreter, ".s", word_print_stack);
         ADD_NATIVE_WORD(interpreter, ".w", word_print_dictionary);
