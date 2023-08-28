@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <termios.h>
 #include <unistd.h>
+#include <cstdlib>
 
 #include "sorth.h"
 
@@ -286,6 +287,22 @@ namespace sorth
     {
         auto path = as_string(interpreter, interpreter->pop());
         interpreter->process_source(std::filesystem::path(path));
+    }
+
+
+    void word_user_env_read(InterpreterPtr& interpreter)
+    {
+        auto name = as_string(interpreter, interpreter->pop());
+        const char* value = std::getenv(name.c_str());
+
+        if (value != nullptr)
+        {
+            interpreter->push(value);
+        }
+        else
+        {
+            interpreter->push("");
+        }
     }
 
 
@@ -1299,6 +1316,9 @@ namespace sorth
         ADD_NATIVE_WORD(interpreter, "reset", word_reset);
         ADD_NATIVE_WORD(interpreter, "at_exit", word_at_exit);
         ADD_NATIVE_WORD(interpreter, "include", word_include);
+
+        // User environment words.
+        ADD_NATIVE_WORD(interpreter, "user.env@", word_user_env_read);
 
         // Words for creating new bytecode.
         ADD_NATIVE_WORD(interpreter, "op.def_variable", word_op_def_variable);
