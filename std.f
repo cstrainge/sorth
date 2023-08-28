@@ -285,7 +285,6 @@
         found_end_bracket @
     until
 
-
     index_count @ 1 =
     if
         0 index_blocks []@@ code.push_stack_block
@@ -338,12 +337,15 @@
 
     catch_label @ op.mark_catch
     "catch" 1 code.compile_until_words
+    drop
 
     op.unmark_catch
     end_catch_label @ op.jump
 
     catch_label @ op.jump_target
     "endcatch" 1 code.compile_until_words
+    drop
+
     end_catch_label @ op.jump_target
 
     code.resolve_jumps
