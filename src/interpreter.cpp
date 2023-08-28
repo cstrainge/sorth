@@ -68,6 +68,7 @@ namespace sorth
                 virtual bool& showing_bytecode() override;
 
                 virtual void halt() override;
+                virtual void clear_halt_flag() override;
 
                 virtual std::tuple<bool, Word> find_word(const std::string& word) override;
                 virtual WordHandlerInfo& get_handler_info(size_t index) override;
@@ -227,6 +228,12 @@ namespace sorth
         void InterpreterImpl::halt()
         {
             is_interpreter_quitting = true;
+        }
+
+
+        void InterpreterImpl::clear_halt_flag()
+        {
+            is_interpreter_quitting = false;
         }
 
 

@@ -382,6 +382,18 @@
 : buffer.position@@ @ buffer.position@ ;
 
 
+( Allow user code to register an at exit handler. )
+: at_exit immediate
+    word op.push_constant_value
+    ` at_exit op.execute
+;
+
+
+( Alternate ways to exit the interpreter. )
+: q    ( -- ) quit ;
+: exit ( -- ) quit ;
+
+
 ( Define a user prompt for the REPL. )
 : prompt "\027[2:34m>\027[0:0m>" . ;
 
@@ -401,7 +413,7 @@
         try
             ( Always make sure we get the newest version of the prompt.  That way the user can )
             ( change it at runtime. )
-            cr ` prompt execute
+            cr "prompt" execute
 
             ( Get the text from the user and execute it.  We are just using a really simple )
             ( implementaion of readline for now. )
@@ -416,11 +428,6 @@
         endcatch
     repeat
 ;
-
-
-( Alternate ways to exit the interpreter. )
-: q    ( -- ) quit ;
-: exit ( -- ) quit ;
 
 
 ( Quick hack to let scripts be executable from the command line. )

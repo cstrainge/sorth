@@ -37,6 +37,7 @@ namespace sorth
             virtual bool& showing_bytecode() = 0;
 
             virtual void halt() = 0;
+            virtual void clear_halt_flag() = 0;
 
             virtual std::tuple<bool, internal::Word> find_word(const std::string& word) = 0;
             virtual internal::WordHandlerInfo& get_handler_info(size_t index) = 0;
