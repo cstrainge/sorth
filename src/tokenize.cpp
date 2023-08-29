@@ -21,6 +21,10 @@ namespace sorth::internal
                     next = '\n';
                     break;
 
+                case 'r':
+                    next = '\r';
+                    break;
+
                 case 't':
                     next = '\t';
                     break;

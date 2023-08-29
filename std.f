@@ -215,6 +215,10 @@
 ;
 
 
+( Make sure we have the regular print word. )
+: . term.! " " term.! ;
+
+
 ( Simple increment and decrements. )
 : ++ ( value -- incremented ) 1 + ;
 : -- ( value -- decremented ) 1 - ;
