@@ -18,6 +18,7 @@
 
     "files.exclude":
     {
-        "**/sorth": true
+        "**/sorth": true,
+        "**/test.bin": true
     }
 }

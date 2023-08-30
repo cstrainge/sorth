@@ -12,6 +12,11 @@
 "foobarbaz" 6 bytes buffer.string!!
 
 
+"./test.bin" file.w/o file.create
+dup bytes @ swap file.!
+file.close
+
+
 ( Show the buffer as it is now. )
 bytes ?
 
