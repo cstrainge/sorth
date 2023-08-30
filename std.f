@@ -406,7 +406,7 @@
 : prompt "\027[2:34m>\027[0:0m>" . ;
 
 
-: repl.exit_handler cr "Goodbye." .cr ;
+: repl.exit_handler "ok" .cr ;
 
 
 ( Implemntation of the language's REPL. )
