@@ -64,7 +64,7 @@ namespace sorth
 
     void* ByteBuffer::data_ptr()
     {
-        return (&bytes[position]);
+        return (&bytes[0]);
     }
 
 
