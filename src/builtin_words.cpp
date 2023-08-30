@@ -695,7 +695,7 @@ namespace sorth
         }
         else
         {
-            throw_error(interpreter->get_current_location(), "Unexpecterd value type for execute.");
+            throw_error(interpreter->get_current_location(), "Unexpected value type for execute.");
         }
     }
 
