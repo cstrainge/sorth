@@ -55,7 +55,6 @@ namespace sorth
 
             if (is_new_file)
             {
-std::cout << "setting file permissions." << std::endl;
                 auto result = fchmod(fd, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 
                 throw_error_if(result != 0,
