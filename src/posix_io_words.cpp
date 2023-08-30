@@ -18,26 +18,53 @@ namespace sorth
     {
 
 
+        bool call_exists(const char* file_path)
+        {
+            struct stat stat_buffer;
+
+            auto result = stat(file_path, &stat_buffer);
+            return result == 0;
+        }
+
+
         void call_open(InterpreterPtr& interpreter, int flags)
         {
             auto file_mode = as_numeric<int64_t>(interpreter, interpreter->pop());
             auto file_path = as_string(interpreter, interpreter->pop());
 
-            int result;
+            bool is_new_file = false;
+
+            int fd;
+
+            if (!call_exists(file_path.c_str()))
+            {
+                is_new_file = true;
+            }
 
             do
             {
                 errno = 0;
-                result = open(file_path.c_str(), file_mode | flags, 0);
+                fd = open(file_path.c_str(), file_mode | flags, 0);
             }
-            while ((result == -1) && (errno == EINTR));
+            while ((fd == -1) && (errno == EINTR));
 
-            throw_error_if(result == -1,
+            throw_error_if(fd == -1,
                            interpreter->get_current_location(),
                            "File could not be opened: " +
                            std::string(strerror(errno)) + ".");
 
-            interpreter->push(result);
+            if (is_new_file)
+            {
+std::cout << "setting file permissions." << std::endl;
+                auto result = fchmod(fd, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+
+                throw_error_if(result != 0,
+                            interpreter->get_current_location(),
+                            "File permissions could not be set: " +
+                            std::string(strerror(errno)) + ".");
+            }
+
+            interpreter->push(fd);
         }
 
 
@@ -145,6 +172,9 @@ namespace sorth
 
         void word_file_exists(InterpreterPtr& interpreter)
         {
+            auto file_path = as_string(interpreter, interpreter->pop());
+
+            interpreter->push(call_exists(file_path.c_str()));
         }
 
 
