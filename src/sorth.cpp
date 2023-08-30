@@ -54,10 +54,12 @@ int main(int argc, char* argv[])
 
         interpreter->add_search_path(get_executable_directory());
 
-        auto std_lib = interpreter->find_file("std.f");
-
         sorth::register_builtin_words(interpreter);
+        sorth::register_io_words(interpreter);
+
+        auto std_lib = interpreter->find_file("std.f");
         interpreter->process_source(std_lib);
+
         interpreter->mark_context();
 
         interpreter->add_search_path(std::filesystem::current_path());

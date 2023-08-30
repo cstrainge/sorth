@@ -21,6 +21,9 @@ namespace sorth
             void set_position(int64_t new_position);
 
         public:
+            void* data_ptr();
+
+        public:
             void write_int(int64_t byte_size, int64_t value);
             int64_t read_int(int64_t byte_size, bool is_signed);
 

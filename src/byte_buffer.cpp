@@ -62,6 +62,12 @@ namespace sorth
     }
 
 
+    void* ByteBuffer::data_ptr()
+    {
+        return (&bytes[position]);
+    }
+
+
     void ByteBuffer::write_int(int64_t byte_size, int64_t value)
     {
         void* data_ptr =(&bytes[position]);
