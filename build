@@ -16,5 +16,6 @@ clang++ \
 ./src/byte_buffer.cpp \
 ./src/data_object.cpp \
 ./src/code_constructor.cpp \
+./src/terminal_words.cpp \
 ./src/posix_io_words.cpp \
 -o sorth

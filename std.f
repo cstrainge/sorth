@@ -215,16 +215,16 @@
 ;
 
 
-( Make sure we have the regular print word. )
-: . term.! " " term.! ;
-
-
 ( Simple increment and decrements. )
 : ++ ( value -- incremented ) 1 + ;
 : -- ( value -- decremented ) 1 - ;
 
+( Make sure we have the regular printing words. )
+: .    ( value -- ) term.! " " term.! ;
+: cr   ( -- )       "\n" term.! term.flush ;
 
-( Lets save some typing. )
+: .hex  ( value -- ) hex term.! ;
+
 : .cr  ( value -- ) . cr ;
 : ?    ( value -- ) @ .cr ;
 : .sp  ( count -- ) begin -- dup 0 >= while "" . repeat drop ;

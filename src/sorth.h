@@ -34,4 +34,5 @@
 #include "code_constructor.h"
 #include "interpreter.h"
 #include "builtin_words.h"
+#include "terminal_words.h"
 #include "posix_io_words.h"

@@ -25,12 +25,6 @@ namespace sorth
         Value at_exit_value;
 
 
-        // This part requires posix.  If we want to work on another os, this needs to be ported.
-        // We're using this to enable and disable the terminal emulator's raw mode.
-        struct termios orig_termios;
-        bool is_in_raw_mode = false;
-
-
         // Class for handling script defined words.  Every user defined word is an instance of this
         // class.
         class ScriptWord
@@ -1197,79 +1191,14 @@ namespace sorth
     }
 
 
-    void word_term_raw_mode(InterpreterPtr& interpreter)
-    {
-        auto requested_on = as_numeric<bool>(interpreter, interpreter->pop());
 
-        if (requested_on && (!is_in_raw_mode))
-        {
-            struct termios raw = orig_termios;
-
-            is_in_raw_mode = true;
-
-            tcgetattr(STDIN_FILENO, &orig_termios);
-            raw.c_lflag &= ~(ECHO | ICANON);
-            tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
-        }
-        else if ((!requested_on) && is_in_raw_mode)
-        {
-            tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
-        }
-    }
-
-
-    void word_term_flush(InterpreterPtr& interpreter)
-    {
-        std::cout << std::flush;
-    }
-
-
-    void word_term_key(InterpreterPtr& interpreter)
-    {
-        char next[2] = { 0 };
-        int read_chars = 0;
-
-        do
-        {
-            read_chars = read(STDIN_FILENO, next, 1);
-        }
-        while (read_chars == 0);
-
-        interpreter->push(std::string(next));
-    }
-
-
-    void word_term_read_line(InterpreterPtr& interpreter)
-    {
-        std::string line;
-        std::getline(std::cin, line);
-
-        interpreter->push(line);
-    }
-
-
-    void word_term_write(InterpreterPtr& interpreter)
-    {
-        std::cout << interpreter->pop();
-    }
-
-
-    void word_print_nl(InterpreterPtr& interpreter)
-    {
-        if (is_in_raw_mode)
-        {
-            std::cout << "\r\n" << std::flush;
-        }
-        else
-        {
-            std::cout << std::endl;
-        }
-    }
 
 
     void word_hex(InterpreterPtr& interpreter)
     {
         auto value = interpreter->pop();
+
+        std::stringstream stream;
 
         if (is_string(value))
         {
@@ -1277,15 +1206,16 @@ namespace sorth
 
             for (auto next : string_value)
             {
-                std::cout << std::hex << (int)next << std::dec << " ";
+                stream << std::hex << (int)next << std::dec << " ";
             }
         }
         else
         {
             auto int_value = as_numeric<int64_t>(interpreter, value);
-            std::cout << std::hex << int_value << std::dec << " ";
+            stream << std::hex << int_value << std::dec << " ";
         }
 
+        interpreter->push(stream.str());
     }
 
 
@@ -1469,15 +1399,7 @@ namespace sorth
         ADD_NATIVE_WORD(interpreter, "true", word_true);
         ADD_NATIVE_WORD(interpreter, "false", word_false);
 
-        // Debug, printing, input, and terminal control words.
-        ADD_NATIVE_WORD(interpreter, "term.raw_mode", word_term_raw_mode);
-        ADD_NATIVE_WORD(interpreter, "term.flush", word_term_flush);
-        ADD_NATIVE_WORD(interpreter, "term.key", word_term_key);
-        ADD_NATIVE_WORD(interpreter, "term.readline", word_term_read_line);
-        ADD_NATIVE_WORD(interpreter, "term.!", word_term_write);
-
-        ADD_NATIVE_WORD(interpreter, "cr", word_print_nl);
-        ADD_NATIVE_WORD(interpreter, ".hex", word_hex);
+        ADD_NATIVE_WORD(interpreter, "hex", word_hex);
 
         ADD_NATIVE_WORD(interpreter, ".s", word_print_stack);
         ADD_NATIVE_WORD(interpreter, ".w", word_print_dictionary);

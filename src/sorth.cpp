@@ -55,6 +55,7 @@ int main(int argc, char* argv[])
         interpreter->add_search_path(get_executable_directory());
 
         sorth::register_builtin_words(interpreter);
+        sorth::register_terminal_words(interpreter);
         sorth::register_io_words(interpreter);
 
         auto std_lib = interpreter->find_file("std.f");
