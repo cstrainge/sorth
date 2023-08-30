@@ -700,6 +700,21 @@ namespace sorth
     }
 
 
+    void word_is_defined(InterpreterPtr& interpreter)
+    {
+        auto& current_token = interpreter->constructor()->current_token;
+        auto& input_tokens = interpreter->constructor()->input_tokens;
+
+        ++current_token;
+        auto name = input_tokens[current_token].text;
+
+        interpreter->constructor()->stack.top().code.push_back({
+                .id = OperationCode::Id::word_exists,
+                .value = name
+            });
+    }
+
+
     void word_throw(InterpreterPtr& interpreter)
     {
         throw_error(interpreter->get_current_location(),
@@ -1379,6 +1394,8 @@ namespace sorth
         ADD_NATIVE_WORD(interpreter, "word", word_word);
         ADD_IMMEDIATE_WORD(interpreter, "`", word_word_index);
         ADD_NATIVE_WORD(interpreter, "execute", word_execute);
+
+        ADD_IMMEDIATE_WORD(interpreter, "defined?", word_is_defined);
 
         ADD_NATIVE_WORD(interpreter, "throw", word_throw);
 

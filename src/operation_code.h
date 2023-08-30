@@ -16,6 +16,7 @@ namespace sorth::internal
             write_variable,
             execute,
             word_index,
+            word_exists,
             push_constant_value,
             mark_loop_exit,
             unmark_loop_exit,

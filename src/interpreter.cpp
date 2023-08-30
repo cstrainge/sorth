@@ -398,7 +398,7 @@ namespace sorth
                         case OperationCode::Id::word_index:
                             {
                                 auto name = as_string(shared_from_this(), operation.value);
-                                auto [found, word] = dictionary.find(name);
+                                auto [ found, word ] = dictionary.find(name);
 
                                 if (!found)
                                 {
@@ -406,6 +406,15 @@ namespace sorth
                                 }
 
                                 push((int64_t)word.handler_index);
+                            }
+                            break;
+
+                        case OperationCode::Id::word_exists:
+                            {
+                                auto name = as_string(shared_from_this(), operation.value);
+                                auto [ found, word ] = dictionary.find(name);
+
+                                push(found);
                             }
                             break;
 

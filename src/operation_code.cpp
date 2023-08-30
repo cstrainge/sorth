@@ -17,6 +17,7 @@ namespace sorth::internal
             case OperationCode::Id::write_variable:      stream << "write_variable     "; break;
             case OperationCode::Id::execute:             stream << "execute            "; break;
             case OperationCode::Id::word_index:          stream << "word_index         "; break;
+            case OperationCode::Id::word_exists:         stream << "word_exists        "; break;
             case OperationCode::Id::push_constant_value: stream << "push_constant_value"; break;
             case OperationCode::Id::mark_loop_exit:      stream << "mark_loop_exit     "; break;
             case OperationCode::Id::unmark_loop_exit:    stream << "unmark_loop_exit   "; break;
