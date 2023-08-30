@@ -219,6 +219,10 @@
 : ++ ( value -- incremented ) 1 + ;
 : -- ( value -- decremented ) 1 - ;
 
+: ++! ( variable -- ) dup @ ++ swap ! ;
+: --! ( variable -- ) dup @ -- swap ! ;
+
+
 ( Make sure we have the regular printing words. )
 : .    ( value -- ) term.! " " term.! ;
 : cr   ( -- )       "\n" term.! term.flush ;
@@ -274,7 +278,7 @@
 
         case
             "," of
-                index_count @ ++ index_count !
+                index_count ++!
 
                 code.new_block
                 index_count @ index_blocks [].resize!
@@ -324,7 +328,7 @@
 
             code.merge_stack_block
 
-            i @ -- i !
+            i --!
             i @ 0<
         until
         ` drop op.execute
