@@ -3,6 +3,10 @@
 70 buffer.new variable! bytes
 
 
+( Print out the blank buffer. )
+bytes ? cr
+
+
 ( Write a few values into the buffer. )
 -1 bytes buffer.i32!!
 1024.28 bytes buffer.f32!!
@@ -12,6 +16,7 @@
 "foobarbaz" 6 bytes buffer.string!!
 
 
+( Write the buffer to a file. )
 "./test.bin" file.w/o file.create
 dup bytes @ swap file.!
 file.close
