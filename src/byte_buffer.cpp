@@ -10,12 +10,37 @@ namespace sorth
 
     std::ostream& operator <<(std::ostream& stream, const ByteBuffer& buffer)
     {
+        auto byte_string = [&](size_t start, size_t stop)
+            {
+                if (stop == 0)
+                {
+                    return;
+                }
+
+                auto spaces = ((16 - (stop - start)) * 3);
+
+                for (size_t i = 0; i <= spaces; ++i)
+                {
+                    stream << " ";
+                }
+
+                for (size_t i = start; i < stop; ++i)
+                {
+                    char next = buffer.bytes[i];
+                    bool is_ctrl = (iscntrl(next) != 0) || ((next & 0x80) != 0);
+
+                    stream << (char)(is_ctrl ? '.' : next);
+                }
+            };
+
         stream << "          00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f";
 
         for (size_t i = 0; i < buffer.bytes.size(); ++i)
         {
             if ((i == 0) || ((i % 16) == 0))
             {
+                byte_string(i - 16, i);
+
                 stream << std::endl << std::setw(8) << std::setfill('0') << std::hex
                        << i << "  ";
             }
@@ -25,6 +50,14 @@ namespace sorth
         }
 
         stream << std::dec << std::setfill(' ');
+
+        auto left_over = buffer.bytes.size() % 16;
+
+        if (left_over != 0)
+        {
+            auto index = buffer.bytes.size() - left_over;
+            byte_string(index, buffer.bytes.size());
+        }
 
         return stream;
     }
