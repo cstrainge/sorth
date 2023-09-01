@@ -19,7 +19,7 @@ namespace sorth
 
         // This part requires posix.  If we want to work on another os, this needs to be ported.
         // We're using this to enable and disable the terminal emulator's raw mode.
-        struct termios orig_termios;
+        struct termios original_termios;
         bool is_in_raw_mode = false;
 
 
@@ -29,17 +29,37 @@ namespace sorth
 
             if (requested_on && (!is_in_raw_mode))
             {
-                struct termios raw = orig_termios;
+                struct termios raw = original_termios;
+
+                auto result = tcgetattr(STDIN_FILENO, &original_termios);
+
+                throw_error_if(result == -1, interpreter->get_current_location(),
+                               "Could not read terminal mode information, " +
+                               std::string(strerror(errno)) + ".");
+
+                raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
+                raw.c_oflag &= ~(OPOST);
+                raw.c_cflag |= (CS8);
+                raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
+                raw.c_cc[VMIN] = 1;
+
+                result = tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
+
+                throw_error_if(result == -1, interpreter->get_current_location(),
+                               "Could not set terminal mode, " +
+                               std::string(strerror(errno)) + ".");
 
                 is_in_raw_mode = true;
-
-                tcgetattr(STDIN_FILENO, &orig_termios);
-                raw.c_lflag &= ~(ECHO | ICANON);
-                tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
             }
             else if ((!requested_on) && is_in_raw_mode)
             {
-                tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
+                auto result = tcsetattr(STDIN_FILENO, TCSAFLUSH, &original_termios);
+
+                throw_error_if(result == -1, interpreter->get_current_location(),
+                               "Could not reset terminal mode, " +
+                               std::string(strerror(errno)) + ".");
+
+                is_in_raw_mode = false;
             }
         }
 
@@ -80,6 +100,21 @@ namespace sorth
         }
 
 
+        void word_term_is_printable(InterpreterPtr& interpreter)
+        {
+            auto str = as_string(interpreter, interpreter->pop());
+
+            throw_error_if(str.size() != 1, interpreter->get_current_location(),
+                           "Expected single character.");
+
+            bool result =    (str[0] >= 32)
+                          || (str[0] == '\n')
+                          || (str[0] == '\t');
+
+            interpreter->push(result);
+        }
+
+
     }
 
 
@@ -91,6 +126,8 @@ namespace sorth
         ADD_NATIVE_WORD(interpreter, "term.key", word_term_key);
         ADD_NATIVE_WORD(interpreter, "term.readline", word_term_read_line);
         ADD_NATIVE_WORD(interpreter, "term.!", word_term_write);
+
+        ADD_NATIVE_WORD(interpreter, "term.is_printable?", word_term_is_printable);
     }
 
 

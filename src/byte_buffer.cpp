@@ -7,7 +7,6 @@ namespace sorth
 {
 
 
-
     std::ostream& operator <<(std::ostream& stream, const ByteBuffer& buffer)
     {
         auto byte_string = [&](size_t start, size_t stop)
