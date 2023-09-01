@@ -232,14 +232,15 @@
 
 ( Make sure we have the regular printing words. )
 : .    ( value -- ) term.! " " term.! ;
+
+: .hex  ( value -- ) hex . ;
+
 : cr   ( -- )       "\n" term.! term.flush ;
-
-: .hex  ( value -- ) hex term.! ;
-
 : .cr  ( value -- ) . cr ;
+: .hcr ( value -- ) .hex cr ;
+
 : ?    ( value -- ) @ .cr ;
 : .sp  ( count -- ) begin -- dup 0 >= while "" . repeat drop ;
-: .hcr ( value -- ) .hex cr ;
 
 
 ( Handy comparisons. )

@@ -1303,7 +1303,7 @@ namespace sorth
 
             for (auto next : string_value)
             {
-                stream << std::hex << (int)next << std::dec << " ";
+                stream << std::hex << (int)next << std::dec;
             }
         }
         else
