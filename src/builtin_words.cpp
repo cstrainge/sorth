@@ -817,6 +817,30 @@ namespace sorth
     }
 
 
+    void word_string_find(InterpreterPtr& interpreter)
+    {
+        auto string = as_string(interpreter, interpreter->pop());
+        auto search_str = as_string(interpreter, interpreter->pop());
+
+        interpreter->push((int64_t)string.find(search_str, 0));
+    }
+
+
+    void word_string_to_number(InterpreterPtr& interpreter)
+    {
+        auto string = as_string(interpreter, interpreter->pop());
+
+        if (string.find('.', 0) != std::string::npos)
+        {
+            interpreter->push(std::atof(string.c_str()));
+        }
+        else
+        {
+            interpreter->push(std::strtoll(string.c_str(), nullptr, 10));
+        }
+    }
+
+
     void word_data_definition(InterpreterPtr& interpreter)
     {
         auto& current_token = interpreter->constructor()->current_token;
@@ -1413,6 +1437,12 @@ namespace sorth
         ADD_NATIVE_WORD(interpreter, "string.length", word_string_length);
         ADD_NATIVE_WORD(interpreter, "string.insert", word_string_insert);
         ADD_NATIVE_WORD(interpreter, "string.remove", word_string_remove);
+        ADD_NATIVE_WORD(interpreter, "string.find", word_string_find);
+        ADD_NATIVE_WORD(interpreter, "string.to_number", word_string_to_number);
+        ADD_NATIVE_WORD(interpreter, "string.npos", [](auto& interpreter)
+            {
+                interpreter->push((int64_t)std::string::npos);
+            });
 
         // Data structure support.
         ADD_IMMEDIATE_WORD(interpreter, "#", word_data_definition);

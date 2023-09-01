@@ -256,9 +256,25 @@
 
 
 ( String variable words. )
-: string.length@ ( string_var -- length )                          @ string.length ;
-: string.insert! ( sub_string possition string_var -- new_string ) @ string.insert ;
-: string.remove! ( count position string_var -- )                  @ string.remove ;
+: string.length@    ( string_var -- length )                  @ string.length    ;
+: string.find@      ( search string_var -- position_or_npos ) @ string.find      ;
+: string.to_number@ ( string_var -- new_number )              @ string.to_number ;
+
+
+: string.insert! ( sub_string possition string_var -- )
+    variable! var_index
+
+    var_index @ @ string.insert
+    var_index @ !
+;
+
+
+: string.remove! ( count position string_var -- )
+    variable! var_index
+
+    var_index @ @ string.remove
+    var_index @ !
+;
 
 
 ( Quicker data field access. )
