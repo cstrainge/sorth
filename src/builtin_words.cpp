@@ -452,6 +452,16 @@ namespace sorth
     }
 
 
+    void word_jump_loop_start(InterpreterPtr& interpreter)
+    {
+        insert_user_instruction(interpreter,
+            {
+                .id = OperationCode::Id::jump_loop_start,
+                .value = 0
+            });
+    }
+
+
     void word_jump_loop_exit(InterpreterPtr& interpreter)
     {
         insert_user_instruction(interpreter,
@@ -1308,6 +1318,7 @@ namespace sorth
         ADD_NATIVE_WORD(interpreter, "op.jump", word_op_jump);
         ADD_NATIVE_WORD(interpreter, "op.jump_if_zero", word_op_jump_if_zero);
         ADD_NATIVE_WORD(interpreter, "op.jump_if_not_zero", word_op_jump_if_not_zero);
+        ADD_NATIVE_WORD(interpreter, "op.jump_loop_start", word_jump_loop_start);
         ADD_NATIVE_WORD(interpreter, "op.jump_loop_exit", word_jump_loop_exit);
         ADD_NATIVE_WORD(interpreter, "op.jump_target", word_op_jump_target);
 

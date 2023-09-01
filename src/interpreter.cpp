@@ -293,7 +293,7 @@ namespace sorth
             }
 
             std::vector<int64_t> catch_locations;
-            std::vector<int64_t> loop_locations;
+            std::vector<std::pair<int64_t, int64_t>> loop_locations;
 
             for (size_t pc = 0; pc < code.size(); ++pc)
             {
@@ -328,8 +328,6 @@ namespace sorth
                                 ADD_NATIVE_WORD(this,
                                                 name,
                                                 handler);
-
-                                //add_word(name, handler, {}, false, false);
                             }
                             break;
 
@@ -428,7 +426,7 @@ namespace sorth
                                                                             operation.value);
                                 int64_t absolute = pc + relative_jump;
 
-                                loop_locations.push_back(absolute);
+                                loop_locations.push_back({pc + 1, absolute});
                             }
                             break;
 
@@ -483,11 +481,18 @@ namespace sorth
                             }
                             break;
 
+                        case OperationCode::Id::jump_loop_start:
+                            if (!loop_locations.empty())
+                            {
+                                pc = loop_locations.back().first - 1;
+                            }
+                            break;
+
                         case OperationCode::Id::jump_loop_exit:
                             if (!loop_locations.empty())
                             {
-                                pc = loop_locations.back() - 1;
-                                loop_locations.pop_back();
+                                pc = loop_locations.back().second - 1;
+                                //loop_locations.pop_back();
                             }
                             break;
 

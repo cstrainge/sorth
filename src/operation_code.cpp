@@ -26,6 +26,7 @@ namespace sorth::internal
             case OperationCode::Id::jump:                stream << "jump               "; break;
             case OperationCode::Id::jump_if_zero:        stream << "jump_if_zero       "; break;
             case OperationCode::Id::jump_if_not_zero:    stream << "jump_if_not_zero   "; break;
+            case OperationCode::Id::jump_loop_start:     stream << "jump_loop_start    "; break;
             case OperationCode::Id::jump_loop_exit:      stream << "jump_loop_exit     "; break;
             case OperationCode::Id::jump_target:         stream << "jump_target        "; break;
         }

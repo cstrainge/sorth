@@ -25,6 +25,7 @@ namespace sorth::internal
             jump,
             jump_if_zero,
             jump_if_not_zero,
+            jump_loop_start,
             jump_loop_exit,
             jump_target
         };

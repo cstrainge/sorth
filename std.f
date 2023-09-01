@@ -70,11 +70,17 @@
 ;
 
 
+: break immediate op.jump_loop_exit ;
+: continue immediate op.jump_loop_start ;
+
+
 : begin immediate
     unique_str variable! top_label
+    unique_str variable! end_label
 
     code.new_block
 
+    end_label @ op.mark_loop_exit
     top_label @ op.jump_target
 
     "while" "until" 2 code.compile_until_words
@@ -82,9 +88,9 @@
     "until" =
     if
         top_label @ op.jump_if_zero
+        end_label @ op.jump_target
+        op.unmark_loop_exit
     else
-        unique_str variable! end_label
-
         end_label @ op.jump_if_zero
 
         "repeat" 1 code.compile_until_words
@@ -92,6 +98,7 @@
 
         top_label @ op.jump
         end_label @ op.jump_target
+        op.unmark_loop_exit
     then
 
     code.resolve_jumps
@@ -136,7 +143,7 @@
     false variable! done
 
     ( Label marking end of the entire case statement. )
-    unique_str variable! end_label
+    unique_str variable! case_end_label
 
     ( Label for the next of statement test or the beginning of the default block. )
     unique_str variable! next_label
@@ -175,7 +182,7 @@
             drop
 
             ( Once the block is done executing, jump to the end of the whole statement. )
-            end_label @ op.jump
+            case_end_label @ op.jump
 
             ( Now that we're outside of the case block, we can mark the beginning of the next one. )
             ( Note that we also generate a new unique id for the next case block, should we find   )
@@ -197,7 +204,7 @@
 
             ( We can now mark a jump target for the end of the entire case statement.  We also )
             ( note that we are done with the loop here. )
-            end_label @ op.jump_target
+            case_end_label @ op.jump_target
             true done !
 
             ( Merge the last block into the base code. )
