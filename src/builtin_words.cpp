@@ -162,6 +162,17 @@ namespace sorth
         }
 
 
+        void logic_op(InterpreterPtr& interpreter, std::function<bool(bool, bool)> op)
+        {
+            auto b = interpreter->pop();
+            auto a = interpreter->pop();
+            auto result = op(as_numeric<bool>(interpreter, a),
+                             as_numeric<bool>(interpreter, b));
+
+            interpreter->push(result);
+        }
+
+
         void logic_bit_op(InterpreterPtr& interpreter, std::function<int64_t(int64_t, int64_t)> op)
         {
             auto b = interpreter->pop();
@@ -1022,25 +1033,45 @@ namespace sorth
     }
 
 
-    void word_and(InterpreterPtr& interpreter)
+    void word_logic_and(InterpreterPtr& interpreter)
+    {
+        logic_op(interpreter, [](auto a, auto b) { return a && b; });
+    }
+
+
+    void word_logic_or(InterpreterPtr& interpreter)
+    {
+        logic_op(interpreter, [](auto a, auto b) { return a || b; });
+    }
+
+
+    void word_logic_not(InterpreterPtr& interpreter)
+    {
+        auto value = as_numeric<bool>(interpreter, interpreter->pop());
+
+        interpreter->push(!value);
+    }
+
+
+    void word_bit_and(InterpreterPtr& interpreter)
     {
         logic_bit_op(interpreter, [](auto a, auto b) { return a & b; });
     }
 
 
-    void word_or(InterpreterPtr& interpreter)
+    void word_bit_or(InterpreterPtr& interpreter)
     {
         logic_bit_op(interpreter, [](auto a, auto b) { return a | b; });
     }
 
 
-    void word_xor(InterpreterPtr& interpreter)
+    void word_bit_xor(InterpreterPtr& interpreter)
     {
         logic_bit_op(interpreter, [](auto a, auto b) { return a ^ b; });
     }
 
 
-    void word_not(InterpreterPtr& interpreter)
+    void word_bit_not(InterpreterPtr& interpreter)
     {
         auto top = interpreter->pop();
         auto value = as_numeric<int64_t>(interpreter, top);
@@ -1051,13 +1082,13 @@ namespace sorth
     }
 
 
-    void word_left_shift(InterpreterPtr& interpreter)
+    void word_bit_left_shift(InterpreterPtr& interpreter)
     {
         logic_bit_op(interpreter, [](auto value, auto amount) { return value << amount; });
     }
 
 
-    void word_right_shift(InterpreterPtr& interpreter)
+    void word_bit_right_shift(InterpreterPtr& interpreter)
     {
         logic_bit_op(interpreter, [](auto value, auto amount) { return value >> amount; });
     }
@@ -1332,12 +1363,13 @@ namespace sorth
 
         ADD_NATIVE_WORD(interpreter, "code.execute_source", word_code_execute_source);
 
+        // Word words.
         ADD_NATIVE_WORD(interpreter, "word", word_word);
         ADD_IMMEDIATE_WORD(interpreter, "`", word_word_index);
         ADD_NATIVE_WORD(interpreter, "execute", word_execute);
-
         ADD_IMMEDIATE_WORD(interpreter, "defined?", word_is_defined);
 
+        // Exception time
         ADD_NATIVE_WORD(interpreter, "throw", word_throw);
 
         // Creating new words.
@@ -1379,13 +1411,18 @@ namespace sorth
         ADD_NATIVE_WORD(interpreter, "*", word_multiply);
         ADD_NATIVE_WORD(interpreter, "/", word_divide);
 
+        // Logical words.
+        ADD_NATIVE_WORD(interpreter, "&&", word_logic_and);
+        ADD_NATIVE_WORD(interpreter, "||", word_logic_or);
+        ADD_NATIVE_WORD(interpreter, "!", word_logic_not);
+
         // Bitwise operator words.
-        ADD_NATIVE_WORD(interpreter, "and", word_and);
-        ADD_NATIVE_WORD(interpreter, "or", word_or);
-        ADD_NATIVE_WORD(interpreter, "xor", word_xor);
-        ADD_NATIVE_WORD(interpreter, "not", word_not);
-        ADD_NATIVE_WORD(interpreter, "<<", word_left_shift);
-        ADD_NATIVE_WORD(interpreter, ">>", word_right_shift);
+        ADD_NATIVE_WORD(interpreter, "&", word_bit_and);
+        ADD_NATIVE_WORD(interpreter, "|", word_bit_or);
+        ADD_NATIVE_WORD(interpreter, "^", word_bit_xor);
+        ADD_NATIVE_WORD(interpreter, "~", word_bit_not);
+        ADD_NATIVE_WORD(interpreter, "<<", word_bit_left_shift);
+        ADD_NATIVE_WORD(interpreter, ">>", word_bit_right_shift);
 
         // Equality words.
         ADD_NATIVE_WORD(interpreter, "=", word_equal);
