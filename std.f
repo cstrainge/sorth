@@ -255,6 +255,12 @@
 : -! ( value variable -- ) over @ - swap ! ;
 
 
+( String variable words. )
+: string.length@ ( string_var -- length )                          @ string.length ;
+: string.insert! ( sub_string possition string_var -- new_string ) @ string.insert ;
+: string.remove! ( count position string_var -- )                  @ string.remove ;
+
+
 ( Quicker data field access. )
 : #!! @ #! ;
 : #@@ @ #@ ;

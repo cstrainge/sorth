@@ -785,6 +785,38 @@ namespace sorth
     }
 
 
+    void word_string_length(InterpreterPtr& interpreter)
+    {
+        auto string = as_string(interpreter, interpreter->pop());
+
+        interpreter->push((int64_t)string.size());
+    }
+
+
+    void word_string_insert(InterpreterPtr& interpreter)
+    {
+        auto string = as_string(interpreter, interpreter->pop());
+        auto position = (size_t)as_numeric<int64_t>(interpreter, interpreter->pop());
+        auto sub_string = as_string(interpreter, interpreter->pop());
+
+        string.insert(position, sub_string);
+
+        interpreter->push(string);
+    }
+
+
+    void word_string_remove(InterpreterPtr& interpreter)
+    {
+        auto string = as_string(interpreter, interpreter->pop());
+        auto position = (size_t)as_numeric<int64_t>(interpreter, interpreter->pop());
+        auto count = (size_t)as_numeric<int64_t>(interpreter, interpreter->pop());
+
+        string.erase(position, count);
+
+        interpreter->push(string);
+    }
+
+
     void word_data_definition(InterpreterPtr& interpreter)
     {
         auto& current_token = interpreter->constructor()->current_token;
@@ -1376,6 +1408,11 @@ namespace sorth
         ADD_IMMEDIATE_WORD(interpreter, ":", word_start_word);
         ADD_IMMEDIATE_WORD(interpreter, ";", word_end_word);
         ADD_IMMEDIATE_WORD(interpreter, "immediate", word_immediate);
+
+        // String words.
+        ADD_NATIVE_WORD(interpreter, "string.length", word_string_length);
+        ADD_NATIVE_WORD(interpreter, "string.insert", word_string_insert);
+        ADD_NATIVE_WORD(interpreter, "string.remove", word_string_remove);
 
         // Data structure support.
         ADD_IMMEDIATE_WORD(interpreter, "#", word_data_definition);

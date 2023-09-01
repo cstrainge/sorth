@@ -33,3 +33,10 @@ drop
 
 ( Reset the color back to the terminal's default. )
 csi "0;0m" + .cr
+
+
+cr cr
+
+"Hello world!" dup string.length --
+swap over 1 rot string.remove "." + .cr
+"Cliché but... " swap 0 swap string.insert .cr
