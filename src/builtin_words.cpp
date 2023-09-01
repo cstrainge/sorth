@@ -1481,7 +1481,7 @@ namespace sorth
         // Logical words.
         ADD_NATIVE_WORD(interpreter, "&&", word_logic_and);
         ADD_NATIVE_WORD(interpreter, "||", word_logic_or);
-        ADD_NATIVE_WORD(interpreter, "!", word_logic_not);
+        ADD_NATIVE_WORD(interpreter, "'", word_logic_not);
 
         // Bitwise operator words.
         ADD_NATIVE_WORD(interpreter, "&", word_bit_and);
