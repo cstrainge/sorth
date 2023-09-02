@@ -465,7 +465,7 @@ term.esc "[" + constant term.csi  ( Control sequence introducer. )
 
         dup until_char @ <>
         if
-            read_str @ swap + read_str !
+            dup read_str @ swap + read_str !
         then
 
         until_char @ =
@@ -476,7 +476,7 @@ term.esc "[" + constant term.csi  ( Control sequence introducer. )
 
 
 ( Get the terminal's currrent cursor position. )
-: term.get_cursor_position  ( -- row column )
+: term.cursor_position@  ( -- row column )
     variable pos_r
     variable pos_c
 
@@ -493,6 +493,45 @@ term.esc "[" + constant term.csi  ( Control sequence introducer. )
     pos_c @
 ;
 
+( Get the current column the cursor is in. )
+: term.cursor_column@
+    term.cursor_position@
+
+    swap
+    drop
+;
+
+
+: term.cursor_left!
+    term.csi swap + "D" + term.!
+    term.flush
+;
+
+
+: term.cursor_right!
+    term.csi swap + "C" + term.!
+    term.flush
+;
+
+
+: term.cursor_save
+    term.esc "7" + term.!
+    term.flush
+;
+
+
+: term.cursor_restore
+    term.esc "8" + term.!
+    term.flush
+;
+
+
+( Clear the entire line the cursor is on. )
+: term.clear_line  ( -- )
+    term.csi "2K\r" + term.!
+    term.flush
+;
+
 
 ( Alternate ways to exit the interpreter. )
 : q    ( -- ) quit ;
@@ -500,7 +539,7 @@ term.esc "[" + constant term.csi  ( Control sequence introducer. )
 
 
 ( Define a user prompt for the REPL. )
-: prompt "\027[2:34m>\027[0:0m>" . ;
+: prompt ">>" . ;
 
 
 : repl.exit_handler "ok" .cr ;
