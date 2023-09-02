@@ -317,6 +317,16 @@ namespace sorth
     }
 
 
+    void word_user_os_read(InterpreterPtr& interpreter)
+    {
+        #ifdef __APPLE__
+            interpreter->push("MacOS");
+        #else
+            interpreter->push("unknown");
+        #endif
+    }
+
+
     void insert_user_instruction(InterpreterPtr& interpreter, const OperationCode& op)
     {
         auto& constructor = interpreter->constructor();
@@ -1390,6 +1400,7 @@ namespace sorth
 
         // User environment words.
         ADD_NATIVE_WORD(interpreter, "user.env@", word_user_env_read);
+        ADD_NATIVE_WORD(interpreter, "user.os", word_user_os_read);
 
         // Words for creating new bytecode.
         ADD_NATIVE_WORD(interpreter, "op.def_variable", word_op_def_variable);
