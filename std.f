@@ -427,110 +427,18 @@
 ;
 
 
-( Some useful words when dealing with the terminal. )
-"\027"         constant term.esc  ( Terminal escape character. )
-term.esc "[" + constant term.csi  ( Control sequence introducer. )
+( Check for extra terminal funcionality.  If it's there include some extra useful words. )
+defined? term.raw_mode
+if
+    "std/term.f" include
+then
 
 
-( Read from the terminal and expect it to be a specific character.  If it isn't a match an )
-( exception is thrown. )
-: term.expect_key  ( extpected_key -- )
-    variable! expected
-    term.key variable! got
-
-    expected @ got @ <>
-    if
-        expected @ term.is_printable? '
-        if
-            expected @ hex expected !
-        then
-
-        got @ term.is_printable? '
-        if
-            got @ hex got !
-        then
-
-        "Did not get expected character, " expected @ + ", received " + got @ + "." + throw
-    then
-;
-
-
-( Read numeric characters from the terminal until an expected terminator character is found. )
-: term.read_num_until  ( terminator_char -- read_numberr )
-    variable! until_char
-    "" variable! read_str
-
-    begin
-        term.key
-
-        dup until_char @ <>
-        if
-            dup read_str @ swap + read_str !
-        then
-
-        until_char @ =
-    until
-
-    read_str @ string.to_number
-;
-
-
-( Get the terminal's currrent cursor position. )
-: term.cursor_position@  ( -- row column )
-    variable pos_r
-    variable pos_c
-
-    term.csi "6n" + term.! term.flush
-
-    ( Expecting csi r ; c R )
-
-    term.esc term.expect_key
-    "[" term.expect_key
-    ";" term.read_num_until pos_r !
-    "R" term.read_num_until pos_c !
-
-    pos_r @
-    pos_c @
-;
-
-( Get the current column the cursor is in. )
-: term.cursor_column@
-    term.cursor_position@
-
-    swap
-    drop
-;
-
-
-: term.cursor_left!
-    term.csi swap + "D" + term.!
-    term.flush
-;
-
-
-: term.cursor_right!
-    term.csi swap + "C" + term.!
-    term.flush
-;
-
-
-: term.cursor_save
-    term.esc "7" + term.!
-    term.flush
-;
-
-
-: term.cursor_restore
-    term.esc "8" + term.!
-    term.flush
-;
-
-
-( Clear the entire line the cursor is on. )
-: term.clear_line  ( -- )
-    term.csi "2K\r" + term.!
-    term.flush
-;
+( If we have the user environment available, include some more useful words. )
+defined? user.env@
+if
+    "std/user.f" include
+then
 
 
 ( Alternate ways to exit the interpreter. )
@@ -538,21 +446,16 @@ term.esc "[" + constant term.csi  ( Control sequence introducer. )
 : exit ( -- ) quit ;
 
 
-( Make sure that advanced terminal functionality is avaiable.  If it is, enable the 'fancy' repl )
-( capable of keeping history.  Otherwise enable the simpler repl. )
+( Make sure that advanced terminal and user functionality is avaiable.  If it is, enable the )
+( 'fancy' repl capable of keeping history.  Otherwise enable the simpler repl. )
 defined? term.raw_mode
+defined? user.env@
+&&
 if
     "std/repl.f" include
 else
     "std/simple_repl.f" include
 then
-
-
-( Some user environment words. )
-: user.home  ( -- home_path  ) "HOME"  user.env@ ;
-: user.name  ( -- user_name  ) "USER"  user.env@ ;
-: user.shell ( -- shell_path ) "SHELL" user.env@ ;
-: user.term  ( -- term_name  ) "TERM"  user.env@ ;
 
 
 ( Quick hack to let scripts be executable from the command line. )
