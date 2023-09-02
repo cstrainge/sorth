@@ -3,6 +3,7 @@
 : prompt ">>" . ;
 
 
+( This gets called automaticlly when the repl exits. )
 : repl.exit_handler "ok" .cr ;
 
 

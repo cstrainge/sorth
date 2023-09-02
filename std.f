@@ -538,10 +538,6 @@ term.esc "[" + constant term.csi  ( Control sequence introducer. )
 : exit ( -- ) quit ;
 
 
-( Define a user prompt for the REPL. )
-: prompt ">>" . ;
-
-
 ( Make sure that advanced terminal functionality is avaiable.  If it is, enable the 'fancy' repl )
 ( capable of keeping history.  Otherwise enable the simpler repl. )
 defined? term.raw_mode
