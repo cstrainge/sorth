@@ -1,8 +1,13 @@
 
 1000 constant repl.history_size
+
+
 user.home "/.sorth_history.txt" + constant repl.history_path
+user.home "/.sorth_init" + constant repl.config_path
+
 
 repl.history_size [].new variable! repl.history
+
 
 0 variable! repl.history_index
 0 variable! repl.history_count
@@ -310,6 +315,11 @@ repl.history_size [].new variable! repl.history
 
     repl.load_history
     at_exit repl.exit_handler
+
+    repl.config_path file.exists?
+    if
+        repl.config_path include
+    then
 
     begin
         true

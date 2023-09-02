@@ -3,6 +3,7 @@
     "files.associations":
     {
         "*.sorth": "forth",
+        ".sorth_init": "forth",
         "*.h": "cpp"
     },
 
