@@ -297,7 +297,7 @@ namespace sorth
     void word_include(InterpreterPtr& interpreter)
     {
         auto path = as_string(interpreter, interpreter->pop());
-        interpreter->process_source(std::filesystem::path(path));
+        interpreter->process_source(interpreter->find_file(path));
     }
 
 

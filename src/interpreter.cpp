@@ -100,6 +100,8 @@ namespace sorth
                 virtual void add_search_path(const std::string& path) override;
                 virtual void add_search_path(const char* path) override;
 
+                void pop_search_path();
+
                 virtual std::filesystem::path find_file(std::filesystem::path& path) override;
                 virtual std::filesystem::path find_file(const std::string& path) override;
                 virtual std::filesystem::path find_file(const char* path) override;
@@ -169,16 +171,21 @@ namespace sorth
 
         void InterpreterImpl::process_source(const std::filesystem::path& path)
         {
-            auto full_source_path = std::filesystem::canonical(path);
+            auto full_source_path = path;
 
             auto base_path = full_source_path;
             base_path.remove_filename();
 
             SourceBuffer source(full_source_path);
 
-            add_search_path(base_path);
+            if (base_path != "")
+            {
+                add_search_path(base_path);
+            }
 
             process_source(source);
+
+            pop_search_path();
         }
 
 
@@ -630,6 +637,15 @@ namespace sorth
         }
 
 
+        void InterpreterImpl::pop_search_path()
+        {
+            if (!search_paths.empty())
+            {
+                search_paths.pop_front();
+            }
+        }
+
+
         std::filesystem::path InterpreterImpl::find_file(std::filesystem::path& path)
         {
             if (!path.is_absolute())
@@ -640,7 +656,7 @@ namespace sorth
 
                     if (std::filesystem::exists(found_path))
                     {
-                        return std::filesystem::canonical(found_path);
+                        return found_path;
                     }
                 }
 

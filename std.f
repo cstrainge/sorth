@@ -542,9 +542,9 @@ term.esc "[" + constant term.csi  ( Control sequence introducer. )
 ( capable of keeping history.  Otherwise enable the simpler repl. )
 defined? term.raw_mode
 if
-    "repl.f" include
+    "std/repl.f" include
 else
-    "simple_repl.f" include
+    "std/simple_repl.f" include
 then
 
 
