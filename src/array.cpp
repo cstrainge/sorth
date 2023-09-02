@@ -21,6 +21,30 @@ namespace sorth
     }
 
 
+    bool operator ==(const ArrayPtr& rhs, const ArrayPtr& lhs)
+    {
+        if (rhs == lhs)
+        {
+            return true;
+        }
+
+        if (rhs->size() != lhs->size())
+        {
+            return false;
+        }
+
+        for (size_t i = 0; i < rhs->size(); ++i)
+        {
+            if ((*rhs)[i] != (*lhs)[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+
     Array::Array(int64_t size)
     {
         items.resize(size);

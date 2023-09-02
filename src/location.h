@@ -52,5 +52,7 @@ namespace sorth::internal
 
     std::ostream& operator <<(std::ostream& stream, Location location);
 
+    bool operator ==(const Location& rhs, const Location& lhs);
+
 
 }

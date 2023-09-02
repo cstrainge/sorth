@@ -24,6 +24,9 @@ namespace sorth
     class ByteBuffer;
     using ByteBufferPtr = std::shared_ptr<ByteBuffer>;
 
+    class HashTable;
+    using HashTablePtr = std::shared_ptr<HashTable>;
+
 
     using Value = std::variant<int64_t,
                                double,
@@ -32,6 +35,7 @@ namespace sorth
                                DataObjectPtr,
                                ArrayPtr,
                                ByteBufferPtr,
+                               HashTablePtr,
                                internal::Token,
                                internal::Location,
                                internal::ByteCode>;
@@ -42,6 +46,28 @@ namespace sorth
     using VariableList = internal::ContextualList<Value>;
 
     std::ostream& operator <<(std::ostream& stream, const Value& value);
+
+
+    size_t hash_value(const Value& key);
+    bool operator ==(const sorth::Value& rhs, const sorth::Value& lhs);
+
+
+}
+
+
+
+namespace std
+{
+
+
+    template<>
+    struct hash<sorth::Value>
+    {
+        size_t operator()(const sorth::Value& key) const
+        {
+            return sorth::hash_value(key);
+        }
+    };
 
 
 }

@@ -31,6 +31,7 @@
 #include "array.h"
 #include "byte_buffer.h"
 #include "data_object.h"
+#include "hash_table.h"
 #include "code_constructor.h"
 #include "interpreter.h"
 #include "builtin_words.h"

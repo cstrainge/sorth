@@ -54,4 +54,8 @@ namespace sorth::internal
     std::ostream& operator <<(std::ostream& stream, const CallStack& call_stack);
 
 
+    bool operator ==(const OperationCode& rhs, const OperationCode& lhs);
+    bool operator ==(const ByteCode& rhs, const ByteCode& lhs);
+
+
 }

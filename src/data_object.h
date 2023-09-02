@@ -34,4 +34,7 @@ namespace sorth
     std::ostream& operator <<(std::ostream& stream, const DataObjectPtr& data);
 
 
+    bool operator ==(const DataObjectPtr& rhs, const DataObjectPtr& lhs);
+
+
 }

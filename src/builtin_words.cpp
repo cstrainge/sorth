@@ -1040,6 +1040,48 @@ namespace sorth
     }
 
 
+    void word_hash_table_new(InterpreterPtr& interpreter)
+    {
+        auto table = std::make_shared<HashTable>();
+        interpreter->push(table);
+    }
+
+
+    void word_hash_table_insert(InterpreterPtr& interpreter)
+    {
+        auto table = as_hash_table(interpreter, interpreter->pop());
+        auto key = interpreter->pop();
+        auto value = interpreter->pop();
+
+        table->insert(key, value);
+    }
+
+
+    void word_hash_table_find(InterpreterPtr& interpreter)
+    {
+        auto table = as_hash_table(interpreter, interpreter->pop());
+        auto key = interpreter->pop();
+
+        auto [ found, value ] = table->get(key);
+
+        throw_error_if (!found, interpreter->get_current_location(),
+                        "Value does not exist in table.");
+
+        interpreter->push(value);
+    }
+
+
+    void word_hash_table_exists(InterpreterPtr& interpreter)
+    {
+        auto table = as_hash_table(interpreter, interpreter->pop());
+        auto key = interpreter->pop();
+
+        auto [ found, value ] = table->get(key);
+
+        interpreter->push(found);
+    }
+
+
     void word_add(InterpreterPtr& interpreter)
     {
         string_or_numeric_op(interpreter,
@@ -1452,6 +1494,12 @@ namespace sorth
 
         ADD_NATIVE_WORD(interpreter, "buffer.position!", word_buffer_set_postion);
         ADD_NATIVE_WORD(interpreter, "buffer.position@", word_buffer_get_postion);
+
+        // HashTable operations.
+        ADD_NATIVE_WORD(interpreter, "{}.new", word_hash_table_new);
+        ADD_NATIVE_WORD(interpreter, "{}!", word_hash_table_insert);
+        ADD_NATIVE_WORD(interpreter, "{}@", word_hash_table_find);
+        ADD_NATIVE_WORD(interpreter, "{}?", word_hash_table_exists);
 
         // Math ops.
         ADD_NATIVE_WORD(interpreter, "+", word_add);

@@ -290,6 +290,13 @@
 : [].resize! @ [].resize ;
 
 
+( Hash table words. )
+
+: {}!! @ {}! ;
+: {}@@ @ {}@ ;
+: {}?? @ {}? ;
+
+
 : [ immediate
     1 variable! index_count
     1 [].new variable! index_blocks

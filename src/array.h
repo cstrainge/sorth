@@ -21,10 +21,13 @@ namespace sorth
 
         private:
             friend std::ostream& operator <<(std::ostream& stream, const ArrayPtr& array);
+            friend bool operator ==(const ArrayPtr& rhs, const ArrayPtr& lhs);
     };
 
 
     std::ostream& operator <<(std::ostream& stream, const ArrayPtr& array);
+
+    bool operator ==(const ArrayPtr& rhs, const ArrayPtr& lhs);
 
 
 }

@@ -22,6 +22,27 @@ namespace sorth::internal
     }
 
 
+    bool operator ==(const Location& rhs, const Location& lhs)
+    {
+        if (rhs.get_line() != lhs.get_line())
+        {
+            return false;
+        }
+
+        if (rhs.get_column() != lhs.get_column())
+        {
+            return false;
+        }
+
+        if (rhs.get_path() != lhs.get_path())
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+
     Location::Location()
     : line(1),
       column(1)

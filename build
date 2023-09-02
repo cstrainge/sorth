@@ -15,6 +15,7 @@ clang++ \
 ./src/array.cpp \
 ./src/byte_buffer.cpp \
 ./src/data_object.cpp \
+./src/hash_table.cpp \
 ./src/code_constructor.cpp \
 ./src/terminal_words.cpp \
 ./src/posix_io_words.cpp \

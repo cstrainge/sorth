@@ -107,6 +107,24 @@ namespace sorth::internal
     }
 
 
+    bool operator ==(const Token& rhs, const Token& lhs)
+    {
+        if (lhs.type != rhs.type)
+        {
+            return false;
+        }
+
+        if (rhs.text != lhs.text)
+        {
+            return false;
+        }
+
+        // We ignore location for this comparison.
+
+        return true;
+    }
+
+
      TokenList tokenize(SourceBuffer& source_code)
     {
         TokenList tokens;

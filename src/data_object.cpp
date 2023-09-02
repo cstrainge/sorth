@@ -29,4 +29,28 @@ namespace sorth
     }
 
 
+    bool operator ==(const DataObjectPtr& rhs, const DataObjectPtr& lhs)
+    {
+        if (rhs == lhs)
+        {
+            return true;
+        }
+
+        if (rhs->definition->name != lhs->definition->name)
+        {
+            return false;
+        }
+
+        for (size_t i = 0; i < rhs->fields.size(); ++i)
+        {
+            if (rhs->fields[i] != lhs->fields[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+
 }

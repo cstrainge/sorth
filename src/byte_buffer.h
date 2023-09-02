@@ -43,4 +43,7 @@ namespace sorth
     std::ostream& operator <<(std::ostream& stream, const ByteBufferPtr& buffer_ptr);
 
 
+    bool operator ==(const ByteBufferPtr& rhs, const ByteBufferPtr& lhs);
+
+
 }

@@ -84,4 +84,42 @@ namespace sorth::internal
     }
 
 
+
+    bool operator ==(const OperationCode& rhs, const OperationCode& lhs)
+    {
+        if (rhs.id != lhs.id)
+        {
+            return false;
+        }
+
+        // We ignore location, if the op and value are the same, the code is considered so too.
+
+        if (rhs.value != lhs.value)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+
+    bool operator ==(const ByteCode& rhs, const ByteCode& lhs)
+    {
+        if (rhs.size() != lhs.size())
+        {
+            return false;
+        }
+
+        for (size_t i = 0; i < rhs.size(); ++i)
+        {
+            if (rhs[i] != lhs[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+
 }

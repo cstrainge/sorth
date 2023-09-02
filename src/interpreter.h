@@ -185,4 +185,15 @@ namespace sorth
     }
 
 
+    inline HashTablePtr as_hash_table(InterpreterPtr interpreter, Value value)
+    {
+        if (!std::holds_alternative<HashTablePtr>(value))
+        {
+            throw_error(interpreter->get_current_location(), "Expected a hash table.");
+        }
+
+        return std::get<HashTablePtr>(value);
+    }
+
+
 }

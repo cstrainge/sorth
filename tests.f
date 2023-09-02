@@ -48,3 +48,9 @@ cr
 "tests/07_test_exception.f" include
 
 cr
+
+"--- Testing hash tables. ---" .cr
+
+"tests/08_test_hashes.f" include
+
+cr
