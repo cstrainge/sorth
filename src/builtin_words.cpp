@@ -644,7 +644,7 @@ namespace sorth
         auto& current_token = interpreter->constructor()->current_token;
         auto& input_tokens = interpreter->constructor()->input_tokens;
 
-        interpreter->push(input_tokens[++current_token]);
+        interpreter->push(input_tokens[++current_token].text);
     }
 
 
