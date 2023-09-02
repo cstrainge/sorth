@@ -134,11 +134,17 @@ namespace sorth
             int fd = as_numeric<int64_t>(interpreter, interpreter->pop());
             int result;
 
+            errno = 0;
+
             do
             {
                 result = close(fd);
             }
-            while (result == EINTR);
+            while ((result == -1) && (errno == EINTR));
+
+            throw_error_if(result == -1,
+                           interpreter->get_current_location(),
+                           "FD could not closed, " + std::string(strerror(errno)) + ".");
         }
 
 
