@@ -290,13 +290,6 @@
 : [].resize! @ [].resize ;
 
 
-( Hash table words. )
-
-: {}!! @ {}! ;
-: {}@@ @ {}@ ;
-: {}?? @ {}? ;
-
-
 : [ immediate
     1 variable! index_count
     1 [].new variable! index_blocks
@@ -370,6 +363,30 @@
         until
         ` drop op.execute
     then
+;
+
+
+( Hash table words. )
+
+: {}!! @ {}! ;
+: {}@@ @ {}@ ;
+: {}?? @ {}? ;
+
+
+: { immediate
+    variable command
+
+    "}!" "}!!" "}@" "}@@" 4 code.compile_until_words
+
+    case
+        "}!"  of  ` {}!  command !  endof
+        "}!!" of  ` {}!! command !  endof
+        "}@"  of  ` {}@  command !  endof
+        "}@@" of  ` {}@@ command !  endof
+    endcase
+
+    ` swap op.execute
+    command @ op.execute
 ;
 
 

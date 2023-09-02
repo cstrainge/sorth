@@ -8,23 +8,23 @@
 {}.new variable! table
 
 
-value1 key1 table {}!!
-value2 key2 table {}!!
+value1 table { key1 }!!
+value2 table { key2 }!!
 
 table ?
 
-key1 table {}@@ .cr
-key2 table {}@@ .cr
+table { key1 }@@ .cr
+table { key2 }@@ .cr
 
 
-key1 table {}@@ value1 <>
+table { key1 }@@ value1 <>
 if
-    "Hash table mismatch!"
+    "Hash table mismatch!" .cr
     exit_failure quit
 then
 
-key2 table {}@@ value2 <>
+table { key1 }@@ value2 <>
 if
-    "Hash table mismatch!"
+    "Hash table mismatch!" .cr
     exit_failure quit
 then
