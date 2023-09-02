@@ -18,4 +18,7 @@ clang++ \
 ./src/code_constructor.cpp \
 ./src/terminal_words.cpp \
 ./src/posix_io_words.cpp \
--o sorth
+./src/user_words.cpp \
+-O3 \
+-o sorth && \
+strip ./sorth
