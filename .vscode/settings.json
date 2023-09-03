@@ -2,14 +2,9 @@
 {
     "files.associations":
     {
-        "*.dox": "c",
-        "*.api": "c",
-        "*.h": "cpp",
-        "Makefile.am": "makefile",
-        "*.scons": "python",
         "*.sorth": "forth",
         ".sorth_init": "forth",
-        "filesystem": "cpp"
+        "*.h": "cpp"
     },
 
     "cSpell.words":
