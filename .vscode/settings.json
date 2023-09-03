@@ -2,9 +2,14 @@
 {
     "files.associations":
     {
+        "*.dox": "c",
+        "*.api": "c",
+        "*.h": "cpp",
+        "Makefile.am": "makefile",
+        "*.scons": "python",
         "*.sorth": "forth",
         ".sorth_init": "forth",
-        "*.h": "cpp"
+        "filesystem": "cpp"
     },
 
     "cSpell.words":
@@ -17,6 +22,8 @@
         "npos",
         "readline",
         "sorth",
+        "structs",
+        "uinteger",
         "unmark"
     ],
 
