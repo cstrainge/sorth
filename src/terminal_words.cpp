@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <termios.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
 #include "sorth.h"
 
 
@@ -70,6 +72,21 @@ namespace sorth
         }
 
 
+        void word_term_size(InterpreterPtr& interpreter)
+        {
+            struct winsize size;
+
+            auto result = ioctl(STDOUT_FILENO, TIOCGWINSZ, &size);
+
+            throw_error_if(result == -1, interpreter->get_current_location(),
+                               "Could not read terminal information, " +
+                               std::string(strerror(errno)) + ".");
+
+            interpreter->push(size.ws_row);
+            interpreter->push(size.ws_col);
+        }
+
+
         void word_term_key(InterpreterPtr& interpreter)
         {
             char next[2] = { 0 };
@@ -122,6 +139,8 @@ namespace sorth
     {
         ADD_NATIVE_WORD(interpreter, "term.raw_mode", word_term_raw_mode);
         ADD_NATIVE_WORD(interpreter, "term.flush", word_term_flush);
+
+        ADD_NATIVE_WORD(interpreter, "term.size@", word_term_size);
 
         ADD_NATIVE_WORD(interpreter, "term.key", word_term_key);
         ADD_NATIVE_WORD(interpreter, "term.readline", word_term_read_line);
