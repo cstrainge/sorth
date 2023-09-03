@@ -46,8 +46,11 @@ namespace sorth
     void register_user_words(InterpreterPtr& interpreter)
     {
         // User environment words.
-        ADD_NATIVE_WORD(interpreter, "user.env@", word_user_env_read);
-        ADD_NATIVE_WORD(interpreter, "user.os", word_user_os_read);
+        ADD_NATIVE_WORD(interpreter, "user.env@", word_user_env_read,
+                        "Read an environment variable");
+
+        ADD_NATIVE_WORD(interpreter, "user.os", word_user_os_read,
+                        "Get the name of the OS the script is running under.");
     }
 
 

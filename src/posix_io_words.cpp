@@ -203,6 +203,7 @@ namespace sorth
 
         void word_file_read(InterpreterPtr& interpreter)
         {
+            throw_error(*interpreter, "This word is currently unimplemented.");
         }
 
 
@@ -286,25 +287,53 @@ namespace sorth
 
     void register_io_words(InterpreterPtr& interpreter)
     {
-        ADD_NATIVE_WORD(interpreter, "file.open", word_file_open);
-        ADD_NATIVE_WORD(interpreter, "file.create", word_file_create);
-        ADD_NATIVE_WORD(interpreter, "file.close", word_file_close);
+        ADD_NATIVE_WORD(interpreter, "file.open", word_file_open,
+                        "Open an existing file and return a fd.");
 
-        ADD_NATIVE_WORD(interpreter, "file.size@", word_file_size_read);
+        ADD_NATIVE_WORD(interpreter, "file.create", word_file_create,
+                        "Create/open a file and return a fd.");
 
-        ADD_NATIVE_WORD(interpreter, "file.exists?", word_file_exists);
-        ADD_NATIVE_WORD(interpreter, "file.is_open?", word_file_is_open);
-        ADD_NATIVE_WORD(interpreter, "file.is_eof?", word_file_is_eof);
+        ADD_NATIVE_WORD(interpreter, "file.close", word_file_close,
+                        "Take a fd and close it.");
 
-        ADD_NATIVE_WORD(interpreter, "file.@", word_file_read);
-        ADD_NATIVE_WORD(interpreter, "file.!", word_file_write);
 
-        ADD_NATIVE_WORD(interpreter, "file.line@", word_file_line_read);
-        ADD_NATIVE_WORD(interpreter, "file.line!", word_file_line_write);
+        ADD_NATIVE_WORD(interpreter, "file.size@", word_file_size_read,
+                        "Return the size of a file represented by a fd.");
 
-        ADD_NATIVE_WORD(interpreter, "file.r/o", [](auto intr) { intr->push(O_RDONLY); });
-        ADD_NATIVE_WORD(interpreter, "file.w/o", [](auto intr) { intr->push(O_WRONLY); });
-        ADD_NATIVE_WORD(interpreter, "file.r/w", [](auto intr) { intr->push(O_RDWR); });
+
+        ADD_NATIVE_WORD(interpreter, "file.exists?", word_file_exists,
+                        "Does the file at the given path exist?");
+
+        ADD_NATIVE_WORD(interpreter, "file.is_open?", word_file_is_open,
+                        "Is the fd currently valid?");
+
+        ADD_NATIVE_WORD(interpreter, "file.is_eof?", word_file_is_eof,
+                        "Is the file pointer at the end of the file?");
+
+
+        ADD_NATIVE_WORD(interpreter, "file.@", word_file_read,
+                        "Read from a given file.  (Unimplemented.)");
+
+        ADD_NATIVE_WORD(interpreter, "file.!", word_file_write,
+                        "Write a value as text to a file, unless it's a ByteBuffer.");
+
+
+        ADD_NATIVE_WORD(interpreter, "file.line@", word_file_line_read,
+                        "Read a full line from a file.");
+
+        ADD_NATIVE_WORD(interpreter, "file.line!", word_file_line_write,
+                        "Write a string as a line to the file.");
+
+
+        ADD_NATIVE_WORD(interpreter, "file.r/o", [](auto intr) { intr->push(O_RDONLY); },
+                        "Constant for opening a file as read only.");
+
+        ADD_NATIVE_WORD(interpreter, "file.w/o", [](auto intr) { intr->push(O_WRONLY); },
+                        "Constant for opening a file as write only.");
+
+        ADD_NATIVE_WORD(interpreter, "file.r/w", [](auto intr) { intr->push(O_RDWR); },
+                        "Constant for opening a file for both reading and writing.");
+
     }
 
 

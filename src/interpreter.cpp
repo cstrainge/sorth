@@ -99,7 +99,7 @@ namespace sorth
 
                 virtual void add_word(const std::string& word, WordFunction handler,
                                       const std::filesystem::path& path, size_t line, size_t column,
-                                      bool is_immediate) override;
+                                      bool is_immediate, const std::string& description) override;
 
             public:
                 virtual void add_search_path(const std::filesystem::path& path) override;
@@ -359,7 +359,8 @@ namespace sorth
 
                                 ADD_NATIVE_WORD(this,
                                                 name,
-                                                handler);
+                                                handler,
+                                                "Access the variable " + name + ".");
                             }
                             break;
 
@@ -368,7 +369,10 @@ namespace sorth
                                 auto name = as_string(shared_from_this(), operation.value);
                                 auto value = pop();
 
-                                ADD_NATIVE_WORD(this, name, [value](auto This) { This->push(value); });
+                                ADD_NATIVE_WORD(this,
+                                                name,
+                                                [value](auto This) { This->push(value); },
+                                                "Constant value " + name + ".");
                             }
                             break;
 
@@ -661,7 +665,8 @@ namespace sorth
         void InterpreterImpl::add_word(const std::string& word, WordFunction handler,
                                        const std::filesystem::path& path,
                                        size_t line, size_t column,
-                                       bool is_immediate)
+                                       bool is_immediate,
+                                       const std::string& description)
         {
             add_word(word,
                      handler,
@@ -669,7 +674,7 @@ namespace sorth
                      is_immediate,
                      false,
                      false,
-                     "");
+                     description);
         }
 
 

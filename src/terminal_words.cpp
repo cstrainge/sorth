@@ -137,16 +137,29 @@ namespace sorth
 
     void register_terminal_words(InterpreterPtr& interpreter)
     {
-        ADD_NATIVE_WORD(interpreter, "term.raw_mode", word_term_raw_mode);
-        ADD_NATIVE_WORD(interpreter, "term.flush", word_term_flush);
+        ADD_NATIVE_WORD(interpreter, "term.raw_mode", word_term_raw_mode,
+                        "Enter or leave the terminal's 'raw' mode.");
 
-        ADD_NATIVE_WORD(interpreter, "term.size@", word_term_size);
 
-        ADD_NATIVE_WORD(interpreter, "term.key", word_term_key);
-        ADD_NATIVE_WORD(interpreter, "term.readline", word_term_read_line);
-        ADD_NATIVE_WORD(interpreter, "term.!", word_term_write);
+        ADD_NATIVE_WORD(interpreter, "term.flush", word_term_flush,
+                        "Flush the terminals buffers.");
 
-        ADD_NATIVE_WORD(interpreter, "term.is_printable?", word_term_is_printable);
+        ADD_NATIVE_WORD(interpreter, "term.size@", word_term_size,
+                        "Return the number or characters in the rows and columns.");
+
+
+        ADD_NATIVE_WORD(interpreter, "term.key", word_term_key,
+                        "Read a keypress from the terminal.");
+
+        ADD_NATIVE_WORD(interpreter, "term.readline", word_term_read_line,
+                        "Read a line of text from the terminal.");
+
+        ADD_NATIVE_WORD(interpreter, "term.!", word_term_write,
+                        "Write a value to the terminal.");
+
+
+        ADD_NATIVE_WORD(interpreter, "term.is_printable?", word_term_is_printable,
+                        "Is the given character printable?");
     }
 
 
