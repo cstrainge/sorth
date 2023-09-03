@@ -1413,7 +1413,7 @@ namespace sorth
         auto& handler_info = interpreter->get_handler_info(word.handler_index);
 
         std::cout << "Word, " << word.handler_index << " -> " << name
-                  << (word.is_scripted ? ", is user defined." : ", is a native word.")
+                  << (word.is_scripted ? "" : ", is a native word.")
                   << std::endl
                   << "Defined at: " << handler_info.definition_location
                   << "." << std::endl;
@@ -1421,6 +1421,11 @@ namespace sorth
         if (word.is_immediate)
         {
             std::cout << "Word is immediate." << std::endl;
+        }
+
+        if (word.is_hidden)
+        {
+            std::cout << "Word is hidden from the directory." << std::endl;
         }
 
         if (word.description)
