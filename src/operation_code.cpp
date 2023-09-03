@@ -112,7 +112,7 @@ namespace sorth::internal
 
         for (size_t i = 0; i < rhs.size(); ++i)
         {
-            if (rhs[i] != lhs[i])
+            if (!(rhs[i] == lhs[i]))
             {
                 return false;
             }
