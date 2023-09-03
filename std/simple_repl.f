@@ -37,7 +37,7 @@
             "ok" .cr
         catch
             ( Something in the user code failed, display the error and try again. )
-            .cr
+            cr .cr
         endcatch
     repeat
 ;

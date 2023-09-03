@@ -345,7 +345,7 @@ repl.history_size [].new variable! repl.history
             "ok" .cr
         catch
             false term.raw_mode
-            .cr
+            cr .cr
         endcatch
     repeat
 ;
