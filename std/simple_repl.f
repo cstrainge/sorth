@@ -10,7 +10,7 @@
 
 
 ( Implementation of the language's REPL. )
-: repl description: "Sorth's REPL, read, evaluate, and print loop."
+: repl description: "Sorth's REPL: read, evaluate, and print loop."
     "Strange Forth REPL." .cr
     cr
     "Enter quit, q, or exit to quit the REPL." .cr
