@@ -23,7 +23,7 @@ if
     exit_failure quit
 then
 
-table { key1 }@@ value2 <>
+table { key2 }@@ value2 <>
 if
     "Hash table mismatch!" .cr
     exit_failure quit
