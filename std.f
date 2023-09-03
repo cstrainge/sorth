@@ -479,7 +479,7 @@
 
 
 
-: [ immediate description: "Syntax definition for 'array [ index(icies) ]' access."
+: [ immediate description: "Syntax definition for 'array [ index or indices ]' access."
     1 variable! index_count
     1 [].new variable! index_blocks
 

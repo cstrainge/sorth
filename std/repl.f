@@ -257,7 +257,7 @@ repl.history_size [].new variable! repl.history
 
                 term.cursor_column@ start_col @ >
                 if
-                    ( Get the cursor position and firgure out where in the current string we are. )
+                    ( Get the cursor position and figure out where in the current string we are. )
                     ( Then delete one character from the string. )
                     term.cursor_column@ start_col @ - -- line repl.cursor_delete!
 
