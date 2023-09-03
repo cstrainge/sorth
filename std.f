@@ -663,32 +663,111 @@
 
 
 ( Helper words for reading/writing byte buffers. )
-: buffer.i8!!  @ 1 buffer.int! ;
-: buffer.i16!! @ 2 buffer.int! ;
-: buffer.i32!! @ 4 buffer.int! ;
-: buffer.i64!! @ 8 buffer.int! ;
+: buffer.i8!! description: "Write an 8-bit signed integer to the buffer variable."
+    @ 1 buffer.int!
+;
 
-: buffer.i8@@  @ 1 true buffer.int@ ;
-: buffer.i16@@ @ 2 true buffer.int@ ;
-: buffer.i32@@ @ 4 true buffer.int@ ;
-: buffer.i64@@ @ 8 true buffer.int@ ;
 
-: buffer.u8@@  @ 1 false buffer.int@ ;
-: buffer.u16@@ @ 2 false buffer.int@ ;
-: buffer.u32@@ @ 4 false buffer.int@ ;
-: buffer.u64@@ @ 8 false buffer.int@ ;
+: buffer.i16!! description: "Write a 16-bit signed integer to the buffer variable."
+    @ 2 buffer.int!
+;
 
-: buffer.f32!! @ 4 buffer.float! ;
-: buffer.f64!! @ 8 buffer.float! ;
 
-: buffer.f32@@ @ 4 buffer.float@ ;
-: buffer.f64@@ @ 8 buffer.float@ ;
+: buffer.i32!! description: "Write a 32-bit signed integer to the buffer variable."
+    @ 4 buffer.int!
+;
 
-: buffer.string!! @ swap buffer.string! ;
-: buffer.string@@ @ swap buffer.string@ ;
 
-: buffer.position!! @ buffer.position! ;
-: buffer.position@@ @ buffer.position@ ;
+: buffer.i64!! description: "Write a  64-bit signed integer to the buffer variable."
+    @ 8 buffer.int!
+;
+
+
+
+: buffer.i8@@ description: "Read an 8-bit signed integer from the buffer variable."
+    @ 1 true buffer.int@
+;
+
+
+: buffer.i16@@ description: "Read a 16-bit signed integer from the buffer variable."
+    @ 2 true buffer.int@
+;
+
+
+: buffer.i32@@ description: "Read a 32-bit signed integer from the buffer variable."
+    @ 4 true buffer.int@
+;
+
+
+: buffer.i64@@ description: "Read a 64-bit signed integer from the buffer variable."
+    @ 8 true buffer.int@
+;
+
+
+
+: buffer.u8@@ description: "Read an 8-bit unsigned integer from the buffer variable."
+    @ 1 false buffer.int@
+;
+
+
+: buffer.u16@@ description: "Read a 16-bit unsigned integer from the buffer variable."
+    @ 2 false buffer.int@
+;
+
+
+: buffer.u32@@ description: "Read a 32-bit unsigned integer from the buffer variable."
+    @ 4 false buffer.int@
+;
+
+
+: buffer.u64@@ description: "Read a 64-bit unsigned integer from the buffer variable."
+    @ 8 false buffer.int@
+;
+
+
+
+: buffer.f32!! description: "Write a 32-bit floating point value to the buffer variable."
+    @ 4 buffer.float!
+;
+
+
+: buffer.f64!! description: "Write a 64-bit floating point value to the buffer variable."
+    @ 8 buffer.float!
+;
+
+
+
+: buffer.f32@@ description: "Read a 32-bit floating point value from the buffer variable."
+    @ 4 buffer.float@
+;
+
+
+: buffer.f64@@ description: "Read a 64-bit floating point value from the buffer variable."
+    @ 8 buffer.float@
+;
+
+
+
+: buffer.string!!
+    description: "Write a string of a given size to the buffer variable.  Pad with 0s."
+    @ swap buffer.string!
+;
+
+
+: buffer.string@@ description: "Read a string of max size from the buffer variable."
+    @ swap buffer.string@
+;
+
+
+
+: buffer.position!! description: "Set the current buffer pointer to the buffer in variable."
+    @ buffer.position!
+;
+
+
+: buffer.position@@ description: "Read the current buffer pointer from the variable."
+    @ buffer.position@
+;
 
 
 
