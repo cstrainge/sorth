@@ -663,5 +663,5 @@ then
 
 
 ( Quick hack to let scripts be executable from the command line. )
-: #!/usr/bin/env ;
-: sorth ;
+: #!/usr/bin/env hidden ;
+: sorth hidden ;
