@@ -70,6 +70,8 @@ namespace sorth
                 virtual void halt() override;
                 virtual void clear_halt_flag() override;
 
+                virtual const CallStack& get_call_stack() const override;
+
                 virtual std::tuple<bool, Word> find_word(const std::string& word) override;
                 virtual WordHandlerInfo& get_handler_info(size_t index) override;
                 virtual std::vector<std::string> get_inverse_lookup_list() override;
@@ -214,7 +216,7 @@ namespace sorth
 
         OptionalConstructor& InterpreterImpl::constructor()
         {
-            throw_error_if(!code_constructor, current_location, "Code constructor is unavailable.");
+            throw_error_if(!code_constructor, *this, "Code constructor is unavailable.");
             return code_constructor;
         }
 
@@ -248,6 +250,12 @@ namespace sorth
         }
 
 
+        const CallStack& InterpreterImpl::get_call_stack() const
+        {
+            return call_stack;
+        }
+
+
         std::tuple<bool, Word> InterpreterImpl::find_word(const std::string& word)
         {
             return dictionary.find(word);
@@ -256,7 +264,7 @@ namespace sorth
 
         WordHandlerInfo& InterpreterImpl::get_handler_info(size_t index)
         {
-            throw_error_if(index >= word_handlers.size(), current_location,
+            throw_error_if(index >= word_handlers.size(), *this,
                            "Handler index is out of range.");
 
             return word_handlers[index];
@@ -273,7 +281,7 @@ namespace sorth
         {
             auto [ found, word_entry ] = dictionary.find(word);
 
-            throw_error_if(!found, current_location, "Word " + word + " was not found.");
+            throw_error_if(!found, *this, "Word " + word + " was not found.");
 
             auto this_ptr = shared_from_this();
             word_handlers[word_entry.handler_index].function(this_ptr);
@@ -283,7 +291,7 @@ namespace sorth
         void InterpreterImpl::execute_word(const Location& location, const Word& word)
         {
             throw_error_if(word.handler_index >= word_handlers.size(),
-                           location,
+                           *this,
                            "Bad word handler index.");
 
             current_location = location;
@@ -291,8 +299,17 @@ namespace sorth
             auto this_ptr = shared_from_this();
 
             call_stack_push(word_handler);
-            word_handler.function(this_ptr);
-            call_stack_pop();
+
+            try
+            {
+                word_handler.function(this_ptr);
+                call_stack_pop();
+            }
+            catch (...)
+            {
+                call_stack_pop();
+                throw;
+            }
         }
 
 
@@ -302,6 +319,8 @@ namespace sorth
             {
                 std::cout << "-------------------------------------" << std::endl;
             }
+
+            bool call_stack_pushed = false;
 
             std::vector<int64_t> catch_locations;
             std::vector<std::pair<int64_t, int64_t>> loop_locations;
@@ -326,6 +345,8 @@ namespace sorth
                     {
                         current_location = operation.location.value();
                         call_stack_push(name, operation.location.value());
+
+                        call_stack_pushed = true;
                     }
 
                     switch (operation.id)
@@ -376,14 +397,25 @@ namespace sorth
 
                                     if (!found)
                                     {
-                                        throw_error(current_location, "Word '" + name + "' not found.");
+                                        throw_error(*this, "Word '" + name + "' not found.");
                                     }
 
                                     auto& word_handler = word_handlers[word.handler_index];
 
                                     call_stack_push(word_handler);
-                                    auto This = shared_from_this();
-                                    word_handler.function(This);
+
+                                    try
+                                    {
+                                        auto This = shared_from_this();
+                                        word_handler.function(This);
+
+                                    }
+                                    catch (...)
+                                    {
+                                        call_stack_pop();
+                                        throw;
+                                    }
+
                                     call_stack_pop();
                                 }
                                 else if (is_numeric(operation.value))
@@ -393,13 +425,23 @@ namespace sorth
                                     auto& word_handler = word_handlers[index];
 
                                     call_stack_push(word_handler);
-                                    auto This = shared_from_this();
-                                    word_handler.function(This);
+
+                                    try
+                                    {
+                                        auto This = shared_from_this();
+                                        word_handler.function(This);
+                                    }
+                                    catch (...)
+                                    {
+                                        call_stack_pop();
+                                        throw;
+                                    }
+
                                     call_stack_pop();
                                 }
                                 else
                                 {
-                                    throw_error(current_location, "Can not execute unexpected value type.");
+                                    throw_error(*this, "Can not execute unexpected value type.");
                                 }
                             }
                             break;
@@ -411,7 +453,7 @@ namespace sorth
 
                                 if (!found)
                                 {
-                                    throw_error(current_location, "Word '" + name + "' not found.");
+                                    throw_error(*this, "Word '" + name + "' not found.");
                                 }
 
                                 push((int64_t)word.handler_index);
@@ -442,7 +484,7 @@ namespace sorth
                             break;
 
                         case OperationCode::Id::unmark_loop_exit:
-                            throw_error_if(loop_locations.empty(), current_location,
+                            throw_error_if(loop_locations.empty(), *this,
                                            "Clearing a loop exit without an enclosing loop.");
 
                             loop_locations.pop_back();
@@ -459,7 +501,7 @@ namespace sorth
                             break;
 
                         case OperationCode::Id::unmark_catch:
-                            throw_error_if(catch_locations.empty(), current_location,
+                            throw_error_if(catch_locations.empty(), *this,
                                            "Clearing a catch exit without an enclosing try/catch.");
                             catch_locations.pop_back();
                             break;
@@ -520,6 +562,12 @@ namespace sorth
                 }
                 catch (const std::runtime_error& error)
                 {
+                    if (call_stack_pushed)
+                    {
+                        call_stack_pop();
+                        call_stack_pushed = false;
+                    }
+
                     if (!catch_locations.empty())
                     {
                         pc = catch_locations.back() - 1;
@@ -571,7 +619,7 @@ namespace sorth
         {
             if (stack.empty())
             {
-                throw_error(current_location, "Stack underflow.");
+                throw_error(*this, "Stack underflow.");
             }
 
             auto next = stack.front();

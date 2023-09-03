@@ -39,6 +39,8 @@ namespace sorth
             virtual void halt() = 0;
             virtual void clear_halt_flag() = 0;
 
+            virtual const internal::CallStack& get_call_stack() const = 0;
+
             virtual std::tuple<bool, internal::Word> find_word(const std::string& word) = 0;
             virtual internal::WordHandlerInfo& get_handler_info(size_t index) = 0;
             virtual std::vector<std::string> get_inverse_lookup_list() = 0;
@@ -138,7 +140,7 @@ namespace sorth
             return std::get<double>(value);
         }
 
-        throw_error(interpreter->get_current_location(), "Expected numeric or boolean value.");
+        internal::throw_error(*interpreter, "Expected numeric or boolean value.");
     }
 
 
@@ -174,7 +176,7 @@ namespace sorth
             return std::get<std::string>(value);
         }
 
-        throw_error(interpreter->get_current_location(), "No string conversion for value.");
+        internal::throw_error(*interpreter, "No string conversion for value.");
     }
 
 
@@ -182,7 +184,7 @@ namespace sorth
     {
         if (!std::holds_alternative<ByteBufferPtr>(value))
         {
-            throw_error(interpreter->get_current_location(), "Expected a byte buffer.");
+            internal::throw_error(*interpreter, "Expected a byte buffer.");
         }
 
         return std::get<ByteBufferPtr>(value);
@@ -193,7 +195,7 @@ namespace sorth
     {
         if (!std::holds_alternative<HashTablePtr>(value))
         {
-            throw_error(interpreter->get_current_location(), "Expected a hash table.");
+            internal::throw_error(*interpreter, "Expected a hash table.");
         }
 
         return std::get<HashTablePtr>(value);

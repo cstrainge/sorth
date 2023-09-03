@@ -108,7 +108,7 @@ namespace sorth
                 stream << type << " index, " << index << ", is out of bounds of the size " << size
                        << ".";
 
-                throw_error(interpreter->get_current_location(), stream.str());
+                throw_error(*interpreter, stream.str());
             }
         }
 
@@ -116,7 +116,7 @@ namespace sorth
         ArrayPtr as_array(InterpreterPtr& interpreter, const Value& value)
         {
             throw_error_if(!std::holds_alternative<ArrayPtr>(value),
-                           interpreter->get_current_location(),
+                           *interpreter,
                            "Expected an array object.");
 
             return std::get<ArrayPtr>(value);
@@ -134,7 +134,7 @@ namespace sorth
                        << buffer->postion() << " would exceed the buffer size, "
                        << buffer->size() << ".";
 
-                throw_error(interpreter->get_current_location(), stream.str());
+                throw_error(*interpreter, stream.str());
             }
         }
 
@@ -506,7 +506,7 @@ namespace sorth
         auto top = interpreter->pop();
 
         throw_error_if(!std::holds_alternative<ByteCode>(top),
-                       interpreter->get_current_location(),
+                       *interpreter,
                        "Expected a byte code block.");
 
         interpreter->constructor()->stack.push({ .code = std::get<ByteCode>(top) });
@@ -694,7 +694,7 @@ namespace sorth
         }
         else
         {
-            throw_error(interpreter->get_current_location(), "Unexpected value type for execute.");
+            throw_error(*interpreter, "Unexpected value type for execute.");
         }
     }
 
@@ -716,7 +716,7 @@ namespace sorth
 
     void word_throw(InterpreterPtr& interpreter)
     {
-        throw_error(interpreter->get_current_location(),
+        throw_error(*interpreter,
                     as_string(interpreter, interpreter->pop()));
     }
 
@@ -789,7 +789,7 @@ namespace sorth
         auto& token = input_tokens[current_token];
 
         throw_error_if(token.type != Token::Type::string,
-                       interpreter->get_current_location(),
+                       *interpreter,
                        "Expected the description to be a string.");
 
         interpreter->constructor()->stack.top().description = token.text;
@@ -900,7 +900,7 @@ namespace sorth
         auto var = interpreter->pop();
 
         throw_error_if(!std::holds_alternative<DataObjectPtr>(var),
-                       interpreter->get_current_location(), "Expected data object.");
+                       *interpreter, "Expected data object.");
 
         auto object = std::get<DataObjectPtr>(var);
 
@@ -916,7 +916,7 @@ namespace sorth
         auto var = interpreter->pop();
 
         throw_error_if(!std::holds_alternative<DataObjectPtr>(var),
-                       interpreter->get_current_location(), "Expected data object.");
+                       *interpreter, "Expected data object.");
 
         auto object = std::get<DataObjectPtr>(var);
 
@@ -1091,8 +1091,7 @@ namespace sorth
 
         auto [ found, value ] = table->get(key);
 
-        throw_error_if (!found, interpreter->get_current_location(),
-                        "Value does not exist in table.");
+        throw_error_if (!found, *interpreter, "Value does not exist in table.");
 
         interpreter->push(value);
     }

@@ -35,7 +35,7 @@ namespace sorth
 
                 auto result = tcgetattr(STDIN_FILENO, &original_termios);
 
-                throw_error_if(result == -1, interpreter->get_current_location(),
+                throw_error_if(result == -1, *interpreter,
                                "Could not read terminal mode information, " +
                                std::string(strerror(errno)) + ".");
 
@@ -47,7 +47,7 @@ namespace sorth
 
                 result = tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
 
-                throw_error_if(result == -1, interpreter->get_current_location(),
+                throw_error_if(result == -1, *interpreter,
                                "Could not set terminal mode, " +
                                std::string(strerror(errno)) + ".");
 
@@ -57,7 +57,7 @@ namespace sorth
             {
                 auto result = tcsetattr(STDIN_FILENO, TCSAFLUSH, &original_termios);
 
-                throw_error_if(result == -1, interpreter->get_current_location(),
+                throw_error_if(result == -1, *interpreter,
                                "Could not reset terminal mode, " +
                                std::string(strerror(errno)) + ".");
 
@@ -78,7 +78,7 @@ namespace sorth
 
             auto result = ioctl(STDOUT_FILENO, TIOCGWINSZ, &size);
 
-            throw_error_if(result == -1, interpreter->get_current_location(),
+            throw_error_if(result == -1, *interpreter,
                                "Could not read terminal information, " +
                                std::string(strerror(errno)) + ".");
 
@@ -121,7 +121,7 @@ namespace sorth
         {
             auto str = as_string(interpreter, interpreter->pop());
 
-            throw_error_if(str.size() != 1, interpreter->get_current_location(),
+            throw_error_if(str.size() != 1, *interpreter,
                            "Expected single character.");
 
             bool result =    (str[0] >= 32)
