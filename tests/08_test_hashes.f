@@ -11,7 +11,7 @@
 value1 table { key1 }!!
 value2 table { key2 }!!
 
-table ?
+table ? cr
 
 table { key1 }@@ .cr
 table { key2 }@@ .cr
