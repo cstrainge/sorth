@@ -732,8 +732,10 @@ namespace sorth
 
         interpreter->constructor()->stack.push({
                 .name = name,
+                .description = "",
                 .location = location,
-                .is_immediate = false
+                .is_immediate = false,
+                .is_hidden = false
             });
 
     }
@@ -759,13 +761,38 @@ namespace sorth
                               new_word,
                               construction.location,
                               construction.is_immediate,
-                              is_scripted);
+                              construction.is_hidden,
+                              is_scripted,
+                              construction.description);
     }
 
 
     void word_immediate(InterpreterPtr& interpreter)
     {
         interpreter->constructor()->stack.top().is_immediate = true;
+    }
+
+
+    void word_hidden(InterpreterPtr& interpreter)
+    {
+        interpreter->constructor()->stack.top().is_hidden = true;
+    }
+
+
+    void word_description(InterpreterPtr& interpreter)
+    {
+        auto& current_token = interpreter->constructor()->current_token;
+        auto& input_tokens = interpreter->constructor()->input_tokens;
+
+        ++current_token;
+
+        auto& token = input_tokens[current_token];
+
+        throw_error_if(token.type != Token::Type::string,
+                       interpreter->get_current_location(),
+                       "Expected the description to be a string.");
+
+        interpreter->constructor()->stack.top().description = token.text;
     }
 
 
@@ -1395,6 +1422,11 @@ namespace sorth
             std::cout << "Word is immediate." << std::endl;
         }
 
+        if (word.description)
+        {
+            std::cout << "Description: " << (*word.description) << std::endl;
+        }
+
         if (word.is_scripted)
         {
             auto& handler = handler_info.function;
@@ -1455,6 +1487,8 @@ namespace sorth
         ADD_IMMEDIATE_WORD(interpreter, ":", word_start_word);
         ADD_IMMEDIATE_WORD(interpreter, ";", word_end_word);
         ADD_IMMEDIATE_WORD(interpreter, "immediate", word_immediate);
+        ADD_IMMEDIATE_WORD(interpreter, "hidden", word_hidden);
+        ADD_IMMEDIATE_WORD(interpreter, "description:", word_description);
 
         // String words.
         ADD_NATIVE_WORD(interpreter, "string.length", word_string_length);

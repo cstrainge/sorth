@@ -9,8 +9,10 @@ namespace sorth::internal
     struct Construction
     {
         bool is_immediate;
+        bool is_hidden;
 
         std::string name;
+        std::string description;
         Location location;
         ByteCode code;
     };

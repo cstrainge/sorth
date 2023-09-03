@@ -30,17 +30,21 @@ namespace sorth::internal
     {
         // First merge all the sub-dictionaries into one sorted dictionary.  Note that words will
         // appear only once.  Even if they are redefined at higher scopes.  Only the newest version
-        // will be displayed.
+        // will be displayed.  (Unless if the newer version is hidden and the older isn't.)
         std::map<std::string, Word> new_dictionary;
 
-        for (auto iter = dictionary.stack.begin(); iter != dictionary.stack.end(); ++iter)
+        for (const auto& sub_dictionary : dictionary.stack)
         {
-            const Dictionary::SubDictionary& sub_dictionary = *iter;
-            new_dictionary.insert(sub_dictionary.begin(), sub_dictionary.end());
+            for (const auto& word_iter : sub_dictionary)
+            {
+                if (!word_iter.second.is_hidden)
+                {
+                    new_dictionary.insert(word_iter);
+                }
+            }
         }
 
         // For formatting, find out the largest word width.
-
         size_t max = 0;
 
         for (const auto& word : new_dictionary)
@@ -53,19 +57,28 @@ namespace sorth::internal
 
         // Now, print out the consolidated dictionary.
 
-        std::cout << new_dictionary.size() << " words defined." << std::endl;
+        stream << new_dictionary.size() << " words defined." << std::endl;
 
         for (const auto& word : new_dictionary)
         {
-            std::cout << std::setw(max) << word.first << " "
+            stream << std::setw(max) << word.first << " "
                       << std::setw(6) << word.second.handler_index;
 
             if (word.second.is_immediate)
             {
-                std::cout << " immediate";
+                stream << "  immediate";
+            }
+            else
+            {
+                stream << "           ";
             }
 
-            std::cout << std::endl;
+            if (word.second.description)
+            {
+                stream << "  --  " << (*word.second.description);
+            }
+
+            stream << std::endl;
         }
 
         return stream;

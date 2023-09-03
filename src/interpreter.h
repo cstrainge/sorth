@@ -57,9 +57,13 @@ namespace sorth
             virtual Value pop() = 0;
 
         public:
-            virtual void add_word(const std::string& word, internal::WordFunction handler,
+            virtual void add_word(const std::string& word,
+                                  internal::WordFunction handler,
                                   const internal::Location& location,
-                                  bool is_immediate, bool is_scripted) = 0;
+                                  bool is_immediate = false,
+                                  bool is_hidden = false,
+                                  bool is_scripted = false,
+                                  const std::string& description = "") = 0;
 
             virtual void add_word(const std::string& word, internal::WordFunction handler,
                                   const std::filesystem::path& path, size_t line, size_t column,

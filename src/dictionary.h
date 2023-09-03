@@ -18,6 +18,9 @@ namespace sorth::internal
     using WordList = ContextualList<WordHandlerInfo>;
 
 
+    using StringPtr = std::shared_ptr<std::string>;
+
+
     // The Forth dictionary.  Handlers for Forth words are not stored directly in the dictionary.
     // Instead they are stored in their own list and the index and any important flags are what is
     // stored in the dictionary directly.
@@ -25,13 +28,15 @@ namespace sorth::internal
     // Also note that the dictionary is implemented as a stack of dictionaries.  This allows the
     // Forth to contain scopes.  If a word is redefined in a higher scope, it effectively replaces
     // that word until that scope is released.
-
     struct Word
     {
-        bool is_immediate;     // Should this word be executed at compile or at run time?  True
-                               // indicates that the word is executed at compile time.
-        bool is_scripted;      // Was this word defined in Forth?
-        size_t handler_index;  // Index of the handler to execute.
+        bool is_immediate;        // Should this word be executed at compile or at run time?  True
+                                  // indicates that the word is executed at compile time.
+        bool is_scripted;         // Was this word defined in Forth?
+        bool is_hidden;           // Is this word hidden from the word dictionary?
+        StringPtr description;    // Quick one line description of this word.
+
+        size_t handler_index;     // Index of the handler to execute.
     };
 
 

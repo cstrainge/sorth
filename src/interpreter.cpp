@@ -87,9 +87,13 @@ namespace sorth
                 virtual Value pop() override;
 
             public:
-                virtual void add_word(const std::string& word, WordFunction handler,
+                virtual void add_word(const std::string& word,
+                                      WordFunction handler,
                                       const internal::Location& location,
-                                      bool is_immediate, bool is_scripted) override;
+                                      bool is_immediate,
+                                      bool is_hidden,
+                                      bool is_scripted,
+                                      const std::string& description) override;
 
                 virtual void add_word(const std::string& word, WordFunction handler,
                                       const std::filesystem::path& path, size_t line, size_t column,
@@ -577,13 +581,26 @@ namespace sorth
         }
 
 
-        void InterpreterImpl::add_word(const std::string& word, WordFunction handler,
-                                       const internal::Location& location,
-                                       bool is_immediate, bool is_scripted)
+        void InterpreterImpl::add_word(const std::string& word,
+                                       WordFunction handler,
+                                       const Location& location,
+                                       bool is_immediate,
+                                       bool is_hidden,
+                                       bool is_scripted,
+                                       const std::string& description)
         {
+            StringPtr shared_description;
+
+            if (description != "")
+            {
+                shared_description = std::make_shared<std::string>(description);
+            }
+
             dictionary.insert(word, {
                     .is_immediate = is_immediate,
                     .is_scripted = is_scripted,
+                    .is_hidden = is_hidden,
+                    .description = shared_description,
                     .handler_index = word_handlers.insert({
                             .name = word,
                             .function = handler,
@@ -602,7 +619,9 @@ namespace sorth
                      handler,
                      Location(std::make_shared<std::filesystem::path>(path), line, column),
                      is_immediate,
-                     false);
+                     false,
+                     false,
+                     "");
         }
 
 

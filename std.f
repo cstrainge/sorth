@@ -1,10 +1,20 @@
 
-: variable immediate word op.def_variable ;
+: variable immediate description: "Define a new variable."
+    word op.def_variable
+;
 
-: @ immediate op.read_variable ;
-: ! immediate op.write_variable ;
 
-: variable! immediate
+: @ immediate description: "Read from a variable index."
+    op.read_variable
+;
+
+
+: ! immediate  description: "Write to a variable at the given index."
+    op.write_variable
+;
+
+
+: variable! immediate description: "Define a new variable with a default value."
     word dup
 
     op.def_variable
@@ -13,7 +23,13 @@
 ;
 
 
-: constant immediate word op.def_constant ;
+
+
+: constant immediate description: "Define a new constant value."
+    word op.def_constant
+;
+
+
 
 
 : if immediate
@@ -40,7 +56,7 @@
 ;
 
 
-: if immediate
+: if immediate description: "Definition of the if else then syntax."
     unique_str variable! if_fail_label
 
     code.new_block
@@ -70,11 +86,21 @@
 ;
 
 
-: break immediate op.jump_loop_exit ;
-: continue immediate op.jump_loop_start ;
 
 
-: begin immediate
+: break immediate description: "Break out of the current loop."
+    op.jump_loop_exit
+;
+
+
+: continue immediate description: "Immediately jump to the next iteration of the loop."
+    op.jump_loop_start
+;
+
+
+
+
+: begin immediate description: "Defines loop until and loop repeat syntaxes."
     unique_str variable! top_label
     unique_str variable! end_label
 
@@ -106,15 +132,23 @@
 ;
 
 
-: ( immediate begin word ")" = until ;
+
+
+: ( immediate description: "Defines comment syntax."
+    begin
+        word ")" =
+    until
+;
+
+
 
 
 ( Now that we've defined comments, we can begin to document the code.  So far we've defined a few  )
-( base words.  Thier implmentations are to simply generate an instruction that will perform their  )
+( base words.  Their implementations are to simply generate an instruction that will perform their )
 ( function into the bytecode stream being generated. )
 
-( Next we define the 'if' statment.  The first one is just a basic version where else blocks are   )
-( manditory.  Right after that we redefine 'if' to have a more flexible implementation.  Note that )
+( Next we define the 'if' statement.  The first one is just a basic version where else blocks are  )
+( mandatory.  Right after that we redefine 'if' to have a more flexible implementation.  Note that )
 ( we use the previous definition to assist us in creating the new one. )
 
 ( Building on that we define the two forms of the 'begin' loop. 'begin until' and 'begin repeat'.  )
@@ -139,7 +173,7 @@
 ( Where it's expected to have an input value left on the stack, and each test block generates a    )
 ( value that's compared against that input for equality. )
 
-: case immediate
+: case immediate description: "Defines case/of/endcase syntax."
     false variable! done
 
     ( Label marking end of the entire case statement. )
@@ -163,7 +197,7 @@
         if
             ( We've just compiled the case of test.  We need to duplicate and preserve the input )
             ( value before the test code burns it up.  So, insert the call to dup at the         )
-            ( begginning of the currrent code block. )
+            ( beginning of the current code block. )
             true code.insert_at_front
             ` dup op.execute
             false code.insert_at_front
@@ -172,7 +206,7 @@
             ( we were given before the case statement began executing. )
             ` = op.execute
 
-            ( If the test fails, jump to the next case test.  If it succedes we drop the input )
+            ( If the test fails, jump to the next case test.  If it succeeds we drop the input )
             ( value as it isn't needed anymore. )
             next_label @ op.jump_if_zero
             ` drop op.execute
@@ -222,47 +256,138 @@
 ;
 
 
-( Simple increment and decrements. )
-: ++ ( value -- incremented ) 1 + ;
-: -- ( value -- decremented ) 1 - ;
 
-: ++! ( variable -- ) dup @ ++ swap ! ;
-: --! ( variable -- ) dup @ -- swap ! ;
+
+( Simple increment and decrements. )
+: ++ ( value -- incremented ) description: "Increment a value on the stack."
+    1 +
+;
+
+
+: ++! ( variable -- ) description: "Increment the given variable."
+    dup @ ++ swap !
+;
+
+
+: -- ( value -- decremented ) description: "Decrement a value on the stack."
+    1 -
+;
+
+
+: --! ( variable -- ) description: "Decrement the given variable."
+    dup @ -- swap !
+;
+
+
 
 
 ( Make sure we have the regular printing words. )
-: .    ( value -- ) term.! " " term.! ;
+: . ( value -- ) description: "Print a value with a space."
+    term.!
+    " " term.!
+;
 
-: .hex  ( value -- ) hex . ;
 
-: cr   ( -- )       "\n" term.! term.flush ;
-: .cr  ( value -- ) . cr ;
-: .hcr ( value -- ) .hex cr ;
+: .hex  ( value -- ) description: "Print a numeric value as hex."
+    hex .
+;
 
-: ?    ( value -- ) @ .cr ;
-: .sp  ( count -- ) begin -- dup 0 >= while "" . repeat drop ;
+
+: cr ( -- ) description: "Print a newline to the console."
+    "\n" term.!
+    term.flush
+;
+
+
+: .cr  ( value -- ) description: "Print a value and a new line."
+    . cr
+;
+
+
+: .hcr ( value -- ) description: "Print a hex value and a new line."
+    .hex cr
+;
+
+
+: ? ( value -- ) description: "Print the value of a variable with a new line."
+    @ .cr
+;
+
+
+: .sp ( count -- ) description: "Print the given number of spaces."
+    begin
+        -- dup 0 >=
+    while
+        " " term.!
+    repeat
+    drop
+;
+
+
 
 
 ( Handy comparisons. )
-: 0>  ( value -- test_result ) 0 >  ;
-: 0=  ( value -- test_result ) 0 =  ;
-: 0<  ( value -- test_result ) 0 <  ;
-: 0>= ( value -- test_result ) 0 >= ;
-: 0<= ( value -- test_result ) 0 <= ;
+: 0>  ( value -- test_result ) description: "Is the value greater than 0?"
+    0 >
+;
+
+
+: 0=  ( value -- test_result ) description: "Does the value equal 0?"
+    0 =
+;
+
+
+: 0<  ( value -- test_result ) description: "Is the value less than 0?"
+    0 <
+;
+
+
+: 0>= ( value -- test_result ) description: "Is the value greater or equal to 0?"
+    0 >=
+;
+
+
+: 0<= ( value -- test_result ) description: "Is the value less than or equal to 0?"
+    0 <=
+;
+
+
 
 
 ( Increment and decrement variables. )
-: +! ( value variable -- ) over @ + swap ! ;
-: -! ( value variable -- ) over @ - swap ! ;
+: +! ( value variable -- ) description: "Increment a variable by a given value."
+    over @ + swap !
+;
+
+
+: -! ( value variable -- ) description: "Decrement a variable by a given value."
+    over @ - swap !
+;
+
+
 
 
 ( String variable words. )
-: string.length@    ( string_var -- length )                  @ string.length    ;
-: string.find@      ( search string_var -- position_or_npos ) @ string.find      ;
-: string.to_number@ ( string_var -- new_number )              @ string.to_number ;
+: string.length@ description: "Get the length of a string variable."
+    ( string_var -- length )
+    @ string.length
+;
 
 
-: string.insert! ( sub_string possition string_var -- )
+: string.find@ description: "Find the first instance of a sub-text within a string variable."
+    ( search string_var -- position_or_npos )
+    @ string.find
+;
+
+
+: string.to_number@ description: "Convert the string in a variable to a number."
+    ( string_var -- new_number )
+    @ string.to_number
+;
+
+
+: string.insert! description: "Insert a given sub-text into a string variable."
+    ( sub_string position string_var -- )
     variable! var_index
 
     var_index @ @ string.insert
@@ -270,7 +395,8 @@
 ;
 
 
-: string.remove! ( count position string_var -- )
+: string.remove! description: "Remove a count of characters from the given variable."
+    ( count position string_var -- )
     variable! var_index
 
     var_index @ @ string.remove
@@ -278,19 +404,40 @@
 ;
 
 
+
+
 ( Quicker data field access. )
-: #!! @ #! ;
-: #@@ @ #@ ;
+: #!! description: "Write to a structure field in a given variable."
+    @ #!
+;
+
+
+: #@@ description: "Read from a structure field from a given variable."
+    @ #@
+;
+
+
 
 
 ( Array words. )
-: []!! @ []! ;
-: []@@ @ []@ ;
+: []!! description: "Write a value at an index to the array variable."
+    @ []!
+;
 
-: [].resize! @ [].resize ;
+
+: []@@ description: "Read a value from an index from the array variable."
+    @ []@
+;
 
 
-: [ immediate
+: [].resize! description: "Shrink or grow the array variable to the given size."
+    @ [].resize
+;
+
+
+
+
+: [ immediate description: "Syntax definition for 'array [ index(icies) ]' access."
     1 variable! index_count
     1 [].new variable! index_blocks
 
@@ -366,14 +513,25 @@
 ;
 
 
+
+
 ( Hash table words. )
+: {}!! description: "Insert a value into the hash table variable."
+    @ {}!
+;
 
-: {}!! @ {}! ;
-: {}@@ @ {}@ ;
-: {}?? @ {}? ;
+
+: {}@@ description: "Read a value from the hash table variable."
+    @ {}@
+;
 
 
-: { immediate
+: {}?? description: "Does a given key exist within the hash table variable?"
+    @ {}?
+;
+
+
+: { immediate description: "Define the 'hash { key }' access syntax."
     variable command
 
     "}!" "}!!" "}@" "}@@" 4 code.compile_until_words
@@ -390,8 +548,10 @@
 ;
 
 
+
+
 ( A try/catch block for exception handling. )
-: try immediate
+: try immediate description: "Define the try/catch/endcatch syntax."
     unique_str variable! catch_label
     unique_str variable! end_catch_label
 
@@ -413,6 +573,8 @@
     code.resolve_jumps
     code.merge_stack_block
 ;
+
+
 
 
 ( Helper words for reading/writing byte buffers. )
@@ -444,18 +606,24 @@
 : buffer.position@@ @ buffer.position@ ;
 
 
+
+
 ( Allow user code to register an at exit handler. )
-: at_exit immediate
+: at_exit immediate description: "Request that a given word be executed when the script exits."
     word op.push_constant_value
     ` at_exit op.execute
 ;
 
 
-( Check for extra terminal funcionality.  If it's there include some extra useful words. )
+
+
+( Check for extra terminal functionality.  If it's there include some extra useful words. )
 defined? term.raw_mode
 if
     "std/term.f" include
 then
+
+
 
 
 ( If we have the user environment available, include some more useful words. )
@@ -465,12 +633,22 @@ if
 then
 
 
+
+
 ( Alternate ways to exit the interpreter. )
-: q    ( -- ) quit ;
-: exit ( -- ) quit ;
+: q    ( -- ) description: "Exit the interpreter."
+    quit
+;
 
 
-( Make sure that advanced terminal and user functionality is avaiable.  If it is, enable the )
+: exit ( -- ) description: "Exit the interpreter."
+    quit
+;
+
+
+
+
+( Make sure that advanced terminal and user functionality is available.  If it is, enable the )
 ( 'fancy' repl capable of keeping history.  Otherwise enable the simpler repl. )
 defined? term.raw_mode
 defined? user.env@
@@ -480,6 +658,8 @@ if
 else
     "std/simple_repl.f" include
 then
+
+
 
 
 ( Quick hack to let scripts be executable from the command line. )

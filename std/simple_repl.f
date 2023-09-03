@@ -1,14 +1,16 @@
 
 ( Define a user prompt for the REPL. )
-: prompt ">>" . ;
+: prompt description: "Prints the user prompt in the REPL."
+    ">>" .
+;
 
 
-( This gets called automaticlly when the repl exits. )
-: repl.exit_handler "ok" .cr ;
+( This gets called automatically when the repl exits. )
+: repl.exit_handler hidden "ok" .cr ;
 
 
-( Implemntation of the language's REPL. )
-: repl
+( Implementation of the language's REPL. )
+: repl description: "Sorth's REPL, read, evaluate, and print loop."
     "Strange Forth REPL." .cr
     cr
     "Enter quit, q, or exit to quit the REPL." .cr
@@ -27,7 +29,7 @@
             cr "prompt" execute
 
             ( Get the text from the user and execute it.  We are just using a really simple )
-            ( implementaion of readline for now. )
+            ( implementation of readline for now. )
             term.readline
             code.execute_source
 

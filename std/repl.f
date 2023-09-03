@@ -13,7 +13,7 @@ repl.history_size [].new variable! repl.history
 0 variable! repl.history_count
 
 
-: repl.increment_history_index
+: repl.increment_history_index hidden
     dup @ ++
 
     dup
@@ -27,7 +27,7 @@ repl.history_size [].new variable! repl.history
 ;
 
 
-: repl.decrement_history_index
+: repl.decrement_history_index hidden
     dup @
     --
 
@@ -42,7 +42,7 @@ repl.history_size [].new variable! repl.history
 ;
 
 
-: repl.increment_history_count
+: repl.increment_history_count  hidden
     repl.history_count @ repl.history_size <
     if
         repl.history_count ++!
@@ -50,7 +50,7 @@ repl.history_size [].new variable! repl.history
 ;
 
 
-: repl.insert_history
+: repl.insert_history hidden
     dup
 
     "" <>
@@ -65,7 +65,7 @@ repl.history_size [].new variable! repl.history
 ;
 
 
-: repl.load_history
+: repl.load_history hidden
     -1 variable! fd
 
     repl.history_path file.r/o file.open fd !
@@ -80,7 +80,7 @@ repl.history_size [].new variable! repl.history
 ;
 
 
-: repl.save_history
+: repl.save_history hidden
     -1 variable! fd
 
     repl.history_path file.w/o file.create fd !
@@ -101,7 +101,7 @@ repl.history_size [].new variable! repl.history
 ;
 
 
-: repl.redraw_line
+: repl.redraw_line hidden
     term.clear_line
     "\r" term.!
 
@@ -112,7 +112,7 @@ repl.history_size [].new variable! repl.history
 ;
 
 
-: repl.show_history
+: repl.show_history hidden
     @ repl.history []@@
     dup repl.redraw_line
 
@@ -120,7 +120,7 @@ repl.history_size [].new variable! repl.history
 ;
 
 
-: repl.cursor_back
+: repl.cursor_back hidden
     variable! current_pos
     variable! start_pos
 
@@ -137,7 +137,8 @@ repl.history_size [].new variable! repl.history
     current_pos @
 ;
 
-: repl.cursor_forward
+
+: repl.cursor_forward hidden
     variable! current_pos
     variable! max_pos
 
@@ -151,7 +152,8 @@ repl.history_size [].new variable! repl.history
 ;
 
 
-: repl.cursor_delete!
+( Delete a character from the line of text at the given index. )
+: repl.cursor_delete! hidden
     variable! current_line_index
     variable! index
 
@@ -170,7 +172,8 @@ repl.history_size [].new variable! repl.history
 ;
 
 
-: repl.cursor_insert!
+( Insert text into the line at the given index. )
+: repl.cursor_insert! hidden
     variable! line_index
     variable! index
     variable! text
@@ -184,7 +187,9 @@ repl.history_size [].new variable! repl.history
 ;
 
 
-: repl.readline
+( The REPL's line editor.  This word will edit the current line of code and will also handle )
+( scrolling through the user's history. )
+: repl.readline hidden
     repl.history_index @ variable! index
     "" variable! line
     variable start_col
@@ -238,7 +243,7 @@ repl.history_size [].new variable! repl.history
 
                     ( Right arrow. )
                     "\067" of
-                    line string.length@ start_col @ + term.cursor_column@ repl.cursor_forward
+                        line string.length@ start_col @ + term.cursor_column@ repl.cursor_forward
                     endof
                 endcase
 
@@ -295,19 +300,24 @@ repl.history_size [].new variable! repl.history
 ;
 
 
-: repl.exit_handler
+( Word registered to be called on exit. )
+: repl.exit_handler hidden
+    ( Make sure that a crash hasn't left the terminal in raw mode. )
     false term.raw_mode
 
+    ( Report that we're exiting and save the REPL's history. )
     "ok" .cr
     repl.save_history
 ;
 
 
 ( Define a user prompt for the REPL. )
-: prompt term.csi "2:34m>" + term.csi + "0:0m>" + . ;
+: prompt description: "Prints the user prompt in the REPL."
+    term.csi "2:34m>" + term.csi + "0:0m>" + .
+;
 
 
-: repl
+: repl description: "Sorth's REPL: read, evaluate, and print loop."
     "Strange Forth REPL." .cr
     cr
     "Enter quit, q, or exit to quit the REPL." .cr
