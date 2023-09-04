@@ -796,6 +796,63 @@ namespace sorth
     }
 
 
+    void word_is_value_number(InterpreterPtr& interpreter)
+    {
+        auto value = interpreter->pop();
+
+        interpreter->push(   std::holds_alternative<int64_t>(value)
+                          || std::holds_alternative<double>(value));
+    }
+
+
+    void word_is_value_boolean(InterpreterPtr& interpreter)
+    {
+        auto value = interpreter->pop();
+
+        interpreter->push(std::holds_alternative<bool>(value));
+    }
+
+
+    void word_is_value_string(InterpreterPtr& interpreter)
+    {
+        auto value = interpreter->pop();
+
+        interpreter->push(std::holds_alternative<std::string>(value));
+    }
+
+
+    void word_is_value_structure(InterpreterPtr& interpreter)
+    {
+        auto value = interpreter->pop();
+
+        interpreter->push(std::holds_alternative<DataObjectPtr>(value));
+    }
+
+
+    void word_is_value_array(InterpreterPtr& interpreter)
+    {
+        auto value = interpreter->pop();
+
+        interpreter->push(std::holds_alternative<ArrayPtr>(value));
+    }
+
+
+    void word_is_value_buffer(InterpreterPtr& interpreter)
+    {
+        auto value = interpreter->pop();
+
+        interpreter->push(std::holds_alternative<ByteBufferPtr>(value));
+    }
+
+
+    void word_is_value_hash_table(InterpreterPtr& interpreter)
+    {
+        auto value = interpreter->pop();
+
+        interpreter->push(std::holds_alternative<HashTablePtr>(value));
+    }
+
+
     void word_string_length(InterpreterPtr& interpreter)
     {
         auto string = as_string(interpreter, interpreter->pop());
@@ -849,6 +906,16 @@ namespace sorth
         {
             interpreter->push(std::strtoll(string.c_str(), nullptr, 10));
         }
+    }
+
+
+    void word_to_string(InterpreterPtr& interpreter)
+    {
+        auto value = interpreter->pop();
+        std::stringstream stream;
+
+        stream << value;
+        interpreter->push(stream.str());
     }
 
 
@@ -1107,6 +1174,23 @@ namespace sorth
         auto [ found, value ] = table->get(key);
 
         interpreter->push(found);
+    }
+
+
+    void word_hash_table_iterate(InterpreterPtr& interpreter)
+    {
+        auto table = as_hash_table(interpreter, interpreter->pop());
+        auto word_index = as_numeric<int64_t>(interpreter, interpreter->pop());
+
+        auto& handler = interpreter->get_handler_info(word_index);
+
+        for (const auto& item : table->get_items())
+        {
+            interpreter->push(item.first);
+            interpreter->push(item.second);
+
+            handler.function(interpreter);
+        }
     }
 
 
@@ -1572,6 +1656,29 @@ namespace sorth
                            "Give a new word it's description.");
 
 
+        // Check value types.
+        ADD_NATIVE_WORD(interpreter, "is_value_number?", word_is_value_number,
+                        "Is the value a number?");
+
+        ADD_NATIVE_WORD(interpreter, "is_value_boolean?", word_is_value_boolean,
+                        "Is the value a boolean?");
+
+        ADD_NATIVE_WORD(interpreter, "is_value_string?", word_is_value_string,
+                        "Is the value a string?");
+
+        ADD_NATIVE_WORD(interpreter, "is_value_structure?", word_is_value_structure,
+                        "Is the value a structure?");
+
+        ADD_NATIVE_WORD(interpreter, "is_value_array?", word_is_value_array,
+                        "Is the value an array?");
+
+        ADD_NATIVE_WORD(interpreter, "is_value_buffer?", word_is_value_buffer,
+                        "Is the value a byte buffer?");
+
+        ADD_NATIVE_WORD(interpreter, "is_value_hash_table?", word_is_value_hash_table,
+                        "Is the value a hash table?");
+
+
         // String words.
         ADD_NATIVE_WORD(interpreter, "string.length", word_string_length,
                         "Get the length of a given string.");
@@ -1587,6 +1694,9 @@ namespace sorth
 
         ADD_NATIVE_WORD(interpreter, "string.to_number", word_string_to_number,
                         "Convert a string into a number.");
+
+        ADD_NATIVE_WORD(interpreter, "to_string", word_to_string,
+                        "Convert a value to a string.");
 
         ADD_NATIVE_WORD(interpreter, "string.npos", [](auto& interpreter)
             {
@@ -1669,6 +1779,9 @@ namespace sorth
 
         ADD_NATIVE_WORD(interpreter, "{}?", word_hash_table_exists,
                         "Check if a given key exists in the table.");
+
+        ADD_NATIVE_WORD(interpreter, "{}.iterate", word_hash_table_iterate,
+                        "Iterate through a hash table and call a word for each item.");
 
 
         // Math ops.
