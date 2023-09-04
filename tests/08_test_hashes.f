@@ -28,3 +28,7 @@ if
     "Hash table mismatch!" .cr
     exit_failure quit
 then
+
+cr
+
+table @ {}.to_json .cr

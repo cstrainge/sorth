@@ -18,8 +18,8 @@
 "Read [ 1 3 2 ]: " . my_array [ 1 , 3 , 2 ]@@ . . .cr
 "Write [ 1 3 2 ]:" . 1024 2048 4096 my_array [ 1 , 3 , 2 ]!! my_array ?
 
-10 my_array [].size!
+10 my_array [].size!!
 "Resize bigger:  " . my_array ?
 
-2 my_array [].size!
+2 my_array [].size!!
 "Resize smaller: " . my_array ?
