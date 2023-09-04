@@ -10,12 +10,17 @@ namespace sorth
     {
         stream << "[ ";
 
-        for (auto item : array->items)
+        for (size_t i = 0; i < array->items.size(); ++i)
         {
-            stream << item << " ";
+            stream << array->items[i];
+
+            if (i < (array->items.size() - 1))
+            {
+                stream << " , ";
+            }
         }
 
-        stream << "]";
+        stream << " ]";
 
         return stream;
     }
