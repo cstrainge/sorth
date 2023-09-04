@@ -92,11 +92,11 @@
     code.merge_stack_block
 ;
 
-: else description: "Define an else clause for an if statement."
+: else immediate description: "Define an else clause for an if statement."
     sentinel_word
 ;
 
-: then description: "End of an if/else/then block."
+: then immediate description: "End of an if/else/then block."
     sentinel_word
 ;
 
@@ -167,7 +167,7 @@
     until
 ;
 
-: ) description: "The end of a comment block."
+: ) immediate description: "The end of a comment block."
     sentinel_word
 ;
 
@@ -286,15 +286,15 @@
     code.merge_stack_block
 ;
 
-: of description: "Defines a test clause of a case block."
+: of immediate description: "Defines a test clause of a case block."
     sentinel_word
 ;
 
-: endof description: "Ends a clause of a case block."
+: endof immediate description: "Ends a clause of a case block."
     sentinel_word
 ;
 
-: endcase description: "End of a case block."
+: endcase immediate description: "End of a case block."
     sentinel_word
 ;
 
@@ -559,23 +559,23 @@
     then
 ;
 
-: , description: "Separator in the [ index , index , ... ] syntax."
+: , immediate description: "Separator in the [ index , index , ... ] syntax."
     sentinel_word
 ;
 
-: ]! description: "End of the [ index ] syntax.  Indicates an array write."
+: ]! immediate description: "End of the [ index ] syntax.  Indicates an array write."
     sentinel_word
 ;
 
-: ]!! description: "End of the [ index ] syntax.  Indicates a an array variable write."
+: ]!! immediate description: "End of the [ index ] syntax.  Indicates a an array variable write."
     sentinel_word
 ;
 
-: ]@ description: "End of the [ index ] syntax.  Indicates an array read."
+: ]@ immediate description: "End of the [ index ] syntax.  Indicates an array read."
     sentinel_word
 ;
 
-: ]@@ description: "End of the [ index ] syntax.  Indicates an array variable read."
+: ]@@ immediate description: "End of the [ index ] syntax.  Indicates an array variable read."
     sentinel_word
 ;
 
@@ -613,19 +613,19 @@
     command @ op.execute
 ;
 
-: }! description: "End of the { key } syntax.  Indicates a hash table write."
+: }! immediate description: "End of the { key } syntax.  Indicates a hash table write."
     sentinel_word
 ;
 
-: }!! description: "End of the { key } syntax.  Indicates a a hash table variable write."
+: }!! immediate description: "End of the { key } syntax.  Indicates a a hash table variable write."
     sentinel_word
 ;
 
-: }@ description: "End of the { key } syntax.  Indicates a hash table read."
+: }@ immediate description: "End of the { key } syntax.  Indicates a hash table read."
     sentinel_word
 ;
 
-: }@@ description: "End of the { key } syntax.  Indicates a hash table variable read."
+: }@@ immediate description: "End of the { key } syntax.  Indicates a hash table variable read."
     sentinel_word
 ;
 
@@ -656,11 +656,11 @@
     code.merge_stack_block
 ;
 
-: catch description: "End of the try block, starts the catch block."
+: catch immediate description: "End of the try block, starts the catch block."
     sentinel_word
 ;
 
-: endcatch description: "End of the total try/catch/endcatch block."
+: endcatch immediate description: "End of the total try/catch/endcatch block."
     sentinel_word
 ;
 
