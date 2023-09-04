@@ -324,7 +324,7 @@ namespace sorth
         {
             if (is_showing_run_code)
             {
-                std::cout << "-------------------------------------" << std::endl;
+                std::cout << "-------[ " << name << " ]------------------------------" << std::endl;
             }
 
             bool call_stack_pushed = false;
@@ -594,7 +594,7 @@ namespace sorth
 
             if (is_showing_run_code)
             {
-                std::cout << "=====================================" << std::endl;
+                std::cout << "=======[ " << name << " ]==============================" << std::endl;
             }
         }
 
