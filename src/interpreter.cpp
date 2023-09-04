@@ -189,9 +189,16 @@ namespace sorth
                 add_search_path(base_path);
             }
 
-            process_source(source);
-
-            pop_search_path();
+            try
+            {
+                process_source(source);
+                pop_search_path();
+            }
+            catch (...)
+            {
+                pop_search_path();
+                throw;
+            }
         }
 
 
