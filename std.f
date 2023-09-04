@@ -472,8 +472,13 @@
 ;
 
 
-: [].resize! description: "Shrink or grow the array variable to the given size."
-    @ [].resize
+: [].size@@ description: "Read the array variable's current size."
+    @ [].size@
+;
+
+
+: [].size!! description: "Shrink or grow the array variable to the given size."
+    @ [].size!
 ;
 
 
@@ -500,7 +505,7 @@
                 index_count ++!
 
                 code.new_block
-                index_count @ index_blocks [].resize!
+                index_count @ index_blocks [].size!!
             endof
 
             "]!"  of  ` []!  command !  true found_end_bracket !  endof
@@ -822,6 +827,12 @@ if
 else
     "std/simple_repl.f" include
 then
+
+
+
+
+( Include our json utility functions. )
+"src/json.f" include
 
 
 
