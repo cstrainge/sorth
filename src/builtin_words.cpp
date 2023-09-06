@@ -513,6 +513,12 @@ namespace sorth
     }
 
 
+    void word_code_stack_block_size(InterpreterPtr& interpreter)
+    {
+        interpreter->push((int64_t)interpreter->constructor()->stack.top().code.size());
+    }
+
+
     void word_code_resolve_jumps(InterpreterPtr& interpreter)
     {
         auto is_jump = [](const OperationCode& code) -> bool
@@ -1480,12 +1486,25 @@ namespace sorth
 
     void word_show_word(InterpreterPtr& interpreter)
     {
-        auto& current_token = interpreter->constructor()->current_token;
-        auto& input_tokens = interpreter->constructor()->input_tokens;
+        std::string name;
+        auto value = interpreter->pop();
 
-        ++current_token;
+        if (is_string(value))
+        {
+            name = as_string(interpreter, value);
+        }
+        else if (is_numeric(value))
+        {
+            auto index = as_numeric<int64_t>(interpreter, value);
+            auto info = interpreter->get_handler_info(index);
 
-        auto name = input_tokens[current_token].text;
+            name = info.name;
+        }
+        else
+        {
+            throw_error(interpreter->get_current_location(), "Expected a word name or index.");
+        }
+
         auto [ found, word ] = interpreter->find_word(name);
 
         if (!found)
@@ -1605,6 +1624,9 @@ namespace sorth
 
         ADD_NATIVE_WORD(interpreter, "code.push_stack_block", word_code_push_stack_block,
                         "Pop a block from the data stack and back onto the code stack.");
+
+        ADD_NATIVE_WORD(interpreter, "code.stack_block_size@", word_code_stack_block_size,
+                        "Read the size of the code block at the top of the stack.");
 
         ADD_NATIVE_WORD(interpreter, "code.resolve_jumps", word_code_resolve_jumps,
                         "Resolve all of the jumps in the top code block.");
@@ -1901,8 +1923,8 @@ namespace sorth
         ADD_NATIVE_WORD(interpreter, "show_run_code", word_show_run_code,
                         "If set to true show bytecode as it's executed.");
 
-        ADD_IMMEDIATE_WORD(interpreter, "show_word", word_show_word,
-                           "Show detailed information about a word.");
+        ADD_NATIVE_WORD(interpreter, "show_word", word_show_word,
+                        "Show detailed information about a word.");
 
     }
 

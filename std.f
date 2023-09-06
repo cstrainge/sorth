@@ -366,6 +366,12 @@
 ;
 
 
+: show_word immediate description: "Show detailed information about a word."
+    word op.push_constant_value
+    ` show_word op.execute
+;
+
+
 
 
 ( Handy comparisons. )
