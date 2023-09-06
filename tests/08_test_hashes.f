@@ -5,16 +5,22 @@
 "hello" constant key1
 "fhqwhgads" constant key2
 
-{}.new variable! table
+
+{
+    key1 -> value1 ,
+    key2 -> value2
+}
+variable! table
 
 
-value1 table { key1 }!!
-value2 table { key2 }!!
+table ?
 
-table ? cr
 
-table { key1 }@@ .cr
-table { key2 }@@ .cr
+cr
+
+key1 . table @ { key1 }@ .cr
+key2 . table @ { key2 }@ .cr
+
 
 
 table { key1 }@@ value1 <>
