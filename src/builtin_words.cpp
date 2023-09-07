@@ -41,7 +41,10 @@ namespace sorth
                         }
                         ~ContextManager()
                         {
-                            interpreter->release_context();
+                            if (interpreter)
+                            {
+                                interpreter->release_context();
+                            }
                         }
                     };
 
@@ -900,6 +903,21 @@ namespace sorth
     }
 
 
+    void word_string_index_read(InterpreterPtr& interpreter)
+    {
+        auto string = as_string(interpreter, interpreter->pop());
+        auto position = (size_t)as_numeric<int64_t>(interpreter, interpreter->pop());
+
+        if ((position < 0) || (position >= string.size()))
+        {
+            throw_error(*interpreter, "String index out of range.");
+        }
+
+        std::string new_str(1, string[position]);
+        interpreter->push(new_str);
+    }
+
+
     void word_string_to_number(InterpreterPtr& interpreter)
     {
         auto string = as_string(interpreter, interpreter->pop());
@@ -1713,6 +1731,9 @@ namespace sorth
 
         ADD_NATIVE_WORD(interpreter, "string.find", word_string_find,
                         "Find the first instance of a string within another.");
+
+        ADD_NATIVE_WORD(interpreter, "string.[]@", word_string_index_read,
+                        "Read a character from the given string.");
 
         ADD_NATIVE_WORD(interpreter, "string.to_number", word_string_to_number,
                         "Convert a string into a number.");
