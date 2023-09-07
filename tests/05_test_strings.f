@@ -15,7 +15,7 @@ esc "[" + constant csi  ( Control sequence introducer. )
 ;
 
 
-( Loop through the color pallete of the console's 256 color mode and print the number of the color )
+( Loop through the color palette of the console's 256 color mode and print the number of the color )
 ( in that color. )
 
 0

@@ -74,7 +74,7 @@
 ( Keep track of the line/column we are on in the input json. )
 # json.location line column ;
 
-: json.location.new
+: json.location.new hidden
     json.location.new
 
     dup 1 json.location.line rot rot #!
@@ -94,7 +94,7 @@
 
     "\n" =
     if
-        ( We're incrmenting lines, so reset colum and increment the line. )
+        ( We're incrementing lines, so reset colum and increment the line. )
         1 location json.location.column!!
         location json.location.line@@ ++ location json.location.line!!
     else
