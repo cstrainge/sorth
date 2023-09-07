@@ -159,9 +159,9 @@ repl.history_size [].new variable! repl.history
 
     "" current_line_index @ @ <>
     if
-        index @ current_line_index @ string.length@ >=
+        index @ current_line_index @ string.size@@ >=
         if
-            current_line_index @ string.length@ -- index !
+            current_line_index @ string.size@@ -- index !
         then
 
         index @ 0>=
@@ -178,7 +178,7 @@ repl.history_size [].new variable! repl.history
     variable! index
     variable! text
 
-    index @ line_index @ string.length@ >=
+    index @ line_index @ string.size@@ >=
     if
         line_index @ @ text @ + line_index @ !
     else
@@ -243,7 +243,7 @@ repl.history_size [].new variable! repl.history
 
                     ( Right arrow. )
                     "\067" of
-                        line string.length@ start_col @ + term.cursor_column@ repl.cursor_forward
+                        line string.size@@ start_col @ + term.cursor_column@ repl.cursor_forward
                     endof
                 endcase
 

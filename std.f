@@ -416,9 +416,9 @@
 
 
 ( String variable words. )
-: string.length@ description: "Get the length of a string variable."
+: string.size@@ description: "Get the length of a string variable."
     ( string_var -- length )
-    @ string.length
+    @ string.size@
 ;
 
 
@@ -434,11 +434,11 @@
 ;
 
 
-: string.insert! description: "Insert a given sub-text into a string variable."
+: string.[]!! description: "Insert a given sub-text into a string variable."
     ( sub_string position string_var -- )
     variable! var_index
 
-    var_index @ @ string.insert
+    var_index @ @ string.[]!
     var_index @ !
 ;
 

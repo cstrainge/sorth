@@ -62,9 +62,9 @@
 
     ` iterator hash @ {}.iterate
 
-    new_json @ string.length 2 >
+    new_json @ string.size@ 2 >
     if
-        2 new_json @ dup string.length 2 - swap string.remove new_json !
+        2 new_json @ dup string.size@ 2 - swap string.remove new_json !
     then
 
     new_json @ " }" +
@@ -145,7 +145,7 @@
 
 : json.string.eos@ hidden ( json.string_var -- is_eos )
     dup json.string.index@@
-    swap json.string.source@@ string.length
+    swap json.string.source@@ string.size@
 
     >=
 ;
@@ -194,7 +194,7 @@
     @ variable! json_source
     variable! expected
 
-    expected @ string.length variable! size
+    expected string.size@@ variable! size
     0 variable! index
 
     begin

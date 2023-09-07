@@ -1720,10 +1720,10 @@ namespace sorth
 
 
         // String words.
-        ADD_NATIVE_WORD(interpreter, "string.length", word_string_length,
+        ADD_NATIVE_WORD(interpreter, "string.size@", word_string_length,
                         "Get the length of a given string.");
 
-        ADD_NATIVE_WORD(interpreter, "string.insert", word_string_insert,
+        ADD_NATIVE_WORD(interpreter, "string.[]!", word_string_insert,
                         "Insert a string into another string.");
 
         ADD_NATIVE_WORD(interpreter, "string.remove", word_string_remove,
