@@ -783,7 +783,10 @@ namespace sorth
 
         void InterpreterImpl::call_stack_pop()
         {
-            call_stack.pop_front();
+            if (!call_stack.empty())
+            {
+                call_stack.pop_front();
+            }
         }
 
 
