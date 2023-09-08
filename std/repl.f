@@ -182,7 +182,7 @@ repl.history_size [].new variable! repl.history
     if
         line_index @ @ text @ + line_index @ !
     else
-        text @ index @ line_index @ string.insert!
+        text @ index @ line_index @ string.[]!!
     then
 ;
 
