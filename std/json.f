@@ -1,5 +1,11 @@
 
-: to_json_array hidden
+( Implementations of the standard library words {}.to_json and {}.from_json, and their helper )
+( words. )
+
+
+
+( Convert an array to a json compatible string. )
+: to_json_array hidden  ( array -- formatted_string )
     variable! array_value
     0 variable! index
     "[ " variable! array_str
@@ -20,7 +26,8 @@
 ;
 
 
-: to_json_value hidden
+( Convert a given value to a json formatted string. )
+: to_json_value hidden  ( value -- string )
     dup is_value_string?
     if
         "\"" swap + "\"" +
@@ -48,7 +55,9 @@
 ;
 
 
-: {}.to_json description: "Convert a hash table into a JSON string."
+
+
+: {}.to_json  ( hash_value -- string)  description: "Convert a hash table into a JSON string."
     variable! hash
     "{ " variable! new_json
 
@@ -71,10 +80,14 @@
 ;
 
 
+
+
 ( Keep track of the line/column we are on in the input json. )
 # json.location line column ;
 
-: json.location.new hidden
+
+( Create a new instance of the structure, properly initialized. )
+: json.location.new hidden ( -- new_location )
     json.location.new
 
     dup 1 json.location.line rot rot #!
@@ -82,6 +95,7 @@
 ;
 
 
+( Member variable accessors they take a variable index and set/get the value of the field. )
 : json.location.line!!    hidden  json.location.line   swap @ #! ;
 : json.location.column!!  hidden  json.location.column swap @ #! ;
 
@@ -89,6 +103,7 @@
 : json.location.column@@  hidden  json.location.column swap @ #@ ;
 
 
+( Take a character and properly increment the line/column as needed. )
 : json.location.inc  hidden  ( character json.location --  )
     variable! location
 
@@ -107,11 +122,12 @@
 
 
 ( String structure used for parsing json.  We use it to keep track of where we are in the string )
-( during parsing.  For in a logical line/colum way and directly as in the index into a string )
+( during parsing.  For in a logical line/colum way and directly as in the index into the string )
 ( variable. )
 # json.string location index source ;
 
 
+( Member variable accessors they take a variable index and set/get the value of the field. )
 : json.string.location!!  hidden  json.string.location swap @ #! ;
 : json.string.index!!     hidden  json.string.index    swap @ #! ;
 : json.string.source!!    hidden  json.string.source   swap @ #! ;
@@ -121,6 +137,7 @@
 : json.string.source@@    hidden  json.string.source   swap @ #@ ;
 
 
+( Create a new initialized instance of the parsing structure. )
 : json.string.new hidden ( string -- json.string )
     json.string.new variable! new_json
 
@@ -131,11 +148,15 @@
     new_json @
 ;
 
-: json.string.inc hidden ( json_string_var_index -- )
+
+( Increment the current location and string positions. )
+: json.string.inc hidden ( character json_string_var_index -- )
     over json.string.location@@ json.location.inc
     dup json.string.index@@ ++ swap json.string.index!!
 ;
 
+
+( Take a peek at the next character in the stream without advancing the pointer. )
 : json.string.peek@ hidden ( json.string_var -- character )
     dup json.string.index@@
     swap json.string.source@@
@@ -143,6 +164,8 @@
     string.[]@
 ;
 
+
+( Check to see if the pointer is at the end of the string or not. )
 : json.string.eos@ hidden ( json.string_var -- is_eos )
     dup json.string.index@@
     swap json.string.source@@ string.size@
@@ -150,6 +173,8 @@
     >=
 ;
 
+
+( Get a character from the string and advance the pointer. )
 : json.string.next@ hidden ( json.string_var -- character )
     dup json.string.eos@ '
     if
@@ -162,7 +187,20 @@
 ;
 
 
-: json.skip_whitespace hidden
+( Report an error in the json string. )
+: json.error hidden  ( message json.string --  )
+    @ variable! json_source
+    variable! message
+
+    json_source json.string.location@@ variable! location
+
+    "[" location json.location.line@@ + ", " + location json.location.column@@ + "]: " +
+    message @ + throw
+;
+
+
+( Skip past any whitespace in the json string. )
+: json.skip_whitespace hidden  ( json.string -- )
     @ variable! json_source
     variable next
 
@@ -177,19 +215,22 @@
 ;
 
 
+( Expect the next character in the string is the one given.  Throw an error if not. )
 : json.expect_char hidden ( char json.string -- )
-    @ variable! json_string
+    @ variable! json_source
     variable! expected
     variable found
 
-    json_string json.string.next@ dup found !
+    json_source json.string.next@ dup found !
     expected @ <>
     if
-        "Expected the character '" expected @ + "' in json string found, '" + found @ + "'." + throw
+        "Expected the character '" expected @ + "' in json string found, '" + found @ + "'." +
+        json_source json.error
     then
 ;
 
 
+( Expect a specific substring from the json string.  Throw an error if it's missing. )
 : json.expect_string hidden ( expected_str json_source == )
     @ variable! json_source
     variable! expected
@@ -206,7 +247,8 @@
 ;
 
 
-: json.read_string hidden
+( Read a string literal from the json source. )
+: json.read_string hidden  ( json.string -- string_value )
     @ variable! json_source
     "" variable! new_string
 
@@ -226,7 +268,8 @@
 ;
 
 
-: json.read_array hidden
+( Read an array of values from the json source. )
+: json.read_array hidden  ( json.string -- array_value )
     @ variable! json_source
     0 [].new variable! new_array
     0 variable! index
@@ -262,7 +305,8 @@
 ;
 
 
-: json.is_numeric? hidden
+( Is the given character considered numeric? )
+: json.is_numeric? hidden  ( character -- is_numeric? )
     variable! next_char
 
     next_char @ "0" >=
@@ -275,7 +319,8 @@
 ;
 
 
-: json.read_number hidden
+( Read a numeric value from the json string. )
+: json.read_number hidden  ( json.string -- number )
     @ variable! json_source
     "" variable! new_number_text
 
@@ -290,7 +335,8 @@
 ;
 
 
-: json.read_value hidden
+( Read a literal value from the json input. )
+: json.read_value hidden  ( json.string -- value )
     @ variable! json_source
     variable new_value
 
@@ -298,7 +344,7 @@
 
     json_source json.string.eos@
     if
-        "Unexpected end of json string." throw
+        "Unexpected end of json string." json_source json.error
     then
 
     json_source json.string.peek@
@@ -313,7 +359,7 @@
         if
             json_source json.read_number new_value !
         else
-            "Unexpected json value type." throw
+            "Unexpected json value type." json_source json.error
         then
     endcase
 
@@ -321,6 +367,7 @@
 ;
 
 
+( Read a hash value from the json string in key/value pairs. )
 : json.read_hash hidden
     @ variable! json_source
     {}.new variable! new_hash
@@ -359,6 +406,8 @@
 ;
 
 
+
+
 : {}.from_json ( string -- hash_table )
     description: "Convert a JSON formatted string into a hash table."
 
@@ -369,7 +418,7 @@
 
     "{" <>
     if
-        "Expected json object." throw
+        "Expected json object." json_source json.error
     then
 
     json_source json.read_hash
