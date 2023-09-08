@@ -17,6 +17,7 @@
         "npos",
         "readline",
         "sorth",
+        "strangeforth",
         "structs",
         "uinteger",
         "unmark"
