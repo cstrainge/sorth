@@ -7,6 +7,13 @@
         "*.h": "cpp"
     },
 
+    "typescript.tsc.autoDetect": "off",
+
+    "search.exclude":
+    {
+        "strange-fort/out": true
+    },
+
     "cSpell.words":
     [
         "doesnt",
