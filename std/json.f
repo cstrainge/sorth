@@ -57,7 +57,7 @@
 
 
 
-: {}.to_json  ( hash_value -- string)  description: "Convert a hash table into a JSON string."
+: {}.to_json  ( hash_value -- string )  description: "Convert a hash table into a JSON string."
     variable! hash
     "{ " variable! new_json
 
