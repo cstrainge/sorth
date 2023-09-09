@@ -653,6 +653,9 @@ namespace sorth
         auto& current_token = interpreter->constructor()->current_token;
         auto& input_tokens = interpreter->constructor()->input_tokens;
 
+        throw_error_if(current_token >= input_tokens.size(), *interpreter,
+                       "word trying to read past the end of the token list.");
+
         interpreter->push(input_tokens[++current_token].text);
     }
 
