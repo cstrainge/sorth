@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+FILE_NAME=sorth_lsp_log.txt
+
+
+echo "Launching server" > $FILE_NAME
+
+shift
+
+exec ./sorth strange-forth/server/language_server.f $@ &>> $FILE_NAME
