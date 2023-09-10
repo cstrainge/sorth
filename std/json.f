@@ -251,6 +251,7 @@
 : json.read_string hidden  ( json.string -- string_value )
     @ variable! json_source
     "" variable! new_string
+    variable next_char
 
     json_source json.skip_whitespace
     "\"" json_source json.expect_char
@@ -259,7 +260,21 @@
         json_source json.string.eos@ '
         json_source json.string.peek@ "\"" <> &&
     while
-        new_string @ json_source json.string.next@ + new_string !
+        json_source json.string.next@ next_char !
+
+        next_char @ dup "\\" =
+        if
+            json_source json.string.next@ dup
+            case
+                "n" of drop "\n" next_char ! endof
+                "r" of drop "\r" next_char ! endof
+                "t" of drop "\t" next_char ! endof
+
+                next_char !
+            endcase
+        then
+
+        new_string @ next_char @ + new_string !
     repeat
 
     "\"" json_source json.expect_char
