@@ -66,8 +66,23 @@ int main(int argc, char* argv[])
 
         interpreter->add_search_path(std::filesystem::current_path());
 
-        if (argc == 2)
+        if (argc >= 2)
         {
+            sorth::ArrayPtr array = std::make_shared<sorth::Array>(argc - 2);
+
+            for (int i = 0; i < argc - 2; ++i)
+            {
+                (*array)[i] = argv[i + 2];
+            }
+
+            ADD_NATIVE_WORD(interpreter,
+                "args",
+                [array](auto interpreter)
+                {
+                    interpreter->push(array);
+                },
+                "List of command line arguments passed to the script.");
+
             auto user_source_path = interpreter->find_file(argv[1]);
             interpreter->process_source(user_source_path);
         }
