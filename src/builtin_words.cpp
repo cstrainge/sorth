@@ -1187,7 +1187,14 @@ namespace sorth
 
         auto [ found, value ] = table->get(key);
 
-        throw_error_if (!found, *interpreter, "Value does not exist in table.");
+        if (!found)
+        {
+            std::stringstream stream;
+
+            stream << "Value, " << key << ", does not exist in the table.";
+
+            throw_error(*interpreter, stream.str());
+        }
 
         interpreter->push(value);
     }
