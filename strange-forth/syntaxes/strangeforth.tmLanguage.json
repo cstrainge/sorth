@@ -1,0 +1,49 @@
+
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "Strange Forth",
+	"patterns": [
+		{
+			"include": "#keywords"
+		},
+		{
+			"include": "#strings"
+		}
+	],
+	"repository": {
+		"keywords": {
+			"patterns": [{
+				"name": "keyword.control.strangeforth",
+				"match": "\\b(immediate|hidden|case|of|endof|endcase|if|else|then|begin|while|until|repeat|continue|break|try|catch|endcatch|:|;|variable|constant|include)\\b"
+			}]
+		},
+		"strings": {
+			"name": "string.quoted.double.strangeforth",
+			"begin": "\"",
+			"end": "\"",
+			"patterns": [
+				{
+					"name": "constant.character.escape.strangeforth",
+					"match": "\\\\."
+				}
+			]
+		},
+        "comment": {
+            "patterns": [
+				{
+					"match": "(?<=^|\\s)(\\.?\\( [^)]*\\))",
+					"name": "comment.block"
+				}
+			]
+        },
+        "constant": {
+			"patterns": [
+				{
+					"match": "(?<=^|\\s)([$#%]?[-+]?[0-9]+(\\.[0-9]*e(-?[0-9]+)|\\.?[0-9a-fA-F]*))(?=\\s)",
+					"name": "constant.numeric.forth"
+				}
+			]
+		}
+	},
+	"scopeName": "source.strangeforth"
+}

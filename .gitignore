@@ -9,4 +9,6 @@ test.bin
 .DS_Store
 
 sorth_lsp_log.txt
-strange-forth/node_modules
+
+strange-forth/node_modules/
+strange-forth/out/

@@ -1,0 +1,62 @@
+{
+  "name": "strange-forth",
+  "displayName": "Strange Forth",
+  "description": "Language support for Strange Forth",
+  "version": "0.0.0",
+  "engines": {
+    "vscode": "^1.82.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "strange-forth.helloWorld",
+        "title": "Hello World"
+      },
+      {
+        "command": "strange-forth.funkTown",
+        "title": "Funk Town"
+      }
+    ],
+    "languages": [
+        {
+            "id": "strangeforth",
+            "aliases": [ "Strange Forth", "strangeforth" ],
+            "extensions": [ ".f" ],
+            "configuration": "./language-configuration.json"
+        }
+    ],
+    "grammars": [{
+        "language": "strangeforth",
+        "scopeName": "source.strangeforth",
+        "path": "./syntaxes/strangeforth.tmLanguage.json"
+      }]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.1",
+    "@types/node": "16.x",
+    "@types/vscode": "^1.82.0",
+    "@typescript-eslint/eslint-plugin": "^6.4.1",
+    "@typescript-eslint/parser": "^6.4.1",
+    "@vscode/test-electron": "^2.3.4",
+    "eslint": "^8.47.0",
+    "glob": "^10.3.3",
+    "mocha": "^10.2.0",
+    "typescript": "^5.1.6"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^8.1.0"
+  }
+}
