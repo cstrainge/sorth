@@ -2,6 +2,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <sys/un.h>
+#include <sys/socket.h>
 
 #include "sorth.h"
 
@@ -148,6 +150,31 @@ namespace sorth
         }
 
 
+        void word_socket_connect(InterpreterPtr& interpreter)
+        {
+            auto path = as_string(interpreter, interpreter->pop());
+
+            struct sockaddr_un address;
+
+            auto fd = socket(AF_UNIX, SOCK_STREAM, 0);
+
+            throw_error_if(fd == -1, *interpreter,
+                           "Could not open socket fd, " + std::string(strerror(errno)) + ".");
+
+            memset(&address, 0, sizeof(struct sockaddr_un));
+
+            address.sun_family = AF_UNIX;
+            strncpy(address.sun_path, path.c_str(), sizeof(address.sun_path) - 1);
+
+            auto result = connect(fd, (struct sockaddr*)&address, sizeof(address));
+
+            throw_error_if(result == -1, *interpreter,
+                           "Could connect to socket, " + std::string(strerror(errno)) + ".");
+
+            interpreter->push(fd);
+        }
+
+
         void word_file_size_read(InterpreterPtr& interpreter)
         {
             struct stat buffer;
@@ -204,6 +231,66 @@ namespace sorth
         void word_file_read(InterpreterPtr& interpreter)
         {
             throw_error(*interpreter, "This word is currently unimplemented.");
+        }
+
+
+        void word_file_read_character(InterpreterPtr& interpreter)
+        {
+            int fd = as_numeric<int64_t>(interpreter, interpreter->pop());
+
+            ssize_t result = 0;
+            char next;
+
+            do
+            {
+                errno = 0;
+                result = read(fd, &next, 1);
+            }
+            while ((result == -1) && (errno == EINTR));
+
+            throw_error_if(result == -1,
+                           *interpreter,
+                           "FD could not be read from " + std::string(strerror(errno)) + ".");
+
+            std::string new_string(1, next);
+            interpreter->push(new_string);
+        }
+
+
+        void word_file_read_string(InterpreterPtr& interpreter)
+        {
+            int fd = as_numeric<int64_t>(interpreter, interpreter->pop());
+            size_t size = as_numeric<int64_t>(interpreter, interpreter->pop());
+
+            char buffer[size + 1];
+            memset(buffer, 0, size + 1);
+
+            ssize_t result = 0;
+            size_t read_bytes = 0;
+
+            do
+            {
+                errno = 0;
+
+                do
+                {
+                    result = read(fd, &buffer[read_bytes], size - read_bytes);
+
+                    if (result > 0)
+                    {
+                        read_bytes += result;
+                    }
+                }
+                while ((result > 0) && (read_bytes < size));
+            }
+            while ((result == -1) && (errno == EINTR));
+
+            throw_error_if(result == -1,
+                           *interpreter,
+                           "FD could not be read from " + std::string(strerror(errno)) + ".");
+
+            std::string new_string = buffer;
+            interpreter->push(new_string);
         }
 
 
@@ -297,6 +384,10 @@ namespace sorth
                         "Take a fd and close it.");
 
 
+        ADD_NATIVE_WORD(interpreter, "socket.connect", word_socket_connect,
+                        "Connect to Unix domain socket at the given path.");
+
+
         ADD_NATIVE_WORD(interpreter, "file.size@", word_file_size_read,
                         "Return the size of a file represented by a fd.");
 
@@ -313,6 +404,12 @@ namespace sorth
 
         ADD_NATIVE_WORD(interpreter, "file.@", word_file_read,
                         "Read from a given file.  (Unimplemented.)");
+
+        ADD_NATIVE_WORD(interpreter, "file.char@", word_file_read_character,
+                        "Read a character from a given file.");
+
+        ADD_NATIVE_WORD(interpreter, "file.string@", word_file_read_string,
+                        "Read a a string of a specified length from a given file.");
 
         ADD_NATIVE_WORD(interpreter, "file.!", word_file_write,
                         "Write a value as text to a file, unless it's a ByteBuffer.");
