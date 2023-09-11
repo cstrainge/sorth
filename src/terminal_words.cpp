@@ -90,7 +90,7 @@ namespace sorth
         void word_term_key(InterpreterPtr& interpreter)
         {
             char next[2] = { 0 };
-            int read_chars = 0;
+            ssize_t read_chars = 0;
 
             do
             {

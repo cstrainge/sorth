@@ -31,11 +31,6 @@ namespace sorth
 
     bool operator ==(const DataObjectPtr& rhs, const DataObjectPtr& lhs)
     {
-        if (rhs == lhs)
-        {
-            return true;
-        }
-
         if (rhs->definition->name != lhs->definition->name)
         {
             return false;

@@ -71,11 +71,6 @@ namespace sorth
 
     bool operator ==(const ByteBufferPtr& rhs, const ByteBufferPtr& lhs)
     {
-        if (rhs == lhs)
-        {
-            return true;
-        }
-
         if (rhs->size() != lhs->size())
         {
             return false;

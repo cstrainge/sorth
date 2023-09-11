@@ -46,13 +46,13 @@ namespace sorth
 
     bool operator ==(const HashTablePtr& rhs, const HashTablePtr& lhs)
     {
-        if (rhs == lhs)
-        {
-            return true;
-        }
-
         auto& r_rhs = *rhs;
         auto& r_lhs = *lhs;
+        
+        if (r_rhs.size() != r_lhs.size())
+        {
+            return false;
+        }
 
         for (auto iter : r_rhs.items)
         {

@@ -28,11 +28,6 @@ namespace sorth
 
     bool operator ==(const ArrayPtr& rhs, const ArrayPtr& lhs)
     {
-        if (rhs == lhs)
-        {
-            return true;
-        }
-
         if (rhs->size() != lhs->size())
         {
             return false;

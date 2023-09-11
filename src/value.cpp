@@ -70,11 +70,11 @@ namespace sorth
         if (std::holds_alternative<DataObjectPtr>(key))
         {
             auto value = std::get<DataObjectPtr>(key);
-            size_t result;
+            size_t result = 0;
 
             for (auto field : value->fields)
             {
-                return result ^ (hash_value(field) << 1);
+                result = result ^ (hash_value(field) << 1);
             }
 
             return result;
@@ -83,11 +83,11 @@ namespace sorth
         if (std::holds_alternative<ArrayPtr>(key))
         {
             auto value = std::get<ArrayPtr>(key);
-            size_t result;
+            size_t result = 0;
 
             for (size_t i = 0; i < value->size(); ++i)
             {
-                return result ^ (hash_value((*value)[i]) << 1);
+                result = result ^ (hash_value((*value)[i]) << 1);
             }
 
             return result;
@@ -96,11 +96,11 @@ namespace sorth
         if (std::holds_alternative<HashTablePtr>(key))
         {
             auto value = std::get<HashTablePtr>(key);
-            size_t result;
+            size_t result = 0;
 
             for (auto iter : value->get_items())
             {
-                return result ^ (hash_value(iter.first) << 1) ^ (hash_value(iter.second) << 1);
+                result = result ^ (hash_value(iter.first) << 1) ^ (hash_value(iter.second) << 1);
             }
 
             return result;
@@ -130,7 +130,7 @@ namespace sorth
         if (std::holds_alternative<ByteCode>(key))
         {
             auto value = std::get<ByteCode>(key);
-            size_t result;
+            size_t result = 0;
 
             for (auto& op : value)
             {

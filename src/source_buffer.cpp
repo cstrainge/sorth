@@ -31,7 +31,7 @@ namespace sorth::internal
         auto begin = std::istreambuf_iterator<char>(source_file);
         auto end = std::istreambuf_iterator<char>();
 
-        source = std::move(std::string(begin, end));
+        source = std::string(begin, end);
 
         // TODO: Look for a #! on the first line and remove it before the rest of the
         //       interpreter sees it.
