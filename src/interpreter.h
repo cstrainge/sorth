@@ -59,6 +59,9 @@ namespace sorth
             virtual Value pop() = 0;
 
         public:
+            virtual const internal::Dictionary& get_dictionary() const = 0;
+
+        public:
             virtual void add_word(const std::string& word,
                                   internal::WordFunction handler,
                                   const internal::Location& location,

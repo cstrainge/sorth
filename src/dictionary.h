@@ -59,6 +59,9 @@ namespace sorth::internal
             void mark_context();
             void release_context();
 
+        public:
+            std::map<std::string, Word> get_merged_dictionary() const;
+
         protected:
             friend std::vector<std::string> inverse_lookup_list(const Dictionary& dictionary,
                                                                 const WordList& word_handlers);

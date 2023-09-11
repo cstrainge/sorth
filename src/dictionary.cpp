@@ -31,27 +31,17 @@ namespace sorth::internal
         // First merge all the sub-dictionaries into one sorted dictionary.  Note that words will
         // appear only once.  Even if they are redefined at higher scopes.  Only the newest version
         // will be displayed.  (Unless if the newer version is hidden and the older isn't.)
-        std::map<std::string, Word> new_dictionary;
+        std::map<std::string, Word> new_dictionary = dictionary.get_merged_dictionary();
 
-        for (const auto& sub_dictionary : dictionary.stack)
-        {
-            for (const auto& word_iter : sub_dictionary)
-            {
-                if (!word_iter.second.is_hidden)
-                {
-                    new_dictionary.insert(word_iter);
-                }
-            }
-        }
 
         // For formatting, find out the largest word width.
-        size_t max = 0;
+        int max = 0;
 
         for (const auto& word : new_dictionary)
         {
             if (max < word.first.size())
             {
-                max = word.first.size();
+                max = (int)word.first.size();
             }
         }
 
@@ -62,7 +52,7 @@ namespace sorth::internal
         for (const auto& word : new_dictionary)
         {
             stream << std::setw(max) << word.first << " "
-                      << std::setw(6) << word.second.handler_index;
+                   << std::setw(6) << word.second.handler_index;
 
             if (word.second.is_immediate)
             {
@@ -138,6 +128,25 @@ namespace sorth::internal
         // There should always be at least one dictionary.  If there isn't something has
         // gone horribly wrong.
         assert(!stack.empty());
+    }
+
+
+    std::map<std::string, Word> Dictionary::get_merged_dictionary() const
+    {
+        std::map<std::string, Word> new_dictionary;
+
+        for (const auto& sub_dictionary : stack)
+        {
+            for (const auto& word_iter : sub_dictionary)
+            {
+                if (!word_iter.second.is_hidden)
+                {
+                    new_dictionary.insert(word_iter);
+                }
+            }
+        }
+
+        return new_dictionary;
     }
 
 

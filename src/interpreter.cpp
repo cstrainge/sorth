@@ -89,6 +89,9 @@ namespace sorth
                 virtual Value pop() override;
 
             public:
+                virtual const Dictionary& get_dictionary() const override;
+
+            public:
                 virtual void add_word(const std::string& word,
                                       WordFunction handler,
                                       const internal::Location& location,
@@ -637,6 +640,12 @@ namespace sorth
             stack.pop_front();
 
             return next;
+        }
+
+
+        const Dictionary& InterpreterImpl::get_dictionary() const
+        {
+            return dictionary;
         }
 
 

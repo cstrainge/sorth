@@ -219,6 +219,74 @@ namespace sorth
         }
 
 
+
+        void create_data_definition_words(InterpreterPtr& interpreter,
+                                          DataObjectDefinitionPtr& definition_ptr)
+        {
+            ADD_NATIVE_WORD(interpreter, definition_ptr->name + ".new",
+                [definition_ptr](auto interpreter)
+                {
+                    DataObjectPtr new_object = std::make_shared<DataObject>();
+
+                    new_object->definition = definition_ptr;
+                    new_object->fields.resize(definition_ptr->fieldNames.size());
+
+                    interpreter->push(new_object);
+                },
+                "Create a new instance of the structure " + definition_ptr->name + ".");
+
+            for (int64_t i = 0; i < definition_ptr->fieldNames.size(); ++i)
+            {
+                ADD_NATIVE_WORD(interpreter,
+                    definition_ptr->name + "." + definition_ptr->fieldNames[i],
+                    [i](auto interpreter)
+                    {
+                        interpreter->push(i);
+                    },
+                    "Access the structure field + " + definition_ptr->fieldNames[i] + ".");
+            }
+        }
+
+
+        DataObjectDefinitionPtr make_word_info_definition()
+        {
+            DataObjectDefinitionPtr definition_ptr = std::make_shared<DataObjectDefinition>();
+
+            definition_ptr->name = "word_info";
+            definition_ptr->fieldNames.push_back("is_immediate");
+            definition_ptr->fieldNames.push_back("is_scripted");
+            definition_ptr->fieldNames.push_back("description");
+            definition_ptr->fieldNames.push_back("handler_index");
+
+            return definition_ptr;
+        }
+
+
+        DataObjectDefinitionPtr word_info_definition = make_word_info_definition();
+
+
+        DataObjectPtr make_word_info_instance(const Word& word)
+        {
+            DataObjectPtr new_object = std::make_shared<DataObject>();
+
+            new_object->definition = word_info_definition;
+            new_object->fields.resize(word_info_definition->fieldNames.size());
+
+            new_object->fields[0] = word.is_immediate;
+            new_object->fields[1] = word.is_scripted;
+            new_object->fields[2] = (*word.description);
+            new_object->fields[3] = (int64_t)word.handler_index;
+
+            return new_object;
+        }
+
+
+        void register_word_info_struct(InterpreterPtr& interpreter)
+        {
+            create_data_definition_words(interpreter, word_info_definition);
+        }
+
+
     }
 
 
@@ -231,7 +299,7 @@ namespace sorth
             if (is_numeric(value))
             {
                 auto exit_code = as_numeric<int64_t>(interpreter, value);
-                interpreter->set_exit_code(exit_code);
+                interpreter->set_exit_code((int)exit_code);
             }
         }
 
@@ -660,6 +728,23 @@ namespace sorth
     }
 
 
+    void word_get_word_table(InterpreterPtr& interpreter)
+    {
+        auto dictionary = interpreter->get_dictionary().get_merged_dictionary();
+        HashTablePtr new_table = std::make_shared<HashTable>();
+
+        for (auto word : dictionary)
+        {
+            auto key = word.first;
+            auto value = make_word_info_instance(word.second);
+
+            new_table->insert(key, value);
+        }
+
+        interpreter->push(new_table);
+    }
+
+
     void word_word_index(InterpreterPtr& interpreter)
     {
         auto& current_token = interpreter->constructor()->current_token;
@@ -951,8 +1036,6 @@ namespace sorth
         auto& current_token = interpreter->constructor()->current_token;
         auto& input_tokens = interpreter->constructor()->input_tokens;
 
-        DataObjectDefinition definition;
-
         ++current_token;
         DataObjectDefinitionPtr definition_ptr = std::make_shared<DataObjectDefinition>();
         definition_ptr->name = input_tokens[current_token].text;
@@ -967,27 +1050,9 @@ namespace sorth
             definition_ptr->fieldNames.push_back(input_tokens[current_token].text);
         }
 
-        ADD_NATIVE_WORD(interpreter, definition_ptr->name + ".new",
-            [definition_ptr](auto interpreter)
-            {
-                DataObjectPtr new_object = std::make_shared<DataObject>();
-
-                new_object->definition = definition_ptr;
-                new_object->fields.resize(definition_ptr->fieldNames.size());
-
-                interpreter->push(new_object);
-            },
-            "Create a new instance of the structure " + definition_ptr->name + ".");
-
-        for (int64_t i = 0; i < definition_ptr->fieldNames.size(); ++i)
-        {
-            ADD_NATIVE_WORD(interpreter, definition_ptr->name + "." + definition_ptr->fieldNames[i],
-                [i](auto interpreter)
-                {
-                    interpreter->push(i);
-                },
-                "Access the structure field + " + definition_ptr->fieldNames[i] + ".");
-        }
+        // Create the words to allow the script to access this definition.  The word
+        // <definition_name>.new will always hold a base reference to our definition object.
+        create_data_definition_words(interpreter, definition_ptr);
     }
 
 
@@ -1673,6 +1738,11 @@ namespace sorth
         // Word words.
         ADD_NATIVE_WORD(interpreter, "word", word_word,
                         "Get the next word in the token stream.");
+
+        register_word_info_struct(interpreter);
+
+        ADD_NATIVE_WORD(interpreter, "words.get{}", word_get_word_table,
+                        "Get a copy of the word table as it exists at time of calling.");
 
         ADD_IMMEDIATE_WORD(interpreter, "`", word_word_index,
                            "Get the index of the next word.");
