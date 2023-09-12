@@ -341,7 +341,11 @@ namespace sorth
 
             for (auto entry : original->get_items())
             {
-                new_object->insert(entry.first, entry.second);
+                auto key = entry.first;
+                auto value = entry.second;
+
+                new_object->insert(deep_copy_value(interpreter, key),
+                                   deep_copy_value(interpreter, value));
             }
 
             return new_object;
@@ -1243,6 +1247,25 @@ namespace sorth
     }
 
 
+    void word_array_plus(InterpreterPtr& interpreter)
+    {
+        auto array_src = as_array(interpreter, interpreter->pop());
+        auto array_dest = as_array(interpreter, interpreter->pop());
+
+        auto orig_size = array_dest->size();
+        auto new_size = orig_size + array_src->size();
+
+        array_dest->resize(new_size);
+
+        for (auto i = orig_size; i < new_size; ++i)
+        {
+            (*array_dest)[i] = deep_copy_value(interpreter, (*array_src)[i - orig_size]);
+        }
+
+        interpreter->push(array_dest);
+    }
+
+
     void word_buffer_new(InterpreterPtr& interpreter)
     {
         auto size = as_numeric<int64_t>(interpreter, interpreter->pop());
@@ -1378,6 +1401,24 @@ namespace sorth
         auto [ found, value ] = table->get(key);
 
         interpreter->push(found);
+    }
+
+
+    void word_hash_plus(InterpreterPtr& interpreter)
+    {
+        auto hash_src = as_hash_table(interpreter, interpreter->pop());
+        auto hash_dest = as_hash_table(interpreter, interpreter->pop());
+
+        for (auto entry : hash_src->get_items())
+        {
+            auto key = entry.first;
+            auto value = entry.second;
+
+            hash_dest->insert(deep_copy_value(interpreter, key),
+                              deep_copy_value(interpreter, value));
+        }
+
+        interpreter->push(hash_dest);
     }
 
 
@@ -1965,6 +2006,10 @@ namespace sorth
         ADD_NATIVE_WORD(interpreter, "[].size!", word_array_resize,
                         "Grow or shrink the array to the new size.");
 
+        ADD_NATIVE_WORD(interpreter, "[].+", word_array_plus,
+                        "Take two arrays and deep copy the contents from the second into the "
+                        "first.");
+
 
         // ByteBuffer operations.
         ADD_NATIVE_WORD(interpreter, "buffer.new", word_buffer_new,
@@ -2011,6 +2056,10 @@ namespace sorth
 
         ADD_NATIVE_WORD(interpreter, "{}?", word_hash_table_exists,
                         "Check if a given key exists in the table.");
+
+        ADD_NATIVE_WORD(interpreter, "{}.+", word_hash_plus,
+                        "Take two hashes and deep copy the contents from the second into the "
+                        "first.");
 
         ADD_NATIVE_WORD(interpreter, "{}.iterate", word_hash_table_iterate,
                         "Iterate through a hash table and call a word for each item.");
