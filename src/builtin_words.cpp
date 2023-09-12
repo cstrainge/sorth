@@ -763,7 +763,7 @@ namespace sorth
         auto& current_token = interpreter->constructor()->current_token;
         auto& input_tokens = interpreter->constructor()->input_tokens;
 
-        auto start_location = input_tokens[current_token - 1].location;
+        auto start_location = input_tokens[current_token].location;
 
         for (++current_token; current_token < input_tokens.size(); ++current_token)
         {
