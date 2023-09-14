@@ -646,7 +646,7 @@
 
     case
         "->"  of  true is_inline_syntax !                 endof
-        "}"   of  "Missing word -> and key value." throw  endof
+        "}"   of  ( "Missing word -> and key value." throw )  endof
         "}!"  of  ` {}!  command !                        endof
         "}!!" of  ` {}!! command !                        endof
         "}@"  of  ` {}@  command !                        endof
@@ -707,6 +707,44 @@
 
 : } immediate description: "Hash table definition syntax."
     sentinel_word
+;
+
+
+
+: #.new immediate description: "Create a new instance of the named structure."
+    word variable! struct_name
+
+    word dup "{" <>
+    if
+        "Expected { word to open structure creation, found " swap + "." + throw
+    then
+    drop
+
+    struct_name @ ".new" + op.execute
+
+    variable next_word
+    variable field_name
+
+    begin
+        next_word @ "}" <>
+    while
+        word field_name !
+
+        word dup "->" <>
+        if
+            "Expected assignment operator, ->, found " swap + "." + throw
+        then
+        drop
+
+        "," "}" 2 code.compile_until_words
+        next_word !
+
+        ` swap op.execute
+        ` over op.execute
+        struct_name @ "." + field_name @ + op.execute
+        ` swap op.execute
+        ` #! op.execute
+    repeat
 ;
 
 

@@ -4,6 +4,7 @@
 
 
 
+
 ( Convert an array to a json compatible string. )
 : to_json_array hidden  ( array -- formatted_string )
     variable! array_value
@@ -46,8 +47,13 @@
                 if
                     to_string
                 else
-                    drop
-                    "Unsupported json value type." throw
+                    dup is_value_structure?
+                    if
+                        #.to_json
+                    else
+                        drop
+                        "Unsupported json value type." throw
+                    then
                 then
             then
         then
@@ -57,11 +63,36 @@
 
 
 
+: #.to_json
+    variable! structure
+    "{ " variable! new_json
+
+    : json.struct_iterator hidden
+        variable! value
+        variable! name
+
+        "\"" name @ to_string + "\"" + ": " + value @ to_json_value + ", " +
+        new_json @ swap + new_json !
+    ;
+
+    ` json.struct_iterator structure @ #.iterate
+
+    new_json @ string.size@ 2 >
+    if
+        2 new_json @ dup string.size@ 2 - swap string.remove new_json !
+    then
+
+    new_json @ " }" +
+;
+
+
+
+
 : {}.to_json  ( hash_value -- string )  description: "Convert a hash table into a JSON string."
     variable! hash
     "{ " variable! new_json
 
-    : iterator hidden
+    : json.hash_iterator hidden
         variable! value
         variable! key
 
@@ -69,7 +100,7 @@
         new_json @ swap + new_json !
     ;
 
-    ` iterator hash @ {}.iterate
+    ` json.hash_iterator hash @ {}.iterate
 
     new_json @ string.size@ 2 >
     if

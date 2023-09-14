@@ -220,6 +220,10 @@ namespace sorth
 
 
 
+        Value deep_copy_value(InterpreterPtr& interpreter, Value& value);
+
+
+
         void create_data_definition_words(InterpreterPtr& interpreter,
                                           DataObjectDefinitionPtr& definition_ptr)
         {
@@ -230,6 +234,12 @@ namespace sorth
 
                     new_object->definition = definition_ptr;
                     new_object->fields.resize(definition_ptr->fieldNames.size());
+
+                    for (size_t i = 0; i < definition_ptr->defaults.size(); ++i)
+                    {
+                        new_object->fields[i] = deep_copy_value(interpreter,
+                                                                definition_ptr->defaults[i]);
+                    }
 
                     interpreter->push(new_object);
                 },
@@ -285,10 +295,6 @@ namespace sorth
         {
             create_data_definition_words(interpreter, word_info_definition);
         }
-
-
-
-        Value deep_copy_value(InterpreterPtr& interpreter, Value& value);
 
 
 
@@ -1151,12 +1157,56 @@ namespace sorth
 
         for (++current_token; current_token < input_tokens.size(); ++current_token)
         {
-            if (input_tokens[current_token].text == ";")
+            if (input_tokens[current_token].text == "(")
+            {
+                interpreter->execute_word("(");
+            }
+            else if (input_tokens[current_token].text == ";")
             {
                 break;
             }
+            else
+            {
+                auto field_name = input_tokens[current_token].text;
+                definition_ptr->fieldNames.push_back(field_name);
 
-            definition_ptr->fieldNames.push_back(input_tokens[current_token].text);
+                if (input_tokens[current_token + 1].text == "->")
+                {
+                    ++current_token;
+
+                    throw_error_if(current_token >= input_tokens.size(), *interpreter,
+                                   "Unexpected end of token stream.");
+
+                    // Push code block
+                    interpreter->constructor()->stack.push({});
+
+                    interpreter->push(",");
+                    interpreter->push(";");
+                    interpreter->push(2);
+                    word_code_compile_until_words(interpreter);
+                    auto found_word = as_string(interpreter, interpreter->pop());
+                    --current_token;
+
+                    if (found_word == ",")
+                    {
+                        ++current_token;
+                    }
+
+                    auto top_code = interpreter->constructor()->stack.top().code;
+                    interpreter->constructor()->stack.pop();
+
+                    throw_error_if(top_code.empty(), *interpreter, "Expected expression.");
+
+                    interpreter->execute_code(field_name + ".init", top_code);
+
+                    auto default_value = interpreter->pop();
+                    definition_ptr->defaults.push_back(default_value);
+                }
+                else
+                {
+                    definition_ptr->defaults.push_back(0);
+                }
+            }
         }
 
         // Create the words to allow the script to access this definition.  The word
@@ -1195,6 +1245,30 @@ namespace sorth
 
         var = interpreter->pop();
         object->fields[field_index] = var;
+    }
+
+
+    void word_structure_iterate(InterpreterPtr& interpreter)
+    {
+        auto var = interpreter->pop();
+
+        throw_error_if(!std::holds_alternative<DataObjectPtr>(var),
+                       *interpreter, "Expected data object.");
+
+        auto object = std::get<DataObjectPtr>(var);
+        auto word_index = as_numeric<int64_t>(interpreter, interpreter->pop());
+
+        auto& handler = interpreter->get_handler_info(word_index);
+
+        auto& data_type = object->definition;
+
+        for (size_t i = 0; i < data_type->fieldNames.size(); ++i)
+        {
+            interpreter->push(data_type->fieldNames[i]);
+            interpreter->push(object->fields[i]);
+
+            handler.function(interpreter);
+        }
     }
 
 
@@ -1987,6 +2061,9 @@ namespace sorth
 
         ADD_NATIVE_WORD(interpreter, "#!", word_write_field,
                         "Write to a field of a structure.");
+
+        ADD_NATIVE_WORD(interpreter, "#.iterate", word_structure_iterate,
+                        "Call an iterator for each member of a structure.");
 
 
         // Array words.

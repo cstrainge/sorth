@@ -15,6 +15,7 @@ namespace sorth
 
         std::string name;     // The name of the type.
         NameList fieldNames;  // Names of all the fields.
+        ValueList defaults;   // The default values of these fields.
     };
 
 
