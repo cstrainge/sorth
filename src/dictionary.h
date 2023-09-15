@@ -35,6 +35,7 @@ namespace sorth::internal
         bool is_scripted;         // Was this word defined in Forth?
         bool is_hidden;           // Is this word hidden from the word dictionary?
         StringPtr description;    // Quick one line description of this word.
+        StringPtr signature;      // How does this word interact with the stack?
 
         size_t handler_index;     // Index of the handler to execute.
     };

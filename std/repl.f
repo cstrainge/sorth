@@ -318,6 +318,7 @@ repl.history_size [].new variable! repl.history
 
 
 : repl description: "Sorth's REPL: read, evaluate, and print loop."
+       signature: " -- "
     "Strange Forth REPL." .cr
     cr
     "Enter quit, q, or exit to quit the REPL." .cr

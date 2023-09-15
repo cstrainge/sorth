@@ -266,6 +266,7 @@ namespace sorth
             definition_ptr->fieldNames.push_back("is_immediate");
             definition_ptr->fieldNames.push_back("is_scripted");
             definition_ptr->fieldNames.push_back("description");
+            definition_ptr->fieldNames.push_back("signature");
             definition_ptr->fieldNames.push_back("handler_index");
 
             return definition_ptr;
@@ -273,6 +274,12 @@ namespace sorth
 
 
         DataObjectDefinitionPtr word_info_definition = make_word_info_definition();
+
+
+        void register_word_info_struct(InterpreterPtr& interpreter)
+        {
+            create_data_definition_words(interpreter, word_info_definition);
+        }
 
 
         DataObjectPtr make_word_info_instance(const Word& word)
@@ -284,18 +291,12 @@ namespace sorth
 
             new_object->fields[0] = word.is_immediate;
             new_object->fields[1] = word.is_scripted;
-            new_object->fields[2] = (*word.description);
-            new_object->fields[3] = (int64_t)word.handler_index;
+            new_object->fields[2] = word.description ? *word.description : "";
+            new_object->fields[3] = word.signature ? *word.signature : "";
+            new_object->fields[4] = (int64_t)word.handler_index;
 
             return new_object;
         }
-
-
-        void register_word_info_struct(InterpreterPtr& interpreter)
-        {
-            create_data_definition_words(interpreter, word_info_definition);
-        }
-
 
 
         Value deep_copy_data_object(InterpreterPtr& interpreter, Value& value)
@@ -968,7 +969,8 @@ namespace sorth
                               construction.is_immediate,
                               construction.is_hidden,
                               is_scripted,
-                              construction.description);
+                              construction.description,
+                              construction.signature);
     }
 
 
@@ -991,6 +993,9 @@ namespace sorth
 
         ++current_token;
 
+        throw_error_if(current_token >= input_tokens.size(), *interpreter,
+                       "Unexpected end to token stream.");
+
         auto& token = input_tokens[current_token];
 
         throw_error_if(token.type != Token::Type::string,
@@ -998,6 +1003,26 @@ namespace sorth
                        "Expected the description to be a string.");
 
         interpreter->constructor()->stack.top().description = token.text;
+    }
+
+
+    void word_signature(InterpreterPtr& interpreter)
+    {
+        auto& current_token = interpreter->constructor()->current_token;
+        auto& input_tokens = interpreter->constructor()->input_tokens;
+
+        ++current_token;
+
+        throw_error_if(current_token >= input_tokens.size(), *interpreter,
+                       "Unexpected end to token stream.");
+
+        auto& token = input_tokens[current_token];
+
+        throw_error_if(token.type != Token::Type::string,
+                       *interpreter,
+                       "Expected the signature to be a string.");
+
+        interpreter->constructor()->stack.top().signature = token.text;
     }
 
 
@@ -1849,6 +1874,11 @@ namespace sorth
             std::cout << "Description: " << (*word.description) << std::endl;
         }
 
+        if (word.signature)
+        {
+            std::cout << "Signature: " << (*word.signature) << std::endl;
+        }
+
         if (word.is_scripted)
         {
             auto& handler = handler_info.function;
@@ -1994,6 +2024,9 @@ namespace sorth
 
         ADD_IMMEDIATE_WORD(interpreter, "description:", word_description,
                            "Give a new word it's description.");
+
+        ADD_IMMEDIATE_WORD(interpreter, "signature:", word_signature,
+                           "Describe a new word's stack signature.");
 
 
         // Check value types.

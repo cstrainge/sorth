@@ -11,6 +11,7 @@
 
 ( Implementation of the language's REPL. )
 : repl description: "Sorth's REPL: read, evaluate, and print loop."
+       signature: " -- "
     "Strange Forth REPL." .cr
     cr
     "Enter quit, q, or exit to quit the REPL." .cr

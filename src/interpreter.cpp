@@ -98,7 +98,8 @@ namespace sorth
                                       bool is_immediate,
                                       bool is_hidden,
                                       bool is_scripted,
-                                      const std::string& description) override;
+                                      const std::string& description,
+                                      const std::string& signature) override;
 
                 virtual void add_word(const std::string& word, WordFunction handler,
                                       const std::filesystem::path& path, size_t line, size_t column,
@@ -655,7 +656,8 @@ namespace sorth
                                        bool is_immediate,
                                        bool is_hidden,
                                        bool is_scripted,
-                                       const std::string& description)
+                                       const std::string& description,
+                                       const std::string& signature)
         {
             StringPtr shared_description;
 
@@ -664,11 +666,19 @@ namespace sorth
                 shared_description = std::make_shared<std::string>(description);
             }
 
+            StringPtr shared_signature;
+
+            if (signature != "")
+            {
+                shared_signature = std::make_shared<std::string>(signature);
+            }
+
             dictionary.insert(word, {
                     .is_immediate = is_immediate,
                     .is_scripted = is_scripted,
                     .is_hidden = is_hidden,
                     .description = shared_description,
+                    .signature = shared_signature,
                     .handler_index = word_handlers.insert({
                             .name = word,
                             .function = handler,
@@ -690,7 +700,8 @@ namespace sorth
                      is_immediate,
                      false,
                      false,
-                     description);
+                     description,
+                     "");
         }
 
 

@@ -63,7 +63,8 @@
 
 
 
-: #.to_json
+: #.to_json  description: "Convert a structure object to a JSON string"
+             signature: "structure -- json_string"
     variable! structure
     "{ " variable! new_json
 
@@ -88,7 +89,8 @@
 
 
 
-: {}.to_json  ( hash_value -- string )  description: "Convert a hash table into a JSON string."
+: {}.to_json  description: "Convert a hash table into a JSON string."
+              signature: "hash_table -- json_string"
     variable! hash
     "{ " variable! new_json
 
@@ -454,8 +456,9 @@
 
 
 
-: {}.from_json ( string -- hash_table )
+: {}.from_json
     description: "Convert a JSON formatted string into a hash table."
+    signature: "json_string -- hash_table"
 
     json.string.new variable! json_source
 

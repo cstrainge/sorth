@@ -1,20 +1,24 @@
 
 : variable immediate description: "Define a new variable."
+                     signature: "variable <new_name>"
     word op.def_variable
 ;
 
 
 : @ immediate description: "Read from a variable index."
+              signature: "variable -- value"
     op.read_variable
 ;
 
 
 : ! immediate  description: "Write to a variable at the given index."
+               signature: "value variable -- "
     op.write_variable
 ;
 
 
 : variable! immediate description: "Define a new variable with a default value."
+                      signature: "new_value variable! <new_name>"
     word dup
 
     op.def_variable
@@ -26,6 +30,7 @@
 
 
 : constant immediate description: "Define a new constant value."
+                     signature: "new_value constant <new_name>"
     word op.def_constant
 ;
 
@@ -64,6 +69,7 @@
 
 
 : if immediate description: "Definition of the if else then syntax."
+               signature: "<test> if <code> [else <code>] then"
     unique_str variable! if_fail_label
 
     code.new_block
@@ -116,6 +122,7 @@
 
 
 : begin immediate description: "Defines loop until and loop repeat syntaxes."
+                  signature: "begin <code> <test> until *or* begin <test> while <code> repeat"
     unique_str variable! top_label
     unique_str variable! end_label
 
@@ -162,6 +169,7 @@
 
 
 : ( immediate description: "Defines comment syntax."
+              signature: "( <words_to_be_ignored> )"
     begin
         word ")" =
     until
@@ -205,6 +213,7 @@
 ( value that's compared against that input for equality. )
 
 : case immediate description: "Defines case/of/endcase syntax."
+                 signature: "<value> case <value> of <code> endof ... <code> endcase"
     false variable! done
 
     ( Label marking end of the entire case statement. )
@@ -301,22 +310,26 @@
 
 
 ( Simple increment and decrements. )
-: ++ ( value -- incremented ) description: "Increment a value on the stack."
+: ++  description: "Increment a value on the stack."
+      ( value -- incremented )
     1 +
 ;
 
 
-: ++! ( variable -- ) description: "Increment the given variable."
+: ++!  description: "Increment the given variable."
+       ( variable -- )
     dup @ ++ swap !
 ;
 
 
-: -- ( value -- decremented ) description: "Decrement a value on the stack."
+: --  description: "Decrement a value on the stack."
+      ( value -- decremented )
     1 -
 ;
 
 
-: --! ( variable -- ) description: "Decrement the given variable."
+: --!  description: "Decrement the given variable."
+       ( variable -- )
     dup @ -- swap !
 ;
 
@@ -324,39 +337,46 @@
 
 
 ( Make sure we have the regular printing words. )
-: . ( value -- ) description: "Print a value with a space."
+: .  description: "Print a value with a space."
+     signature: "value -- "
     term.!
     " " term.!
 ;
 
 
-: .hex  ( value -- ) description: "Print a numeric value as hex."
+: .hex  description: "Print a numeric value as hex."
+        signature: "value -- "
     hex .
 ;
 
 
-: cr ( -- ) description: "Print a newline to the console."
+: cr  description: "Print a newline to the console."
+      signature: " -- "
     "\n" term.!
     term.flush
 ;
 
 
-: .cr  ( value -- ) description: "Print a value and a new line."
+: .cr  description: "Print a value and a new line."
+       signature: "value -- "
     . cr
 ;
 
 
-: .hcr ( value -- ) description: "Print a hex value and a new line."
+: .hcr  description: "Print a hex value and a new line."
+        signature: "value -- "
     .hex cr
 ;
 
 
-: ? ( value -- ) description: "Print the value of a variable with a new line."
+: ?  description: "Print the value of a variable with a new line."
+     signature: "value -- "
     @ .cr
 ;
 
 
-: .sp ( count -- ) description: "Print the given number of spaces."
+: .sp  description: "Print the given number of spaces."
+       signature: "count -- "
     begin
         -- dup 0 >=
     while
@@ -367,6 +387,7 @@
 
 
 : show_word immediate description: "Show detailed information about a word."
+            signature: "show_word <word_name>"
     word op.push_constant_value
     ` show_word op.execute
 ;
@@ -375,27 +396,32 @@
 
 
 ( Handy comparisons. )
-: 0>  ( value -- test_result ) description: "Is the value greater than 0?"
+: 0>  description: "Is the value greater than 0?"
+      signature: "value -- test_result"
     0 >
 ;
 
 
-: 0=  ( value -- test_result ) description: "Does the value equal 0?"
+: 0=  description: "Does the value equal 0?"
+      signature: "value -- test_result"
     0 =
 ;
 
 
-: 0<  ( value -- test_result ) description: "Is the value less than 0?"
+: 0<  description: "Is the value less than 0?"
+      signature: "value -- test_result"
     0 <
 ;
 
 
-: 0>= ( value -- test_result ) description: "Is the value greater or equal to 0?"
+: 0>=  description: "Is the value greater or equal to 0?"
+       signature: "value -- test_result"
     0 >=
 ;
 
 
-: 0<= ( value -- test_result ) description: "Is the value less than or equal to 0?"
+: 0<=  description: "Is the value less than or equal to 0?"
+       signature: "value -- test_result"
     0 <=
 ;
 
@@ -403,12 +429,14 @@
 
 
 ( Increment and decrement variables. )
-: +! ( value variable -- ) description: "Increment a variable by a given value."
+: +!  description: "Increment a variable by a given value."
+      ( value variable -- )
     over @ + swap !
 ;
 
 
-: -! ( value variable -- ) description: "Decrement a variable by a given value."
+: -!  description: "Decrement a variable by a given value."
+      signature: " value variable -- "
     over @ - swap !
 ;
 
@@ -417,25 +445,25 @@
 
 ( String variable words. )
 : string.size@@ description: "Get the length of a string variable."
-    ( string_var -- length )
+                signature: "string_variable -- length"
     @ string.size@
 ;
 
 
 : string.find@ description: "Find the first instance of a sub-text within a string variable."
-    ( search string_var -- position_or_npos )
+               signature: "search string_variable -- position_or_npos"
     @ string.find
 ;
 
 
 : string.to_number@ description: "Convert the string in a variable to a number."
-    ( string_var -- new_number )
+                    signature: " string_variable -- new_number "
     @ string.to_number
 ;
 
 
 : string.[]!! description: "Insert a given sub-text into a string variable."
-    ( sub_string position string_var -- )
+              signature: "sub_string position string_variable -- updated_string"
     variable! var_index
 
     var_index @ @ string.[]!
@@ -444,7 +472,7 @@
 
 
 : string.remove! description: "Remove a count of characters from the given variable."
-    ( count position string_var -- )
+                 signature: "count position string_variable -- updated_string"
     variable! var_index
 
     var_index @ @ string.remove
@@ -456,11 +484,13 @@
 
 ( Quicker data field access. )
 : #!! description: "Write to a structure field in a given variable."
+      signature: "value field_index struct_variable -- "
     @ #!
 ;
 
 
 : #@@ description: "Read from a structure field from a given variable."
+      signature: "field_index struct_variable -- value"
     @ #@
 ;
 
@@ -469,21 +499,25 @@
 
 ( Array words. )
 : []!! description: "Write a value at an index to the array variable."
+       signature: "new_value index array_variable -- "
     @ []!
 ;
 
 
 : []@@ description: "Read a value from an index from the array variable."
+       signature: "index array_variable -- value"
     @ []@
 ;
 
 
 : [].size@@ description: "Read the array variable's current size."
+            signature: "array_variable -- size"
     @ [].size@
 ;
 
 
 : [].size!! description: "Shrink or grow the array variable to the given size."
+            signature: "new_size array_variable -- "
     @ [].size!
 ;
 
@@ -492,6 +526,7 @@
 
 : [ immediate
     description: "Define 'array [ index or indices ]' access or `[ value , ... ]` creation."
+    signature: "array [ <index> ]<operation> *or* [ <value_list> ]"
 
     1 variable! index_count
     1 [].new variable! index_blocks
@@ -622,21 +657,25 @@
 
 ( Hash table words. )
 : {}!! description: "Insert a value into the hash table variable."
+       signature: "value key hash_variable -- "
     @ {}!
 ;
 
 
 : {}@@ description: "Read a value from the hash table variable."
+       signature: "key hash_variable -- value"
     @ {}@
 ;
 
 
 : {}?? description: "Does a given key exist within the hash table variable?"
+       signature: "key hash_variable -- does_exist?"
     @ {}?
 ;
 
 
-: { immediate description: "Define both the 'hash { key }'  and '{ key : value , ... }' syntaxes."
+: { immediate description: "Define both the 'hash { key }'  and '{ key -> value , ... }' syntaxes."
+              signature: "hash { key }<operation> *or* { key -> value , ... }"
     variable command
 
     false variable! is_new
@@ -712,6 +751,7 @@
 
 
 : #.new immediate description: "Create a new instance of the named structure."
+                  signature: "#.new struct_name { field -> value , ... }"
     word variable! struct_name
 
     word dup "{" <>
@@ -752,6 +792,7 @@
 
 ( A try/catch block for exception handling. )
 : try immediate description: "Define the try/catch/endcatch syntax."
+                signature: "try <code> catch <code> endcatch"
     unique_str variable! catch_label
     unique_str variable! end_catch_label
 
@@ -787,85 +828,101 @@
 
 ( Helper words for reading/writing byte buffers. )
 : buffer.i8!! description: "Write an 8-bit signed integer to the buffer variable."
+              signature: "value buffer_variable -- "
     @ 1 buffer.int!
 ;
 
 
 : buffer.i16!! description: "Write a 16-bit signed integer to the buffer variable."
+               signature: "value buffer_variable -- "
     @ 2 buffer.int!
 ;
 
 
 : buffer.i32!! description: "Write a 32-bit signed integer to the buffer variable."
+               signature: "value buffer_variable -- "
     @ 4 buffer.int!
 ;
 
 
 : buffer.i64!! description: "Write a 64-bit signed integer to the buffer variable."
+               signature: "value buffer_variable -- "
     @ 8 buffer.int!
 ;
 
 
 
 : buffer.i8@@ description: "Read an 8-bit signed integer from the buffer variable."
+              signature: "buffer_variable -- value"
     @ 1 true buffer.int@
 ;
 
 
 : buffer.i16@@ description: "Read a 16-bit signed integer from the buffer variable."
+               signature: "buffer_variable -- value"
     @ 2 true buffer.int@
 ;
 
 
 : buffer.i32@@ description: "Read a 32-bit signed integer from the buffer variable."
+               signature: "buffer_variable -- value"
     @ 4 true buffer.int@
 ;
 
 
 : buffer.i64@@ description: "Read a 64-bit signed integer from the buffer variable."
+               signature: "buffer_variable -- value"
     @ 8 true buffer.int@
 ;
 
 
 
 : buffer.u8@@ description: "Read an 8-bit unsigned integer from the buffer variable."
+              signature: "buffer_variable -- value"
     @ 1 false buffer.int@
 ;
 
 
 : buffer.u16@@ description: "Read a 16-bit unsigned integer from the buffer variable."
+               signature: "buffer_variable -- value"
     @ 2 false buffer.int@
 ;
 
 
 : buffer.u32@@ description: "Read a 32-bit unsigned integer from the buffer variable."
+               signature: "buffer_variable -- value"
     @ 4 false buffer.int@
 ;
 
 
 : buffer.u64@@ description: "Read a 64-bit unsigned integer from the buffer variable."
+               signature: "buffer_variable -- value"
     @ 8 false buffer.int@
 ;
 
 
 
 : buffer.f32!! description: "Write a 32-bit floating point value to the buffer variable."
+               signature: "buffer_variable -- value"
     @ 4 buffer.float!
 ;
 
 
 : buffer.f64!! description: "Write a 64-bit floating point value to the buffer variable."
+               signature: "buffer_variable -- value"
     @ 8 buffer.float!
 ;
 
 
 
 : buffer.f32@@ description: "Read a 32-bit floating point value from the buffer variable."
+               signature: "buffer_variable -- value"
     @ 4 buffer.float@
 ;
 
 
 : buffer.f64@@ description: "Read a 64-bit floating point value from the buffer variable."
+               signature: "buffer_variable -- value"
     @ 8 buffer.float@
 ;
 
@@ -873,22 +930,26 @@
 
 : buffer.string!!
     description: "Write a string of a given size to the buffer variable.  Pad with 0s."
+    signature: "string buffer_variable max_size -- "
     @ swap buffer.string!
 ;
 
 
 : buffer.string@@ description: "Read a string of max size from the buffer variable."
+                  signature: "buffer_variable max_size -- string"
     @ swap buffer.string@
 ;
 
 
 
 : buffer.position!! description: "Set the current buffer pointer to the buffer in variable."
+                    signature: "new_position buffer_variable -- "
     @ buffer.position!
 ;
 
 
 : buffer.position@@ description: "Read the current buffer pointer from the variable."
+                    signature: "buffer_variable -- position"
     @ buffer.position@
 ;
 
@@ -897,6 +958,7 @@
 
 ( Allow user code to register an at exit handler. )
 : at_exit immediate description: "Request that a given word be executed when the script exits."
+                    signature: "at_exit <word>"
     word op.push_constant_value
     ` at_exit op.execute
 ;
@@ -923,12 +985,14 @@ then
 
 
 ( Alternate ways to exit the interpreter. )
-: q    ( -- ) description: "Exit the interpreter."
+: q  description: "Exit the interpreter."
+     signature: "[exit_code] -- "
     quit
 ;
 
 
-: exit ( -- ) description: "Exit the interpreter."
+: exit description: "Exit the interpreter."
+       signature: "[exit_code] -- "
     quit
 ;
 

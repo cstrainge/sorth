@@ -13,6 +13,7 @@ namespace sorth::internal
 
         std::string name;
         std::string description;
+        std::string signature;
         Location location;
         ByteCode code;
     };

@@ -1,20 +1,24 @@
 
 ( Some user environment words. )
-: user.home  ( -- home_path  ) description: "The user's 'home' path."
+: user.home  description: "The user's 'home' path."
+             signature: " -- home_path"
     "HOME"  user.env@
 ;
 
 
-: user.name  ( -- user_name  ) description: "The name of the current user."
+: user.name  description: "The name of the current user."
+             signature: " -- user_name"
     "USER"  user.env@
 ;
 
 
-: user.shell ( -- shell_path ) description: "The default shell of the current user."
+: user.shell description: "The default shell of the current user."
+             signature: " -- shell_path"
     "SHELL" user.env@
 ;
 
 
-: user.term  ( -- term_name  ) description: "The terminal we are running in."
+: user.term  description: "The terminal we are running in."
+             signature: " -- term_name"
     "TERM"  user.env@
 ;
