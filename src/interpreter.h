@@ -73,7 +73,8 @@ namespace sorth
 
             virtual void add_word(const std::string& word, internal::WordFunction handler,
                                   const std::filesystem::path& path, size_t line, size_t column,
-                                  bool is_immediate, const std::string& description = "") = 0;
+                                  bool is_immediate, const std::string& description = "",
+                                  const std::string& signature = "") = 0;
 
         public:
             virtual void add_search_path(const std::filesystem::path& path) = 0;
@@ -92,11 +93,11 @@ namespace sorth
     InterpreterPtr create_interpreter();
 
 
-    #define ADD_NATIVE_WORD(INTERPRETER, NAME, HANDLER, DESCRIPTION) \
-        INTERPRETER->add_word(NAME, HANDLER, __FILE__, __LINE__, 1, false, DESCRIPTION)
+    #define ADD_NATIVE_WORD(INTERPRETER, NAME, HANDLER, DESCRIPTION, SIGNATURE) \
+        INTERPRETER->add_word(NAME, HANDLER, __FILE__, __LINE__, 1, false, DESCRIPTION, SIGNATURE)
 
-    #define ADD_IMMEDIATE_WORD(INTERPRETER, NAME, HANDLER, DESCRIPTION) \
-        INTERPRETER->add_word(NAME, HANDLER, __FILE__, __LINE__, 1, true, DESCRIPTION)
+    #define ADD_IMMEDIATE_WORD(INTERPRETER, NAME, HANDLER, DESCRIPTION, SIGNATURE) \
+        INTERPRETER->add_word(NAME, HANDLER, __FILE__, __LINE__, 1, true, DESCRIPTION, SIGNATURE)
 
 
     // Value interrogation and conversion functions.  Because the value itself is a variant, it's

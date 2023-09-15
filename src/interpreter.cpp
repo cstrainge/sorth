@@ -103,7 +103,8 @@ namespace sorth
 
                 virtual void add_word(const std::string& word, WordFunction handler,
                                       const std::filesystem::path& path, size_t line, size_t column,
-                                      bool is_immediate, const std::string& description) override;
+                                      bool is_immediate, const std::string& description,
+                                      const std::string& signature) override;
 
             public:
                 virtual void add_search_path(const std::filesystem::path& path) override;
@@ -371,7 +372,8 @@ namespace sorth
                                 ADD_NATIVE_WORD(this,
                                                 name,
                                                 handler,
-                                                "Access the variable " + name + ".");
+                                                "Access the variable " + name + ".",
+                                                " -- variable_index");
                             }
                             break;
 
@@ -383,7 +385,8 @@ namespace sorth
                                 ADD_NATIVE_WORD(this,
                                                 name,
                                                 [value](auto This) { This->push(value); },
-                                                "Constant value " + name + ".");
+                                                "Constant value " + name + ".",
+                                                " -- value");
                             }
                             break;
 
@@ -692,7 +695,8 @@ namespace sorth
                                        const std::filesystem::path& path,
                                        size_t line, size_t column,
                                        bool is_immediate,
-                                       const std::string& description)
+                                       const std::string& description,
+                                       const std::string& signature)
         {
             add_word(word,
                      handler,
@@ -701,7 +705,7 @@ namespace sorth
                      false,
                      false,
                      description,
-                     "");
+                     signature);
         }
 
 

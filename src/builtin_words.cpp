@@ -243,7 +243,8 @@ namespace sorth
 
                     interpreter->push(new_object);
                 },
-                "Create a new instance of the structure " + definition_ptr->name + ".");
+                "Create a new instance of the structure " + definition_ptr->name + ".",
+                " -- " + definition_ptr->name);
 
             for (int64_t i = 0; i < definition_ptr->fieldNames.size(); ++i)
             {
@@ -253,7 +254,8 @@ namespace sorth
                     {
                         interpreter->push(i);
                     },
-                    "Access the structure field + " + definition_ptr->fieldNames[i] + ".");
+                    "Access the structure field + " + definition_ptr->fieldNames[i] + ".",
+                    " -- structure_field_index");
             }
         }
 
@@ -1894,406 +1896,523 @@ namespace sorth
     {
         // Manage the interpreter state.
         ADD_NATIVE_WORD(interpreter, "quit", word_quit,
-                        "Exit the interpreter.");
+                        "Exit the interpreter.",
+                        "[exit_code] -- ");
 
         ADD_NATIVE_WORD(interpreter, "reset", word_reset,
-                        "Reset the interpreter to it's default state.");
+                        "Reset the interpreter to it's default state.",
+                        " -- ");
 
         ADD_NATIVE_WORD(interpreter, "at_exit", word_at_exit,
-                        "Run the given word when the interpreter exits.");
+                        "Run the given word when the interpreter exits.",
+                        "word -- ");
 
         ADD_NATIVE_WORD(interpreter, "include", word_include,
-                        "Include and execute another source file.");
+                        "Include and execute another source file.",
+                        "source_path -- ");
 
 
         // Words for creating new bytecode.
         ADD_NATIVE_WORD(interpreter, "op.def_variable", word_op_def_variable,
-                        "Insert this instruction into the byte stream.");
+                        "Insert this instruction into the byte stream.",
+                        " -- ");
 
         ADD_NATIVE_WORD(interpreter, "op.def_constant", word_op_def_constant,
-                        "Insert this instruction into the byte stream.");
+                        "Insert this instruction into the byte stream.",
+                        "value -- ");
 
         ADD_NATIVE_WORD(interpreter, "op.read_variable", word_op_read_variable,
-                        "Insert this instruction into the byte stream.");
+                        "Insert this instruction into the byte stream.",
+                        " -- ");
 
         ADD_NATIVE_WORD(interpreter, "op.write_variable", word_op_write_variable,
-                        "Insert this instruction into the byte stream.");
+                        "Insert this instruction into the byte stream.",
+                        " -- ");
 
         ADD_NATIVE_WORD(interpreter, "op.execute", word_op_execute,
-                        "Insert this instruction into the byte stream.");
+                        "Insert this instruction into the byte stream.",
+                        "index -- ");
 
         ADD_NATIVE_WORD(interpreter, "op.push_constant_value", word_op_push_constant_value,
-                        "Insert this instruction into the byte stream.");
+                        "Insert this instruction into the byte stream.",
+                        "value -- ");
 
         ADD_NATIVE_WORD(interpreter, "op.mark_loop_exit", word_mark_loop_exit,
-                        "Insert this instruction into the byte stream.");
+                        "Insert this instruction into the byte stream.",
+                        "identifier -- ");
 
         ADD_NATIVE_WORD(interpreter, "op.unmark_loop_exit", word_unmark_loop_exit,
-                        "Insert this instruction into the byte stream.");
+                        "Insert this instruction into the byte stream.",
+                        " -- ");
 
         ADD_NATIVE_WORD(interpreter, "op.mark_catch", word_op_mark_catch,
-                        "Insert this instruction into the byte stream.");
+                        "Insert this instruction into the byte stream.",
+                        "identifier -- ");
 
         ADD_NATIVE_WORD(interpreter, "op.unmark_catch", word_op_unmark_catch,
-                        "Insert this instruction into the byte stream.");
+                        "Insert this instruction into the byte stream.",
+                        " -- ");
 
         ADD_NATIVE_WORD(interpreter, "op.jump", word_op_jump,
-                        "Insert this instruction into the byte stream.");
+                        "Insert this instruction into the byte stream.",
+                        "identifier -- ");
 
         ADD_NATIVE_WORD(interpreter, "op.jump_if_zero", word_op_jump_if_zero,
-                        "Insert this instruction into the byte stream.");
+                        "Insert this instruction into the byte stream.",
+                        "identifier -- ");
 
         ADD_NATIVE_WORD(interpreter, "op.jump_if_not_zero", word_op_jump_if_not_zero,
-                        "Insert this instruction into the byte stream.");
+                        "Insert this instruction into the byte stream.",
+                        "identifier -- ");
 
         ADD_NATIVE_WORD(interpreter, "op.jump_loop_start", word_jump_loop_start,
-                        "Insert this instruction into the byte stream.");
+                        "Insert this instruction into the byte stream.",
+                        " -- ");
 
         ADD_NATIVE_WORD(interpreter, "op.jump_loop_exit", word_jump_loop_exit,
-                        "Insert this instruction into the byte stream.");
+                        "Insert this instruction into the byte stream.",
+                        " -- ");
 
         ADD_NATIVE_WORD(interpreter, "op.jump_target", word_op_jump_target,
-                        "Insert this instruction into the byte stream.");
+                        "Insert this instruction into the byte stream.",
+                        "identifier -- ");
 
 
         ADD_NATIVE_WORD(interpreter, "code.new_block", word_code_new_block,
-                        "Create a new sub-block on the code generation stack.");
+                        "Create a new sub-block on the code generation stack.",
+                        " -- ");
 
         ADD_NATIVE_WORD(interpreter, "code.merge_stack_block", word_code_merge_stack_block,
-                        "Merge the top code block into the one below.");
+                        "Merge the top code block into the one below.",
+                        " -- ");
 
         ADD_NATIVE_WORD(interpreter, "code.pop_stack_block", word_code_pop_stack_block,
-                        "Pop a code block off of the code stack and onto the data stack.");
+                        "Pop a code block off of the code stack and onto the data stack.",
+                        " -- code_block");
 
         ADD_NATIVE_WORD(interpreter, "code.push_stack_block", word_code_push_stack_block,
-                        "Pop a block from the data stack and back onto the code stack.");
+                        "Pop a block from the data stack and back onto the code stack.",
+                        "code_block -- ");
 
         ADD_NATIVE_WORD(interpreter, "code.stack_block_size@", word_code_stack_block_size,
-                        "Read the size of the code block at the top of the stack.");
+                        "Read the size of the code block at the top of the stack.",
+                        " -- code_size");
 
         ADD_NATIVE_WORD(interpreter, "code.resolve_jumps", word_code_resolve_jumps,
-                        "Resolve all of the jumps in the top code block.");
+                        "Resolve all of the jumps in the top code block.",
+                        " -- ");
 
         ADD_NATIVE_WORD(interpreter, "code.compile_until_words", word_code_compile_until_words,
-                        "Compile words until one of the given words is found.");
+                        "Compile words until one of the given words is found.",
+                        "words... word_count -- found_word");
 
         ADD_NATIVE_WORD(interpreter, "code.insert_at_front", word_code_insert_at_front,
-                        "When true new instructions are added beginning of the block.");
+                        "When true new instructions are added beginning of the block.",
+                        "bool -- ");
 
 
         ADD_NATIVE_WORD(interpreter, "code.execute_source", word_code_execute_source,
-                        "Interpret and execute a string like it is source code.");
+                        "Interpret and execute a string like it is source code.",
+                        "string_to_execute -- ???");
 
 
         // Word words.
         ADD_NATIVE_WORD(interpreter, "word", word_word,
-                        "Get the next word in the token stream.");
+                        "Get the next word in the token stream.",
+                        " -- next_word");
 
         register_word_info_struct(interpreter);
 
         ADD_NATIVE_WORD(interpreter, "words.get{}", word_get_word_table,
-                        "Get a copy of the word table as it exists at time of calling.");
+                        "Get a copy of the word table as it exists at time of calling.",
+                        " -- all_defined_words");
 
         ADD_IMMEDIATE_WORD(interpreter, "`", word_word_index,
-                           "Get the index of the next word.");
+                           "Get the index of the next word.",
+                        " -- index");
 
         ADD_NATIVE_WORD(interpreter, "execute", word_execute,
-                        "Execute a word name or index.");
+                        "Execute a word name or index.",
+                        "word_name_or_index -- ???");
 
         ADD_IMMEDIATE_WORD(interpreter, "defined?", word_is_defined,
-                           "Is the given word defined?");
+                           "Is the given word defined?",
+                        " -- bool");
 
 
         // Exception time
         ADD_NATIVE_WORD(interpreter, "throw", word_throw,
-                        "Throw an exception with the given message.");
+                        "Throw an exception with the given message.",
+                        "message -- ");
 
 
         // Creating new words.
         ADD_IMMEDIATE_WORD(interpreter, ":", word_start_word,
-                           "The start of a new word definition.");
+                           "The start of a new word definition.",
+                           " -- ");
 
         ADD_IMMEDIATE_WORD(interpreter, ";", word_end_word,
-                           "The end of a new word definition.");
+                           "The end of a new word definition.",
+                           " -- ");
 
         ADD_IMMEDIATE_WORD(interpreter, "immediate", word_immediate,
-                           "Mark the current word being built as immediate.");
+                           "Mark the current word being built as immediate.",
+                           " -- ");
 
         ADD_IMMEDIATE_WORD(interpreter, "hidden", word_hidden,
-                           "Mark the current word being built as hidden.");
+                           "Mark the current word being built as hidden.",
+                           " -- ");
 
         ADD_IMMEDIATE_WORD(interpreter, "description:", word_description,
-                           "Give a new word it's description.");
+                           "Give a new word it's description.",
+                           " -- ");
 
         ADD_IMMEDIATE_WORD(interpreter, "signature:", word_signature,
-                           "Describe a new word's stack signature.");
+                           "Describe a new word's stack signature.",
+                           " -- ");
 
 
         // Check value types.
         ADD_NATIVE_WORD(interpreter, "is_value_number?", word_is_value_number,
-                        "Is the value a number?");
+                        "Is the value a number?",
+                        "value -- bool");
 
         ADD_NATIVE_WORD(interpreter, "is_value_boolean?", word_is_value_boolean,
-                        "Is the value a boolean?");
+                        "Is the value a boolean?",
+                        "value -- bool");
 
         ADD_NATIVE_WORD(interpreter, "is_value_string?", word_is_value_string,
-                        "Is the value a string?");
+                        "Is the value a string?",
+                        "value -- bool");
 
         ADD_NATIVE_WORD(interpreter, "is_value_structure?", word_is_value_structure,
-                        "Is the value a structure?");
+                        "Is the value a structure?",
+                        "value -- bool");
 
         ADD_NATIVE_WORD(interpreter, "is_value_array?", word_is_value_array,
-                        "Is the value an array?");
+                        "Is the value an array?",
+                        "value -- bool");
 
         ADD_NATIVE_WORD(interpreter, "is_value_buffer?", word_is_value_buffer,
-                        "Is the value a byte buffer?");
+                        "Is the value a byte buffer?",
+                        "value -- bool");
 
         ADD_NATIVE_WORD(interpreter, "is_value_hash_table?", word_is_value_hash_table,
-                        "Is the value a hash table?");
+                        "Is the value a hash table?",
+                        "value -- bool");
 
 
         ADD_NATIVE_WORD(interpreter, "value.copy", word_value_copy,
-                        "Create a new value that's a copy of another.  Deep copy as required.");
+                        "Create a new value that's a copy of another.  Deep copy as required.",
+                        "value -- new_copy");
 
 
         // String words.
         ADD_NATIVE_WORD(interpreter, "string.size@", word_string_length,
-                        "Get the length of a given string.");
+                        "Get the length of a given string.",
+                        "string -- size");
 
         ADD_NATIVE_WORD(interpreter, "string.[]!", word_string_insert,
-                        "Insert a string into another string.");
+                        "Insert a string into another string.",
+                        "string -- updated_string");
 
         ADD_NATIVE_WORD(interpreter, "string.remove", word_string_remove,
-                        "Remove some characters from a string.");
+                        "Remove some characters from a string.",
+                        "string -- updated_string");
 
         ADD_NATIVE_WORD(interpreter, "string.find", word_string_find,
-                        "Find the first instance of a string within another.");
+                        "Find the first instance of a string within another.",
+                        "string -- index");
 
         ADD_NATIVE_WORD(interpreter, "string.[]@", word_string_index_read,
-                        "Read a character from the given string.");
+                        "Read a character from the given string.",
+                        "index string -- character");
 
         ADD_NATIVE_WORD(interpreter, "string.to_number", word_string_to_number,
-                        "Convert a string into a number.");
+                        "Convert a string into a number.",
+                        "string -- number");
 
         ADD_NATIVE_WORD(interpreter, "to_string", word_to_string,
-                        "Convert a value to a string.");
+                        "Convert a value to a string.",
+                        "value -- string");
 
         ADD_NATIVE_WORD(interpreter, "string.npos", [](auto& interpreter)
             {
                 interpreter->push((int64_t)std::string::npos);
             },
-            "Constant value that indicates a search has failed.");
+            "Constant value that indicates a search has failed.",
+            " -- npos");
 
 
         // Data structure support.
         ADD_IMMEDIATE_WORD(interpreter, "#", word_data_definition,
-                           "Beginning of a structure definition.");
+                           "Beginning of a structure definition.",
+                           " -- ");
 
         ADD_NATIVE_WORD(interpreter, "#@", word_read_field,
-                        "Read a field from a structure.");
+                        "Read a field from a structure.",
+                        "field_index structure -- value");
 
         ADD_NATIVE_WORD(interpreter, "#!", word_write_field,
-                        "Write to a field of a structure.");
+                        "Write to a field of a structure.",
+                        "value field_index structure -- ");
 
         ADD_NATIVE_WORD(interpreter, "#.iterate", word_structure_iterate,
-                        "Call an iterator for each member of a structure.");
+                        "Call an iterator for each member of a structure.",
+                        "word_or_index -- ");
 
 
         // Array words.
 
         ADD_NATIVE_WORD(interpreter, "[].new", word_array_new,
-                        "Create a new array with the given default size.");
+                        "Create a new array with the given default size.",
+                        " -- array");
 
         ADD_NATIVE_WORD(interpreter, "[].size@", word_array_size,
-                        "Read the size of the array object.");
+                        "Read the size of the array object.",
+                        "array -- size");
 
         ADD_NATIVE_WORD(interpreter, "[]!", word_array_write_index,
-                        "Write to a value in the array.");
+                        "Write to a value in the array.",
+                        "value index array -- ");
 
         ADD_NATIVE_WORD(interpreter, "[]@", word_array_read_index,
-                        "Read a value from the array.");
+                        "Read a value from the array.",
+                        "index array -- value");
 
         ADD_NATIVE_WORD(interpreter, "[].size!", word_array_resize,
-                        "Grow or shrink the array to the new size.");
+                        "Grow or shrink the array to the new size.",
+                        "array -- size");
 
         ADD_NATIVE_WORD(interpreter, "[].+", word_array_plus,
                         "Take two arrays and deep copy the contents from the second into the "
-                        "first.");
+                        "first.",
+                        "dest source -- dest");
 
 
         // ByteBuffer operations.
         ADD_NATIVE_WORD(interpreter, "buffer.new", word_buffer_new,
-                        "Create a new byte buffer.");
+                        "Create a new byte buffer.",
+                        "size -- buffer");
 
 
         ADD_NATIVE_WORD(interpreter, "buffer.int!", word_buffer_write_int,
-                        "Write an integer of a given size to the buffer.");
+                        "Write an integer of a given size to the buffer.",
+                        "value buffer byte_size -- ");
 
         ADD_NATIVE_WORD(interpreter, "buffer.int@", word_buffer_read_int,
-                        "Read an integer of a given size from the buffer.");
+                        "Read an integer of a given size from the buffer.",
+                        "buffer byte_size is_signed -- value");
 
 
         ADD_NATIVE_WORD(interpreter, "buffer.float!", word_buffer_write_float,
-                        "Write a float of a given size to the buffer.");
+                        "Write a float of a given size to the buffer.",
+                        "value buffer byte_size -- ");
 
         ADD_NATIVE_WORD(interpreter, "buffer.float@", word_buffer_read_float,
-                        "read a float of a given size from the buffer.");
+                        "read a float of a given size from the buffer.",
+                        "buffer byte_size -- value");
 
 
         ADD_NATIVE_WORD(interpreter, "buffer.string!", word_buffer_write_string,
-                        "Write a string of given size to the buffer.  Padded with 0s if needed.");
+                        "Write a string of given size to the buffer.  Padded with 0s if needed.",
+                        "value buffer size -- ");
 
         ADD_NATIVE_WORD(interpreter, "buffer.string@", word_buffer_read_string,
-                        "Read a string of a given max size from the buffer.");
+                        "Read a string of a given max size from the buffer.",
+                        "buffer size -- value");
 
 
         ADD_NATIVE_WORD(interpreter, "buffer.position!", word_buffer_set_postion,
-                        "Set the position of the buffer pointer.");
+                        "Set the position of the buffer pointer.",
+                        "position buffer -- ");
 
         ADD_NATIVE_WORD(interpreter, "buffer.position@", word_buffer_get_postion,
-                        "Get the position of the buffer pointer.");
+                        "Get the position of the buffer pointer.",
+                        "buffer -- position");
 
 
         // HashTable operations.
         ADD_NATIVE_WORD(interpreter, "{}.new", word_hash_table_new,
-                        "Create a new hash table.");
+                        "Create a new hash table.",
+                        " -- new_hash_table");
 
         ADD_NATIVE_WORD(interpreter, "{}!", word_hash_table_insert,
-                        "Write a value to a given key in the table.");
+                        "Write a value to a given key in the table.",
+                        "value key table -- ");
 
         ADD_NATIVE_WORD(interpreter, "{}@", word_hash_table_find,
-                        "Read a value from a given key in the table.");
+                        "Read a value from a given key in the table.",
+                        "key table -- value");
 
         ADD_NATIVE_WORD(interpreter, "{}?", word_hash_table_exists,
-                        "Check if a given key exists in the table.");
+                        "Check if a given key exists in the table.",
+                        "key table -- bool");
 
         ADD_NATIVE_WORD(interpreter, "{}.+", word_hash_plus,
                         "Take two hashes and deep copy the contents from the second into the "
-                        "first.");
+                        "first.",
+                        "dest source -- dest");
 
         ADD_NATIVE_WORD(interpreter, "{}.iterate", word_hash_table_iterate,
-                        "Iterate through a hash table and call a word for each item.");
+                        "Iterate through a hash table and call a word for each item.",
+                        "word_index -- ");
 
 
         // Math ops.
         ADD_NATIVE_WORD(interpreter, "+", word_add,
-                        "Add 2 numbers or strings together.");
+                        "Add 2 numbers or strings together.",
+                        "a b -- result");
 
         ADD_NATIVE_WORD(interpreter, "-", word_subtract,
-                        "Subtract 2 numbers.");
+                        "Subtract 2 numbers.",
+                        "a b -- result");
 
         ADD_NATIVE_WORD(interpreter, "*", word_multiply,
-                        "Multiply 2 numbers.");
+                        "Multiply 2 numbers.",
+                        "a b -- result");
 
         ADD_NATIVE_WORD(interpreter, "/", word_divide,
-                        "Divide 2 numbers.");
+                        "Divide 2 numbers.",
+                        "a b -- result");
 
 
         // Logical words.
         ADD_NATIVE_WORD(interpreter, "&&", word_logic_and,
-                        "Logically compare 2 values.");
+                        "Logically compare 2 values.",
+                        "a b -- bool");
 
         ADD_NATIVE_WORD(interpreter, "||", word_logic_or,
-                        "Logically compare 2 values.");
+                        "Logically compare 2 values.",
+                        "a b -- bool");
 
         ADD_NATIVE_WORD(interpreter, "'", word_logic_not,
-                        "Logically invert a boolean value.");
+                        "Logically invert a boolean value.",
+                        "bool -- bool");
 
 
         // Bitwise operator words.
         ADD_NATIVE_WORD(interpreter, "&", word_bit_and,
-                        "Bitwise AND two numbers together.");
+                        "Bitwise AND two numbers together.",
+                        "a b -- result");
 
         ADD_NATIVE_WORD(interpreter, "|", word_bit_or,
-                        "Bitwise OR two numbers together.");
+                        "Bitwise OR two numbers together.",
+                        "a b -- result");
 
         ADD_NATIVE_WORD(interpreter, "^", word_bit_xor,
-                        "Bitwise XOR two numbers together.");
+                        "Bitwise XOR two numbers together.",
+                        "a b -- result");
 
         ADD_NATIVE_WORD(interpreter, "~", word_bit_not,
-                        "Bitwise NOT a number.");
+                        "Bitwise NOT a number.",
+                        "number -- result");
 
         ADD_NATIVE_WORD(interpreter, "<<", word_bit_left_shift,
-                        "Shift a numbers bits to the left.");
+                        "Shift a numbers bits to the left.",
+                        "value amount -- result");
 
         ADD_NATIVE_WORD(interpreter, ">>", word_bit_right_shift,
-                        "Shift a numbers bits to the right.");
+                        "Shift a numbers bits to the right.",
+                        "value amount -- result");
 
 
         // Equality words.
         ADD_NATIVE_WORD(interpreter, "=", word_equal,
-                        "Are 2 values equal?");
+                        "Are 2 values equal?",
+                        "a b -- bool");
 
         ADD_NATIVE_WORD(interpreter, "<>", word_not_equal,
-                        "Are 2 values not equal?");
+                        "Are 2 values not equal?",
+                        "a b -- bool");
 
         ADD_NATIVE_WORD(interpreter, ">=", word_greater_equal,
-                        "Is one value greater or equal to another?");
+                        "Is one value greater or equal to another?",
+                        "a b -- bool");
 
         ADD_NATIVE_WORD(interpreter, "<=", word_less_equal,
-                        "Is one value less than or equal to another?");
+                        "Is one value less than or equal to another?",
+                        "a b -- bool");
 
         ADD_NATIVE_WORD(interpreter, ">", word_greater,
-                        "Is one value greater than another?");
+                        "Is one value greater than another?",
+                        "a b -- bool");
 
         ADD_NATIVE_WORD(interpreter, "<", word_less,
-                        "Is one value less than another?");
+                        "Is one value less than another?",
+                        "a b -- bool");
 
 
         // Stack words.
         ADD_NATIVE_WORD(interpreter, "dup", word_dup,
-                        "Duplicate the top value on the data stack.");
+                        "Duplicate the top value on the data stack.",
+                        "value -- value value");
 
         ADD_NATIVE_WORD(interpreter, "drop", word_drop,
-                        "Discard the top value on the data stack.");
+                        "Discard the top value on the data stack.",
+                        "value -- ");
 
         ADD_NATIVE_WORD(interpreter, "swap", word_swap,
-                        "Swap the top 2 values on the data stack.");
+                        "Swap the top 2 values on the data stack.",
+                        "a b -- a b");
 
         ADD_NATIVE_WORD(interpreter, "over", word_over,
-                        "Make a copy of the top value and place the copy under the second.");
+                        "Make a copy of the top value and place the copy under the second.",
+                        "a b -- b a b");
 
         ADD_NATIVE_WORD(interpreter, "rot", word_rot,
-                        "Rotate the top 3 values on the stack.");
+                        "Rotate the top 3 values on the stack.",
+                        "a b c -- c a b");
 
 
         // Some built in constants.
         ADD_NATIVE_WORD(interpreter, "unique_str", word_unique_str,
-                        "Generate a unique string and push it onto the data stack.");
+                        "Generate a unique string and push it onto the data stack.",
+                        " -- string");
 
 
         ADD_NATIVE_WORD(interpreter, "exit_success", word_exit_success,
-                        "Constant value for a process success exit code.");
+                        "Constant value for a process success exit code.",
+                        " -- success");
 
         ADD_NATIVE_WORD(interpreter, "exit_failure", word_exit_failure,
-                        "Constant value for a process fail exit code.");
+                        "Constant value for a process fail exit code.",
+                        " -- falure");
 
         ADD_NATIVE_WORD(interpreter, "true", word_true,
-                        "Push the value true onto the data stack.");
+                        "Push the value true onto the data stack.",
+                        " -- true");
 
         ADD_NATIVE_WORD(interpreter, "false", word_false,
-                        "Push the value false onto the data stack.");
+                        "Push the value false onto the data stack.",
+                        " -- false");
 
 
         ADD_NATIVE_WORD(interpreter, "hex", word_hex,
-                        "Convert a number into a hex string.");
+                        "Convert a number into a hex string.",
+                        "number -- hex_string");
 
 
         ADD_NATIVE_WORD(interpreter, ".s", word_print_stack,
-                        "Print out the data stack without changing it.");
+                        "Print out the data stack without changing it.",
+                        " -- ");
 
         ADD_NATIVE_WORD(interpreter, ".w", word_print_dictionary,
-                        "Print out the current word dictionary.");
+                        "Print out the current word dictionary.",
+                        " -- ");
 
 
         ADD_NATIVE_WORD(interpreter, "show_bytecode", word_show_bytecode,
-                        "If set to true, show bytecode as it's generated.");
+                        "If set to true, show bytecode as it's generated.",
+                        "bool -- ");
 
         ADD_NATIVE_WORD(interpreter, "show_run_code", word_show_run_code,
-                        "If set to true show bytecode as it's executed.");
+                        "If set to true show bytecode as it's executed.",
+                        "bool -- ");
 
         ADD_NATIVE_WORD(interpreter, "show_word", word_show_word,
-                        "Show detailed information about a word.");
+                        "Show detailed information about a word.",
+                        "word -- ");
 
     }
 

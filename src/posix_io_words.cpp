@@ -375,61 +375,78 @@ namespace sorth
     void register_io_words(InterpreterPtr& interpreter)
     {
         ADD_NATIVE_WORD(interpreter, "file.open", word_file_open,
-                        "Open an existing file and return a fd.");
+                        "Open an existing file and return a fd.",
+                        "path flags -- fd");
 
         ADD_NATIVE_WORD(interpreter, "file.create", word_file_create,
-                        "Create/open a file and return a fd.");
+                        "Create/open a file and return a fd.",
+                        "path flags -- fd");
 
         ADD_NATIVE_WORD(interpreter, "file.close", word_file_close,
-                        "Take a fd and close it.");
+                        "Take a fd and close it.",
+                        "fd -- ");
 
 
         ADD_NATIVE_WORD(interpreter, "socket.connect", word_socket_connect,
-                        "Connect to Unix domain socket at the given path.");
+                        "Connect to Unix domain socket at the given path.",
+                        "path -- fd");
 
 
         ADD_NATIVE_WORD(interpreter, "file.size@", word_file_size_read,
-                        "Return the size of a file represented by a fd.");
+                        "Return the size of a file represented by a fd.",
+                        "fd -- size");
 
 
         ADD_NATIVE_WORD(interpreter, "file.exists?", word_file_exists,
-                        "Does the file at the given path exist?");
+                        "Does the file at the given path exist?",
+                        "path -- bool");
 
         ADD_NATIVE_WORD(interpreter, "file.is_open?", word_file_is_open,
-                        "Is the fd currently valid?");
+                        "Is the fd currently valid?",
+                        "fd -- bool");
 
         ADD_NATIVE_WORD(interpreter, "file.is_eof?", word_file_is_eof,
-                        "Is the file pointer at the end of the file?");
+                        "Is the file pointer at the end of the file?",
+                        "fd -- bool");
 
 
         ADD_NATIVE_WORD(interpreter, "file.@", word_file_read,
-                        "Read from a given file.  (Unimplemented.)");
+                        "Read from a given file.  (Unimplemented.)",
+                        " -- ");
 
         ADD_NATIVE_WORD(interpreter, "file.char@", word_file_read_character,
-                        "Read a character from a given file.");
+                        "Read a character from a given file.",
+                        "fd -- character");
 
         ADD_NATIVE_WORD(interpreter, "file.string@", word_file_read_string,
-                        "Read a a string of a specified length from a given file.");
+                        "Read a a string of a specified length from a given file.",
+                        "size fd -- string");
 
         ADD_NATIVE_WORD(interpreter, "file.!", word_file_write,
-                        "Write a value as text to a file, unless it's a ByteBuffer.");
+                        "Write a value as text to a file, unless it's a ByteBuffer.",
+                        "value fd -- ");
 
 
         ADD_NATIVE_WORD(interpreter, "file.line@", word_file_line_read,
-                        "Read a full line from a file.");
+                        "Read a full line from a file.",
+                        "fd -- string");
 
         ADD_NATIVE_WORD(interpreter, "file.line!", word_file_line_write,
-                        "Write a string as a line to the file.");
+                        "Write a string as a line to the file.",
+                        "string fd -- ");
 
 
         ADD_NATIVE_WORD(interpreter, "file.r/o", [](auto intr) { intr->push(O_RDONLY); },
-                        "Constant for opening a file as read only.");
+                        "Constant for opening a file as read only.",
+                        " -- flag");
 
         ADD_NATIVE_WORD(interpreter, "file.w/o", [](auto intr) { intr->push(O_WRONLY); },
-                        "Constant for opening a file as write only.");
+                        "Constant for opening a file as write only.",
+                        " -- flag");
 
         ADD_NATIVE_WORD(interpreter, "file.r/w", [](auto intr) { intr->push(O_RDWR); },
-                        "Constant for opening a file for both reading and writing.");
+                        "Constant for opening a file for both reading and writing.",
+                        " -- flag");
 
     }
 

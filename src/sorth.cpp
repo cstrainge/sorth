@@ -81,7 +81,8 @@ int main(int argc, char* argv[])
                 {
                     interpreter->push(array);
                 },
-                "List of command line arguments passed to the script.");
+                "List of command line arguments passed to the script.",
+                " -- arguments");
 
             auto user_source_path = interpreter->find_file(argv[1]);
             interpreter->process_source(user_source_path);

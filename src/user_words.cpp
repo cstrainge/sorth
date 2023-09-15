@@ -47,10 +47,12 @@ namespace sorth
     {
         // User environment words.
         ADD_NATIVE_WORD(interpreter, "user.env@", word_user_env_read,
-                        "Read an environment variable");
+                        "Read an environment variable",
+                        "name -- value_or_empty");
 
         ADD_NATIVE_WORD(interpreter, "user.os", word_user_os_read,
-                        "Get the name of the OS the script is running under.");
+                        "Get the name of the OS the script is running under.",
+                        " -- os_name");
     }
 
 
