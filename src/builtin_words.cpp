@@ -427,6 +427,8 @@ namespace sorth
         at_exit_value = 0;
 
         interpreter->release_context();
+        interpreter->clear_stack();
+
         interpreter->mark_context();
     }
 
