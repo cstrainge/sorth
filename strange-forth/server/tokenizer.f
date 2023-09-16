@@ -9,13 +9,13 @@
 
 
 
-: tk.location.uri!        tk.location.uri       swap @ #! ;
-: tk.location.line!       tk.location.line      swap @ #! ;
-: tk.location.character!  tk.location.character swap @ #! ;
+: tk.location.uri!        tk.location.uri        swap @ #! ;
+: tk.location.line!       tk.location.line       swap @ #! ;
+: tk.location.character!  tk.location.character  swap @ #! ;
 
-: tk.location.uri@        tk.location.uri       swap @ #@ ;
-: tk.location.line@       tk.location.line      swap @ #@ ;
-: tk.location.character@  tk.location.character swap @ #@ ;
+: tk.location.uri@        tk.location.uri        swap @ #@ ;
+: tk.location.line@       tk.location.line       swap @ #@ ;
+: tk.location.character@  tk.location.character  swap @ #@ ;
 
 
 
@@ -131,7 +131,7 @@
 
 
 ( Check to make sure the pointer isn't at the end of the stream. )
-: tk.buffer.eos?  ( tk.buffer_var -- is_eos? )
+: tk.buffer.is_eos?  ( tk.buffer_var -- is_eos? )
     @ variable! source_buffer
 
     source_buffer tk.buffer.index@
@@ -146,7 +146,7 @@
 : tk.buffer.peek  ( tk.buffer -- next_char )
     @ variable! source_buffer
 
-    source_buffer tk.buffer.eos?
+    source_buffer tk.buffer.is_eos?
     if
         " "
     else
@@ -163,7 +163,7 @@
 : tk.buffer.next  ( tk.buffer -- next_char )
     @ variable! source_buffer
 
-    source_buffer tk.buffer.eos?
+    source_buffer tk.buffer.is_eos?
     if
         " "
     else
@@ -194,7 +194,7 @@
     @ variable! source_buffer
 
     begin
-        source_buffer tk.buffer.eos? false =
+        source_buffer tk.buffer.is_eos? false =
         source_buffer tk.buffer.peek tk.is_whitespace_char
         &&
     while
@@ -210,7 +210,7 @@
     "" variable! new_text
 
     begin
-        source_buffer tk.buffer.eos? false =
+        source_buffer tk.buffer.is_eos? false =
         source_buffer tk.buffer.peek tk.is_whitespace_char false =
         &&
     while
@@ -257,7 +257,7 @@
         then
 
         current_text @ ")" =
-        source_buffer tk.buffer.eos? true =
+        source_buffer tk.buffer.is_eos? true =
         ||
     until
 
@@ -293,7 +293,7 @@
         1 variable! n_lines
 
         begin
-            source_buffer tk.buffer.eos? '
+            source_buffer tk.buffer.is_eos? '
             next_char @ "\"" <>
 
             &&
@@ -383,33 +383,31 @@
 
     text @ "" =
     if
-        " " text !
-    then
-
-    ( Determine type of token from that text. )
-    ( If comment, read a list of tokens. )
-    text @ "(" =
-    if
-        start_location @ source_buffer tk.buffer.read_comment_tokens
-
-        text !
-        n_lines !
-
-        tk.token_type:comment token_type !
+        tk.token_type:eos token_type !
     else
-        0 text @ string.[]@ "\"" =
+        text @ "(" =
         if
-            text @ source_buffer tk.buffer.read_string
+            start_location @ source_buffer tk.buffer.read_comment_tokens
 
             text !
             n_lines !
-            tk.token_type:string token_type !
+
+            tk.token_type:comment token_type !
         else
-            0 text @ string.[]@ tk.is_numeric?
+            0 text @ string.[]@ "\"" =
             if
-                text @ tk.try_as_number token_type ! text !
+                text @ source_buffer tk.buffer.read_string
+
+                text !
+                n_lines !
+                tk.token_type:string token_type !
             else
-                tk.token_type:word token_type !
+                0 text @ string.[]@ tk.is_numeric?
+                if
+                    text @ tk.try_as_number token_type ! text !
+                else
+                    tk.token_type:word token_type !
+                then
             then
         then
     then
@@ -447,13 +445,18 @@
 : tk.tokenize  ( uri source_code -- tk.token_list )
     tk.buffer.new variable! source_buffer
     0 [].new variable! token_list
+    variable token
 
     begin
-        source_buffer tk.buffer.eos? '
+        source_buffer tk.buffer.is_eos? '
     while
-        token_list [].size++!!
+        source_buffer tk.buffer.read_token token !
 
-        source_buffer tk.buffer.read_token token_list [ token_list [].size@@ -- ]!!
+        token tk.token.type@ tk.token_type:eos <>
+        if
+            token_list [].size++!!
+            token @ token_list [ token_list [].size@@ -- ]!!
+        then
     repeat
 
     #.new tk.token_list {
@@ -465,13 +468,13 @@
 
 
 
-: tk.token_list.eos?  ( token_list_variable -- is_eol? )
+: tk.token_list.is_eos?  ( token_list_variable -- is_eos? )
     @ variable! token_list
 
     token_list tk.token_list.position@
     token_list tk.token_list.items@ [].size@
 
-    <
+    >=
 ;
 
 
@@ -481,7 +484,7 @@
 : tk.token_list.peek  ( token_list_variable -- current_token )
     @ variable! token_list
 
-    token_list tk.token_list.eos?
+    token_list tk.token_list.is_eos?
     if
         #.new tk.token {
             type -> tk.token_type:eos
