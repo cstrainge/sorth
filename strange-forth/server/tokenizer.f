@@ -53,7 +53,7 @@
     "\n" =
     if
         ( We're incrementing lines, so reset colum and increment the line. )
-        0 location json.location.character!!
+        0 location tk.location.character!
         location tk.location.line@ ++ location tk.location.line!
     else
         ( This isn't a new line, so we're just incrementing the character. )
@@ -137,7 +137,7 @@
     source_buffer tk.buffer.index@
     source_buffer tk.buffer.source@ string.size@
 
-    <
+    >=
 ;
 
 
@@ -178,10 +178,12 @@
 
 
 : tk.is_whitespace_char  ( character -- is_whitespace )
-    dup "\n" =
-    dup "\t" =
+    variable! next_char
+
+    next_char @ "\n" =
+    next_char @ "\t" =
     ||
-    " " =
+    next_char @ " " =
     ||
 ;
 
@@ -192,7 +194,7 @@
     @ variable! source_buffer
 
     begin
-        source_buffer tk.buffer.is_eos? false =
+        source_buffer tk.buffer.eos? false =
         source_buffer tk.buffer.peek tk.is_whitespace_char
         &&
     while
@@ -208,7 +210,7 @@
     "" variable! new_text
 
     begin
-        source_buffer tk.buffer.is_eos? false =
+        source_buffer tk.buffer.eos? false =
         source_buffer tk.buffer.peek tk.is_whitespace_char false =
         &&
     while
@@ -220,7 +222,7 @@
 
 
 
-: tk.buffer.read_comment_tokens  ( start_location tk.buffer -- comment_token )
+: tk.buffer.read_comment_tokens  ( start_location tk.buffer -- n_lines comment_tokens )
     @ variable! source_buffer
     variable! start_location
     1 [].new variable! comment_list
@@ -251,15 +253,15 @@
                 type -> tk.token_type:comment ,
                 contents -> current_text @
             }
-            comment_list [ comment_list @ [].size -- ]!!
+            comment_list [ comment_list @ [].size@ -- ]!!
         then
 
         current_text @ ")" =
-        source_buffer tk.buffer.is_eos? true =
+        source_buffer tk.buffer.eos? true =
         ||
     until
 
-    comment_list [ comment_list [].size@@ -- ]@@ tk.token.location #@ tk.location.line #@
+    tk.token.location comment_list [ comment_list [].size@@ -- ]@@ #@ tk.location.line swap #@
     variable! last_line
 
     1 variable! n_lines
@@ -269,9 +271,10 @@
         last_line @ start_location tk.location.line@ - n_lines !
     then
 
-    comment_list @
     n_lines @
+    comment_list @
 ;
+
 
 
 
@@ -279,7 +282,86 @@
     @ variable! source_buffer
     variable! string
 
-    ( )
+    string @ string.size@ -- string @ string.[]@
+    "\""
+    =
+    if
+        1
+        string @
+    else
+        variable next_char
+        1 variable! n_lines
+
+        begin
+            source_buffer tk.buffer.eos? '
+            next_char @ "\"" <>
+
+            &&
+        while
+            source_buffer tk.buffer.next next_char !
+
+            next_char @
+            case
+                "\\" of next_char @ source_buffer tk.buffer.next + next_char ! endof
+                "\n" of "\\n" next_char ! n_lines ++! endof
+            endcase
+
+            string @ next_char @ + string !
+        repeat
+
+        n_lines @
+        string @
+    then
+;
+
+
+
+
+: tk.is_numeric? ( character -- bool )
+    variable! next_char
+
+    next_char @ "0" >=
+    next_char @ "9" <=
+    &&
+
+    next_char @ "." =
+    ||
+
+    next_char @ "e" =
+    ||
+;
+
+
+
+
+: tk.try_as_number ( text -- text_or_number token_type )
+    variable! text
+    tk.token_type:word variable! token_type
+
+    true variable! is_a_number
+    0 variable! index
+    text @ string.size@ variable! count
+
+    begin
+        index @ count @ <
+    while
+        index @ text @ string.[]@ tk.is_numeric? true <>
+        if
+            false is_a_number !
+            break
+        then
+
+        index ++!
+    repeat
+
+    is_a_number @
+    if
+        text @ string.to_number text !
+        tk.token_type:number token_type !
+    then
+
+    text @
+    token_type @
 ;
 
 
@@ -299,29 +381,35 @@
     ( Read a word of text from the buffer. )
     source_buffer tk.buffer.read_token_text variable! text
 
+    text @ "" =
+    if
+        " " text !
+    then
+
     ( Determine type of token from that text. )
     ( If comment, read a list of tokens. )
     text @ "(" =
     if
         start_location @ source_buffer tk.buffer.read_comment_tokens
 
+        text !
         n_lines !
-        text @
+
         tk.token_type:comment token_type !
     else
-        ( If the text starts with a " read the rest as a string. )
         0 text @ string.[]@ "\"" =
         if
-            text @ tk.buffer_read_string text ! n_lines !
+            text @ source_buffer tk.buffer.read_string
+
+            text !
+            n_lines !
             tk.token_type:string token_type !
         else
-            ( If the text looks like a number, try to convert to number. )
             0 text @ string.[]@ tk.is_numeric?
             if
                 text @ tk.try_as_number token_type ! text !
             else
-                ( Else, it's a word. )
-                tk.token_type:word
+                tk.token_type:word token_type !
             then
         then
     then
@@ -351,7 +439,7 @@
 
 : tk.tokenize  ( uri source_code -- tk.token_list )
     tk.buffer.new variable! source_buffer
-    1 [].new variable! token_list
+    0 [].new variable! token_list
 
     begin
         source_buffer tk.buffer.eos? '
