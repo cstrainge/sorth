@@ -435,6 +435,13 @@
 ;
 
 
+: tk.token_list.items!     tk.token_list.items     swap @ #! ;
+: tk.token_list.position!  tk.token_list.position  swap @ #! ;
+
+: tk.token_list.items@     tk.token_list.items     swap @ #@ ;
+: tk.token_list.position@  tk.token_list.position  swap @ #@ ;
+
+
 
 
 : tk.tokenize  ( uri source_code -- tk.token_list )
@@ -461,8 +468,8 @@
 : tk.token_list.eos?  ( token_list_variable -- is_eol? )
     @ variable! token_list
 
-    tk.token_list.position token_list @ #@
-    tk.token_list.items token_list @ #@ [].size@
+    token_list tk.token_list.position@
+    token_list tk.token_list.items@ [].size@
 
     <
 ;
@@ -480,7 +487,7 @@
             type -> tk.token_type:eos
         }
     else
-        tk.token_list.items token_list @ #@ [ tk.token_list.position token_list @ #@ ]@
+        token_list tk.token_list.items@ [ token_list tk.token_list.position@ ]@
     then
 ;
 
@@ -493,8 +500,8 @@
 
     token_list tk.token_list.peek variable! next_token
 
-    tk.token_list.position token_list @ #@ ++
-    tk.token_list.position token_list @ #!
+    token_list tk.token_list.position@ ++
+    token_list tk.token_list.position!
 
     next_token @
 ;
@@ -506,5 +513,5 @@
 : tk.token_list.reset
     @ variable! token_list
 
-    0 tk.token_list.position token_list @ #!
+    0 token_list tk.token_list.position!
 ;
