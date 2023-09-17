@@ -152,11 +152,11 @@
 
 : tk.buffer.location!  tk.buffer.location  swap @ #! ;
 : tk.buffer.index!     tk.buffer.index     swap @ #! ;
-: tk.buffeource!    tk.buffeource    swap @ #! ;
+: tk.buffer.source!    tk.buffer.source    swap @ #! ;
 
 : tk.buffer.location@  tk.buffer.location  swap @ #@ ;
 : tk.buffer.index@     tk.buffer.index     swap @ #@ ;
-: tk.buffeource@    tk.buffeource    swap @ #@ ;
+: tk.buffer.source@    tk.buffer.source    swap @ #@ ;
 
 
 
@@ -165,7 +165,7 @@
 : tk.buffer.new  ( uri source_code -- tk.buffer )
     tk.buffer.new variable! source_buffer
 
-                    source_buffer tk.buffeource!
+                    source_buffer tk.buffer.source!
     tk.location.new source_buffer tk.buffer.location!
     0               source_buffer tk.buffer.index!
 
@@ -179,7 +179,7 @@
     @ variable! source_buffer
 
     source_buffer tk.buffer.index@
-    source_buffer tk.buffeource@ strinize@
+    source_buffer tk.buffer.source@ string.size@
 
     >=
 ;
@@ -195,7 +195,7 @@
         " "
     else
         source_buffer tk.buffer.index@
-        source_buffer tk.buffeource@
+        source_buffer tk.buffer.source@
 
         string.[]@
     then
@@ -234,7 +234,7 @@
 
 
 
-: tk.buffekip_whitespace  ( tk.buffer -- )
+: tk.buffer.skip_whitespace  ( tk.buffer -- )
     @ variable! source_buffer
 
     begin
@@ -283,13 +283,13 @@
     variable current_text
 
     begin
-        source_buffer tk.buffekip_whitespace
+        source_buffer tk.buffer.skip_whitespace
         source_buffer tk.buffer.location@ value.copy current_location !
         source_buffer tk.buffer.read_token_text current_text !
 
         current_text "" <>
         if
-            comment_list [ize++!!
+            comment_list [].size++!!
 
             #.new tk.token {
                 location -> current_location @ ,
@@ -297,7 +297,7 @@
                 type -> tk.token_type:comment ,
                 contents -> current_text @
             }
-            comment_list [ comment_list @ [ize@ -- ]!!
+            comment_list [ comment_list @ [].size@ -- ]!!
         then
 
         current_text @ ")" =
@@ -305,7 +305,7 @@
         ||
     until
 
-    tk.token.location comment_list [ comment_list [ize@@ -- ]@@ #@ tk.location.line swap #@
+    tk.token.location comment_list [ comment_list [].size@@ -- ]@@ #@ tk.location.line swap #@
     variable! last_line
 
     1 variable! n_lines
@@ -326,7 +326,7 @@
     @ variable! source_buffer
     variable! string
 
-    string @ strinize@ -- string @ string.[]@
+    string @ string.size@ -- string @ string.[]@
     "\""
     =
     if
@@ -384,7 +384,7 @@
 
     true variable! is_a_number
     0 variable! index
-    text @ strinize@ variable! count
+    text @ string.size@ variable! count
 
     begin
         index @ count @ <
@@ -415,7 +415,7 @@
 : tk.buffer.read_token  ( tk_buffer_variable -- tk.token )
     @ variable! source_buffer
 
-    source_buffer tk.buffekip_whitespace
+    source_buffer tk.buffer.skip_whitespace
 
     ( Get our starting location from the buffer. )
     source_buffer tk.buffer.location@ value.copy variable! start_location
@@ -497,13 +497,13 @@
     variable base_end
     variable next_start
 
-    index @ tokens @ [ize@ <
+    index @ tokens @ [].size@ <
     if
         tokens [ index @ ]@@ next_token !
 
         next_token tk.token.is_comment?
         if
-            base_token tk.token.contents@ [ base_token tk.token.contents@ [ize@ -- ]@ base_end !
+            base_token tk.token.contents@ [ base_token tk.token.contents@ [].size@ -- ]@ base_end !
             next_token tk.token.contents@ [ 0 ]@ next_start !
 
             next_start tk.token.location.line@
@@ -527,7 +527,7 @@
     variable! tokens
     variable! base_index
 
-    tokens @ [ize@ variable! size
+    tokens @ [].size@ variable! size
     tokens [ base_index @ ]@@ variable! base_token
 
     base_index @ ++ variable! index
@@ -563,7 +563,7 @@
 ( Go through the token list and compress all adjacent comment tokens into a single comment token. )
 : tk.token_list.compress_comments
     variable! tokens
-    tokens @ [ize@ [].new variable! new_list
+    tokens @ [].size@ [].new variable! new_list
 
     variable index
     variable added
@@ -573,12 +573,12 @@
 
     begin
         index @
-        tokens @ [ize@
+        tokens @ [].size@
         <
     while
         tokens [ index @ ]@@ token !
 
-        index @ ++ tokens @ [ize@ <
+        index @ ++ tokens @ [].size@ <
         if
             tokens [ index @ ++ ]@@ next_token !
 
@@ -597,7 +597,7 @@
         index ++!
     repeat
 
-    added @ new_list @ [ize!
+    added @ new_list @ [].size!
     new_list @
 ;
 
@@ -616,8 +616,8 @@
 
         token tk.token.type@ tk.token_type:eos <>
         if
-            token_list [ize++!!
-            token @ token_list [ token_list [ize@@ -- ]!!
+            token_list [].size++!!
+            token @ token_list [ token_list [].size@@ -- ]!!
         then
     repeat
 
@@ -636,7 +636,7 @@
     @ variable! token_list
 
     token_list tk.token_list.position@
-    token_list tk.token_list.items@ [ize@
+    token_list tk.token_list.items@ [].size@
 
     >=
 ;
