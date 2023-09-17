@@ -429,15 +429,15 @@
 
 
 ( Increment and decrement variables. )
-: +!  description: "Increment a variable by a given value."
-      ( value variable -- )
-    over @ + swap !
+: ++!  description: "Increment a variable by a given value."
+       signature: "value variable -- "
+     dup @ ++ swap !
 ;
 
 
-: -!  description: "Decrement a variable by a given value."
-      signature: " value variable -- "
-    over @ - swap !
+: --!  description: "Decrement a variable by a given value."
+       signature: "value variable -- "
+    dup @ -- swap !
 ;
 
 
@@ -519,6 +519,23 @@
 : [].size!! description: "Shrink or grow the array variable to the given size."
             signature: "new_size array_variable -- "
     @ [].size!
+;
+
+
+: [].size++!  description: "Grow an array by one item, leaving the resized array on the stack."
+              signature: "array -- resized_array"
+    variable! the_array
+
+    the_array [].size@@ ++ the_array [].size!!
+    the_array @
+;
+
+
+: [].size++!!  description: "Grow an array variable by one item."
+               signature: "array_variable -- "
+    @ variable! the_array
+
+    the_array [].size@@ ++ the_array [].size!!
 ;
 
 
