@@ -88,10 +88,54 @@
 : tk.token.type!        tk.token.type        swap @ #! ;
 : tk.token.contents!    tk.token.contents    swap @ #! ;
 
-: tk.token.uri@         tk.token.uri         swap @ #@ ;
+: tk.token.location@    tk.token.location    swap @ .s #@ ;
 : tk.token.line_count@  tk.token.line_count  swap @ #@ ;
 : tk.token.type@        tk.token.type        swap @ #@ ;
 : tk.token.contents@    tk.token.contents    swap @ #@ ;
+
+
+
+
+: tk.token.is_word?
+    tk.token.type@ tk.token_type:word =
+;
+
+
+: tk.token.is_comment?
+    tk.token.type@ tk.token_type:comment =
+;
+
+
+: tk.token.is_string?
+    tk.token.type@ tk.token_type:string =
+;
+
+
+: tk.token.is_number?
+    tk.token.type@ tk.token_type:number =
+;
+
+
+: tk.token.is_eos?
+    tk.token.type@ tk.token_type:eos =
+;
+
+
+
+
+: tk.token.location.line@  ( token_index -- token_line )
+    @ variable! token
+
+    tk.location.line tk.token.location token @ #@ #@
+;
+
+
+
+: tk.token.location.character@  ( token_index -- token_character )
+    @ variable! token
+
+    tk.location.character tk.token.location token @ #@ #@
+;
 
 
 
@@ -441,8 +485,126 @@
 
 
 
+( Check the indexed comment against the base comment tokens, are these two comments directly )
+( adjacent to each other? )
+: tk.token_list.next_comment_is_adjacent?  ( base_token next_index tokens -- is_adjacent? )
+    @ variable! tokens
+    variable! index
+    variable! base_token
 
-: tk.tokenize  ( uri source_code -- tk.token_list )
+    variable next_token
+
+    variable base_end
+    variable next_start
+
+    index @ tokens @ [].size@ <
+    if
+        tokens [ index @ ]@@ next_token !
+
+        next_token tk.token.is_comment?
+        if
+            base_token tk.token.contents@ [ base_token tk.token.contents@ [].size@ -- ]@ base_end !
+            next_token tk.token.contents@ [ 0 ]@ next_start !
+
+            next_start tk.token.location.line@
+            base_end tk.token.location.line@
+            -
+
+            1 <=
+        else
+            false
+        then
+    else
+        false
+    then
+;
+
+
+
+( Given a base index, iterate through the next tokens, and if those tokens are adjacent comments, )
+( combine them into one larger comment. )
+: tk.token_list.combine_consecutive_comments  ( base_index tokens -- num_combined )
+    variable! tokens
+    variable! base_index
+
+    tokens @ [].size@ variable! size
+    tokens [ base_index @ ]@@ variable! base_token
+
+    base_index @ ++ variable! index
+
+    variable next_token
+
+    begin
+        index @ size @ <
+        dup .cr
+        base_token @ index @ tokens tk.token_list.next_comment_is_adjacent?
+        &&
+    while
+        tokens [ index @ ]@@ next_token !
+
+        base_token tk.token.location.line@ next_token tk.token.location.line@
+        <>
+        if
+            base_token tk.token.line_count@ next_token tk.token.line_count@ +
+            base_token tk.token.line_count!
+        then
+
+        base_token tk.token.contents@ next_token tk.token.contents@ [].+
+        base_token tk.token.contents!
+
+        index ++!
+    repeat
+
+    index @ base_index @ - dup .cr
+;
+
+
+
+( Go through the token list and compress all adjacent comment tokens into a single comment token. )
+: tk.token_list.compress_comments
+    variable! tokens
+    tokens @ [].size@ [].new variable! new_list
+
+    variable index
+    variable added
+
+    variable token
+    variable next_token
+
+    begin
+        index @
+        tokens @ [].size@
+        <
+    while
+        tokens [ index @ ]@@ token !
+
+        index @ ++ tokens @ [].size@ <
+        if
+            tokens [ index @ ++ ]@@ next_token !
+
+            token tk.token.is_comment?
+            next_token tk.token.is_comment?
+            &&
+            if
+                index @ tokens @ tk.token_list.combine_consecutive_comments
+                -- index @ + index !
+            then
+        then
+
+        token @ new_list [ added @ ]!!
+        added ++!
+
+        index ++!
+    repeat
+
+    added @ new_list @ [].size!
+    new_list @
+;
+
+
+
+
+: tk.token_list.tokenize  ( uri source_code -- tk.token_list )
     tk.buffer.new variable! source_buffer
     0 [].new variable! token_list
     variable token
@@ -458,6 +620,8 @@
             token @ token_list [ token_list [].size@@ -- ]!!
         then
     repeat
+
+    token_list @ tk.token_list.compress_comments token_list !
 
     #.new tk.token_list {
         items -> token_list @ ,
