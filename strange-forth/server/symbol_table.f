@@ -1,2 +1,0 @@
-
-# st.symbol name location
