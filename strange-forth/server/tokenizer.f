@@ -677,7 +677,7 @@
 
 
 ( Reset back to the beginning of the stream. )
-: tk.token_list.reset
+: tk.token_list.reset  ( tk.token_list_variable -- )
     @ variable! token_list
 
     0 token_list tk.token_list.position!
