@@ -1,5 +1,10 @@
 
+( Core file of the Strange Forth language server.  This file acts as the program's main. All of )
+( writes to standard out are currently captured by the launch script and shunted to the file )
+( sorth_lsp_log.txt.  It is planned as the language server stabilizes that this level of logging )
+( will be removed. )
 "Server started." .cr
+
 
 
 
@@ -21,6 +26,7 @@ socket_path socket.connect variable! server_fd
 
 
 
+( Include the rest of the language server. )
 "jsonrpc.f" include
 "lsp.f" include
 "tokenizer.f" include
@@ -34,6 +40,9 @@ ls.standard_words ds.add_std_symbols
 
 
 
+( Handle the initialize message sent from the language client. We don't examine the parameters )
+( sent yet and simply respond with a simple set of capabilities. )
+( This word should be improved to configure and better report the server capabilities. )
 : ls.handle:initialize ( message_params -- response_data was_successful )
     ( TODO: Read the message params. )
 
@@ -61,6 +70,7 @@ ls.standard_words ds.add_std_symbols
 
 
 
+( The init process has completed. )
 : ls.handle:initialized
     "Client/server connection has been successfully initialized." lsp.log_message
 ;
@@ -68,6 +78,7 @@ ls.standard_words ds.add_std_symbols
 
 
 
+( We have been requested to begin shutdown. )
 : ls.handle:shutdown
     "The server is shutting down." lsp.log_message
 
@@ -81,6 +92,7 @@ ls.standard_words ds.add_std_symbols
 
 
 
+( Ok, now the client wants us to exit for real. )
 : ls.handle:exit
     "Final exit notification received." lsp.log_message
 
@@ -90,6 +102,8 @@ ls.standard_words ds.add_std_symbols
 
 
 
+( Set/activate/deactivate the language server's trace level.  We don't really do anything with )
+( this flag at this moment. )
 : ls.handle:$/set_trace
     variable! params
     params { "value" }@@ variable! trace_value
@@ -100,6 +114,11 @@ ls.standard_words ds.add_std_symbols
 
 
 
+( Handle the fact that a document has been opened in the client.  What we do here is store the )
+( full text of the document in our document store and process it for symbols and any other useful )
+( information we can extract.  Right now there's a perf issue in string handling so the initial )
+( tokenization can take multiple seconds on larger documents.  A language change is being planned )
+( to address this. )
 : ls.handle:text_document/did_open
     variable! params
 
@@ -119,6 +138,7 @@ ls.standard_words ds.add_std_symbols
 
 
 
+( Handle a document highlight request. We don't do anything with the request right now. )
 : ls.handle:text_document/document_highlight
     "Document highlight request" lsp.log_message
     drop
@@ -130,6 +150,10 @@ ls.standard_words ds.add_std_symbols
 
 
 
+( Handle a client's hover request.  We take the line and character location and scan our )
+( document's token list and try to find a word token that the requested location lands on.  If )
+( a word token is found, we try to look up a symbol for that word and return what information we )
+( find to the language client. )
 : ls.handle:text_document/hover
     variable! params
 
@@ -211,6 +235,7 @@ ls.standard_words ds.add_std_symbols
 
 
 
+( Document definition request.  We don't do anything with this at this time. )
 : ls.handle:text_document/definition
     variable! params
 
@@ -226,7 +251,7 @@ ls.standard_words ds.add_std_symbols
 
 
 
-
+( Register our handlers with the LSP message processor, )
 ` ls.handle:initialize lsp.on:initialize
 ` ls.handle:initialized lsp.on:initialized
 ` ls.handle:shutdown lsp.on:shutdown
@@ -239,7 +264,10 @@ ls.standard_words ds.add_std_symbols
 ` ls.handle:text_document/hover lsp.on:text_document/hover
 ` ls.handle:text_document/definition lsp.on:text_document/definition
 
-" Handlers registered, starting main loop." .cr
 
+
+
+( All of our init has completed, so run the main message loop and wait for incoming requests. )
+" Handlers registered, starting main loop." .cr
 
 lsp.process_message_loop

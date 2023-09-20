@@ -1,4 +1,8 @@
 
+( Implantation of the source text tokenizer and supporting structures. Everything in this file )
+( falls under the tk. namespace. )
+
+
 ( Represent a given location within the source text. )
 # tk.location
     uri        ( The uri we get from vscode for the file being edited. )
@@ -20,12 +24,11 @@
 
 
 
+( Overbidden constructor that takes a uri and initializes the line and character to default. )
 : tk.location.new  ( uri -- tk.location )
     tk.location.new variable! location
 
-      location tk.location.uri!
-    0 location tk.location.line!
-    0 location tk.location.character!
+    location tk.location.uri!
 
     location @
 ;
@@ -33,20 +36,7 @@
 
 
 
-: tk.location.new_lc  ( uri line column -- tk.location )
-    rot rot
-
-    tk.location.new variable! location
-
-    location tk.location.character!
-    location tk.location.line!
-
-    location @
-;
-
-
-
-
+( Increment the location based on the character encountered. )
 : tk.location.inc  ( character tk.location --  )
     variable! location
 
@@ -81,8 +71,6 @@
 ;
 
 
-
-
 : tk.token.location!    tk.token.location    swap @ #! ;
 : tk.token.line_count!  tk.token.line_count  swap @ #! ;
 : tk.token.type!        tk.token.type        swap @ #! ;
@@ -96,27 +84,40 @@
 
 
 
-: tk.token.is_word?
+( Is the token variable holding a word token? )
+: tk.token.is_word?  ( token_variable -- bool )
     tk.token.type@ tk.token_type:word =
 ;
 
 
-: tk.token.is_comment?
+
+
+( Is the token variable holding a word comment? )
+: tk.token.is_comment?  ( token_variable -- bool )
     tk.token.type@ tk.token_type:comment =
 ;
 
 
-: tk.token.is_string?
+
+
+( Is the token variable holding a string token? )
+: tk.token.is_string?  ( token_variable -- bool )
     tk.token.type@ tk.token_type:string =
 ;
 
 
-: tk.token.is_number?
+
+
+( Is the token variable holding a number token? )
+: tk.token.is_number?  ( token_variable -- bool )
     tk.token.type@ tk.token_type:number =
 ;
 
 
-: tk.token.is_eos?
+
+
+( Is the token variable holding a end of stream token? )
+: tk.token.is_eos?  ( token_variable -- bool )
     tk.token.type@ tk.token_type:eos =
 ;
 
@@ -187,6 +188,7 @@
 
 
 
+( Peek into the string buffer without advancing the pointer. )
 : tk.buffer.peek  ( tk.buffer -- next_char )
     @ variable! source_buffer
 
@@ -204,6 +206,7 @@
 
 
 
+( Get the next character from the text stream and advance the current location pointer. )
 : tk.buffer.next  ( tk.buffer -- next_char )
     @ variable! source_buffer
 
@@ -221,6 +224,7 @@
 
 
 
+( Is the given character considered whitespace? )
 : tk.is_whitespace_char  ( character -- is_whitespace )
     variable! next_char
 
@@ -234,6 +238,7 @@
 
 
 
+( Skip past whitespace in the source buffer. )
 : tk.buffer.skip_whitespace  ( tk.buffer -- )
     @ variable! source_buffer
 
@@ -249,7 +254,8 @@
 
 
 
-: tk.buffer.read_token_text
+( Read a textual token from the source stream. )
+: tk.buffer.read_token_text  ( source_buffer_variable -- new_token_text )
     @ variable! source_buffer
     "" variable! new_text
 
@@ -266,6 +272,10 @@
 
 
 
+
+( Comment tokens are a bit different than other tokens.  The contents of a top level token is )
+( list of sub-tokens that actually comprise the comment, including bracket tokens. )
+( The contents of the sub-tokens actually contain text. )
 : tk.buffer.read_comment_tokens  ( start_location tk.buffer -- n_lines comment_tokens )
     @ variable! source_buffer
     variable! start_location
@@ -322,10 +332,15 @@
 
 
 
-: tk.buffer.read_string  ( starting_text tk.buffer_variable -- n_lines string )
+( Read a string literal from the source buffer.  We are given a token's worth of starting text and )
+( we'll append to that text until we find the closing quote.  Unlike in the actual language this )
+( version will happily consume the string across new lines. )
+: tk.buffer.read_string  ( starting_text tk.buffer_variable -- num_lines string )
     @ variable! source_buffer
     variable! string
 
+    ( Check to see if the starting text has the closing quote.  Note that if the quote is the only )
+    ( character in the text, then it doesn't count as a closing quote. )
     string @ string.size@ 1  >
     string @ string.size@ -- string @ string.[]@  "\""  =
     &&
@@ -360,7 +375,8 @@
 
 
 
-: tk.is_numeric? ( character -- bool )
+( This this character look like it's probably part of a numeric string? )
+: tk.is_numeric?  ( character -- bool )
     variable! next_char
 
     next_char @ "0" >=
@@ -372,11 +388,16 @@
 
     next_char @ "e" =
     ||
+
+    next_char @ "-" =
+    ||
 ;
 
 
 
 
+( Try to handle the given text as a numeric literal.  If it does look like a numeric literal )
+( convert to a number now. )
 : tk.try_as_number ( text -- text_or_number token_type )
     variable! text
     tk.token_type:word variable! token_type
@@ -542,7 +563,7 @@
 
 
 ( Go through the token list and compress all adjacent comment tokens into a single comment token. )
-: tk.token_list.compress_comments
+: tk.token_list.compress_comments  ( token_list -- compressed_list )
     variable! tokens
     tokens @ [].size@ [].new variable! new_list
 
@@ -578,6 +599,7 @@
         index ++!
     repeat
 
+    ( Resize the list back down to how many tokens are actually in the list. )
     added @ new_list @ [].size!
     new_list @
 ;
@@ -585,6 +607,8 @@
 
 
 
+( Take a source text from the language client and break it down into a token list for later )
+( processing. )
 : tk.tokenize  ( uri source_code -- token_list )
     tk.buffer.new variable! source_buffer
     0 [].new variable! token_list

@@ -1,4 +1,10 @@
 
+( Implementation of the language server's document store.  This is where we keep all loaded )
+( documents as well as all useful information extracted from said documents. )
+
+
+
+( Internal document store state. )
 {}.new variable! ds.document_store  ( All documents are stored here, indexed by uri. )
 
 variable ds.symbol_table            ( A copy of all of the symbols we know about from all loaded )
@@ -201,6 +207,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 
 
 
+
 ( Scan the tokens for a specific word token, keyword.  Starting at base_index and ending at )
 ( end_word.  Give "" to scan until end of the document. )
 : ds.document.scan_for_keyword  ( base_index keyword end_word tokens -- [found_index] was_found? )
@@ -243,6 +250,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
         swap
     then
 ;
+
 
 
 
@@ -450,6 +458,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 
 
 
+
 ( Scan for a word's signature.  Either as a comment or by using the signature: keyword. )
 : ds.document.scan_for_signature  ( start_index tokens -- signature )
     variable! tokens
@@ -634,6 +643,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 
 
 
+
 ( Convert the collection of word_info structs into our ds.document.symbol and create a base set of )
 ( symbols as defined by the standard library. )
 : ds.add_std_symbols  ( system_word_table -- )
@@ -758,6 +768,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
         false
     then
 ;
+
 
 
 

@@ -1,4 +1,9 @@
 
+( Implementation of the language server protocol, server side.  This is still a pretty early )
+( implementation and not all messages and constants are supported yet. )
+
+
+( Base LSP error codes. )
 -32700 constant lsp.parse_error
 -32600 constant lsp.invalid_request
 -32601 constant lsp.method_not_found
@@ -21,11 +26,13 @@ jsonrpc.reserved_error_range_end constant lsp.server_error_end
 
 
 
+( What kind of document sync do we support. )
 0 constant lsp.text_document_sync_kind.none
 1 constant lsp.text_document_sync_kind.full
 2 constant lsp.text_document_sync_kind.incremental
 
 
+( Types of log messages supported by the protocol. )
 1 constant lsp.log_message.type.error
 2 constant lsp.log_message.type.warning
 3 constant lsp.log_message.type.info
@@ -34,27 +41,40 @@ jsonrpc.reserved_error_range_end constant lsp.server_error_end
 
 
 
-: lsp.begin_shutdown
+( Start the server shutdown procedures. )
+: lsp.begin_shutdown  ( -- )
     true lsp.is_shutting_down !
 ;
 
 
+
+
+( We're received the final exit call, exit from the message loop now. )
 : lsp.handle_exit
     true lsp.should_exit_now !
 ;
 
 
+
+
+( Transmit a successful response to an incoming query. )
 : lsp.success_response  ( id response_value -- )
     "result" jsonrpc.send_message_response
 ;
 
 
+
+
+( Transmit a query failed response back to the client as response to it's query. )
 : lsp.failed_response  ( id response_value -- )
     "error" jsonrpc.send_message_response
 ;
 
 
-: lsp.log_message
+
+
+( Log a message from the server to the client. )
+: lsp.log_message  ( message -- )
     variable! message
 
     ""
@@ -70,6 +90,12 @@ jsonrpc.reserved_error_range_end constant lsp.server_error_end
 ;
 
 
+
+
+( Handle an incoming message from the LSP client.  It is at this point that we look up a handler )
+( for the message in our handler table.  If a handler is found, the handler is called.  Otherwise )
+( an error is returned.  An error is also returned if an exception is thrown during the processing )
+( of the message. )
 : lsp.process_message  ( message -- )
     variable! message
 
@@ -129,13 +155,16 @@ jsonrpc.reserved_error_range_end constant lsp.server_error_end
 
 
 
-{}.new variable! lsp.message_registrar
-false variable! lsp.is_shutting_down
-false variable! lsp.should_exit_now
+
+( LSP server internal state. )
+{}.new variable! lsp.message_registrar  ( Registry of message handlers. )
+false variable! lsp.is_shutting_down    ( Are we starting to shut down? )
+false variable! lsp.should_exit_now     ( Shutdown prep is done, exit the message loop now. )
 
 
 
 
+( Registration handlers.  Handy methods to keep the protocol message string names in one place. )
 : lsp.on:initialize lsp.message_registrar { "initialize" }!! ;
 : lsp.on:initialized lsp.message_registrar { "initialized" }!! ;
 : lsp.on:shutdown lsp.message_registrar { "shutdown" }!! ;
@@ -152,6 +181,8 @@ false variable! lsp.should_exit_now
 
 
 
+
+( )
 : lsp.process_message_loop  ( -- )
     begin
         try
