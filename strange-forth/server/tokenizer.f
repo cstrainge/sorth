@@ -326,9 +326,9 @@
     @ variable! source_buffer
     variable! string
 
-    string @ string.size@ -- string @ string.[]@
-    "\""
-    =
+    string @ string.size@ 1  >
+    string @ string.size@ -- string @ string.[]@  "\""  =
+    &&
     if
         1
         string @
@@ -343,7 +343,6 @@
             &&
         while
             source_buffer tk.buffer.next next_char !
-
             next_char @
             case
                 "\\" of next_char @ source_buffer tk.buffer.next + next_char ! endof
@@ -468,23 +467,6 @@
 
 
 
-( Like the source buffer, tk.buffer, but in this case represents source text that's been fully )
-( tokenized. This token list supports being treated like a stream, just like the tk.buffer, )
-( allowing for some standard parsing algorithms to be applied to the token list. )
-# tk.token_list
-    items     ( The actual tokens themselves. )
-    position  ( Where in the token list are we currently reading from? )
-;
-
-
-: tk.token_list.items!     tk.token_list.items     swap @ #! ;
-: tk.token_list.position!  tk.token_list.position  swap @ #! ;
-
-: tk.token_list.items@     tk.token_list.items     swap @ #@ ;
-: tk.token_list.position@  tk.token_list.position  swap @ #@ ;
-
-
-
 ( Check the indexed comment against the base comment tokens, are these two comments directly )
 ( adjacent to each other? )
 : tk.token_list.next_comment_is_adjacent?  ( base_token next_index tokens -- is_adjacent? )
@@ -536,7 +518,6 @@
 
     begin
         index @ size @ <
-        dup .cr
         base_token @ index @ tokens tk.token_list.next_comment_is_adjacent?
         &&
     while
@@ -555,7 +536,7 @@
         index ++!
     repeat
 
-    index @ base_index @ - dup .cr
+    index @  base_index @  -
 ;
 
 
@@ -604,7 +585,7 @@
 
 
 
-: tk.token_list.tokenize  ( uri source_code -- tk.token_list )
+: tk.tokenize  ( uri source_code -- token_list )
     tk.buffer.new variable! source_buffer
     0 [].new variable! token_list
     variable token
@@ -621,64 +602,5 @@
         then
     repeat
 
-    token_list @ tk.token_list.compress_comments token_list !
-
-    #.new tk.token_list {
-        items -> token_list @ ,
-        position -> 0
-    }
-;
-
-
-
-
-: tk.token_list.is_eos?  ( token_list_variable -- is_eos? )
-    @ variable! token_list
-
-    token_list tk.token_list.position@
-    token_list tk.token_list.items@ [].size@
-
-    >=
-;
-
-
-
-
-( Peek into the token list and read out the current token without advancing the current position. )
-: tk.token_list.peek  ( token_list_variable -- current_token )
-    @ variable! token_list
-
-    token_list tk.token_list.is_eos?
-    if
-        #.new tk.token {
-            type -> tk.token_type:eos
-        }
-    else
-        token_list tk.token_list.items@ [ token_list tk.token_list.position@ ]@
-    then
-;
-
-
-
-
-( Get the next token, and advance the current position. )
-: tk.token_list.next  ( token_list_variable -- current_token )
-    @ variable! token_list
-
-    token_list tk.token_list.peek variable! next_token
-
-    token_list tk.token_list.position@ ++
-    token_list tk.token_list.position!
-
-    next_token @
-;
-
-
-
-
-( Reset back to the beginning of the stream. )
-: tk.token_list.reset  ( tk.token_list_variable -- )
-    @ variable! token_list
-
-    0 token_list tk.token_list.position!
+    token_list @ tk.token_list.compress_comments
 ;
