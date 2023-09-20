@@ -26,9 +26,21 @@ jsonrpc.reserved_error_range_end constant lsp.server_error_end
 2 constant lsp.text_document_sync_kind.incremental
 
 
+1 constant lsp.log_message.type.error
+2 constant lsp.log_message.type.warning
+3 constant lsp.log_message.type.info
+4 constant lsp.log_message.type.log
+
+
+
 
 : lsp.begin_shutdown
-    true lsp.is_shutting_down
+    true lsp.is_shutting_down !
+;
+
+
+: lsp.handle_exit
+    true lsp.should_exit_now !
 ;
 
 
@@ -39,6 +51,22 @@ jsonrpc.reserved_error_range_end constant lsp.server_error_end
 
 : lsp.failed_response  ( id response_value -- )
     "error" jsonrpc.send_message_response
+;
+
+
+: lsp.log_message
+    variable! message
+
+    ""
+
+    "window/logMessage"
+
+    {
+        "messageType" -> lsp.log_message.type.log ,
+        "message" -> message @
+    }
+
+    jsonrpc.send_message
 ;
 
 
@@ -56,9 +84,15 @@ jsonrpc.reserved_error_range_end constant lsp.server_error_end
     then
 
     try
+        ( TODO: Respond with lsp.invalid_request if the server is shutting down. )
         method @ lsp.message_registrar @ {}?
         if
-            message { "params" }@@ lsp.message_registrar { method @ }@@ execute
+            "params" message @ {}?
+            if
+                message { "params" }@@
+            then
+
+            lsp.message_registrar { method @ }@@ execute
 
             id @ "" <>
             if
@@ -71,10 +105,10 @@ jsonrpc.reserved_error_range_end constant lsp.server_error_end
         else
             id @
 
-            {}.new
-
-            dup lsp.method_not_found                 swap "code"    swap {}!
-            dup "No registration found for message." swap "message" swap {}!
+            {
+                "code" -> lsp.method_not_found ,
+                "message" -> "No registration found for message."
+            }
 
             lsp.failed_response
         then
@@ -84,10 +118,10 @@ jsonrpc.reserved_error_range_end constant lsp.server_error_end
 
         id @
 
-        {}.new
-
-        dup lsp.internal_error                    swap "code"    swap {}!
-        dup "Internal error, exception occurred." swap "message" swap {}!
+        {
+            "code" -> lsp.internal_error ,
+            "message" -> "Internal error, exception occurred."
+        }
 
         lsp.failed_response
     endcatch
@@ -97,12 +131,15 @@ jsonrpc.reserved_error_range_end constant lsp.server_error_end
 
 {}.new variable! lsp.message_registrar
 false variable! lsp.is_shutting_down
+false variable! lsp.should_exit_now
 
 
 
 
 : lsp.on:initialize lsp.message_registrar { "initialize" }!! ;
 : lsp.on:initialized lsp.message_registrar { "initialized" }!! ;
+: lsp.on:shutdown lsp.message_registrar { "shutdown" }!! ;
+: lsp.on:exit lsp.message_registrar { "exit" }!! ;
 
 
 : lsp.on:$/set_trace lsp.message_registrar { "$/setTrace" }!! ;
@@ -111,7 +148,7 @@ false variable! lsp.is_shutting_down
 : lsp.on:text_document/did_open lsp.message_registrar { "textDocument/didOpen" }!! ;
 : lsp.on:text_document/hover lsp.message_registrar { "textDocument/hover" }!! ;
 : lsp.on:text_document/document_highlight lsp.message_registrar { "textDocument/documentHighlight" }!! ;
-
+: lsp.on:text_document/definition lsp.message_registrar { "textDocument/definition" }!! ;
 
 
 
@@ -124,6 +161,6 @@ false variable! lsp.is_shutting_down
             .cr
         endcatch
 
-        lsp.is_shutting_down @
+        lsp.should_exit_now @
     until
 ;

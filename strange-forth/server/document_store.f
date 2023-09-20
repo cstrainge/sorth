@@ -348,7 +348,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
         1 max_size !
     then
 
-    "| Pre  |       | Post |\n| :--- | :---: | :--- |\n" table_text !
+    "| Pre  |       | Post |\\n| :--- | :---: | :--- |\\n" table_text !
 
     max_size @ --  variable! index
 
@@ -365,7 +365,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
             "    " +
         then
 
-        index @  post_list @  ds.document.signature_table_item  +  "\n" +  table_text !
+        index @  post_list @  ds.document.signature_table_item  +  "\\n" +  table_text !
 
         index --!
     repeat
@@ -668,19 +668,12 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 : ds.insert_document  ( uri version contents -- )
     ds.document.new variable! new_document
 
-"****" new_document ds.document.uri@ + "****" + .cr
-"****" new_document ds.document.uri@ + "****" + .cr
-"****" new_document ds.document.uri@ + "****" + .cr
-
     new_document @ ds.document_store { new_document ds.document.uri@ }!!
 
     new_document ds.document.generate_tokens
-"****" "Tokens generated." + "****" + .cr
     new_document ds.document.generate_symbols
-"****" "Symbols generated." + "****" + .cr
 
     ds.regenerate_master_symbol_list
-"****" "Symbol table regenerated." + "****" + .cr
 ;
 
 
@@ -724,7 +717,6 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 
     uri @  ds.find_document
     if
-"-- Found document. --" .cr
         document !
         document ds.document.token_list@  tokens !
         tokens [].size@@  size !
@@ -736,7 +728,6 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 
             token tk.token.is_word?
             if
-"-- word: " token tk.token.location.line@ + ", " + token tk.token.location.character@ + "->" + token tk.token.contents@ + .cr
                 line @  token tk.token.location.line@  =
                 if
                     character @  token tk.token.location.character@  >=
@@ -752,14 +743,11 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 
             line @  token tk.token.location.line@  <
             if
-"**** Gone too far. " line @ + "->" + token tk.token.location.line@ + .cr
                 break
             then
 
             index ++!
         repeat
-    else
-        "Did not find document: " uri @ + .cr
     then
 
     found_word? @
@@ -773,6 +761,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 
 
 
+( Search the global symbol table and attempt to find the word in question. )
 : ds.find_symbol  ( word -- [ds.document.symbol] was_found? )
     variable! found_word
 

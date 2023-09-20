@@ -114,14 +114,14 @@
 
 
 : jsonrpc.read_message  ( -- message_hash )
-    "Waiting for incoming message." log_message
+    "Waiting for incoming message." .cr
 
     jsonrpc.read_headers variable! header
     variable json_body
 
     header jsonrpc.header.content_length@@ jsonrpc.read_string json_body !
 
-    "Read Message: " header @ to_string + log_message
+    "Read Message: " header @ to_string + .cr
 
     json_body @ .cr
 
@@ -158,6 +158,31 @@
     "Content-Length: " message @ string.size@ + "\r\n\r\n" + message @ + message !
 
     "---[ Responding ]------" .cr
+    message @ .cr
+    message @ jsonrpc.write_string
+    "-----------------------" .cr
+;
+
+
+
+: jsonrpc.send_message ( id method params )
+    variable! params
+    variable! method
+    variable! id
+
+    "{ \"jsonrpc\": \"2.0\", "
+
+    id @ "" <>
+    if
+        "\"id\": " + id @ + ", " +
+    then
+
+    "\"method\": \"" + method @ + "\", \"params\": " + params @ {}.to_json + " }" +
+    variable! message
+
+    "Content-Length: " message @ string.size@ + "\r\n\r\n" + message @ + message !
+
+    "---[ Transmitting ]----" .cr
     message @ .cr
     message @ jsonrpc.write_string
     "-----------------------" .cr
