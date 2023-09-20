@@ -450,7 +450,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 
 
 
-
+( Scan for a word's signature.  Either as a comment or by using the signature: keyword. )
 : ds.document.scan_for_signature  ( start_index tokens -- signature )
     variable! tokens
     variable! start_index
@@ -532,6 +532,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 
 
 
+( Generate a symbol for a structure and store it in the document's symbol table. )
 : ds.document.symbolize_new_struct
     @ variable! document
     variable! tokens
@@ -541,6 +542,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 
 
 
+( Generate a symbol for a variable and store it in the document's symbol table. )
 : ds.document.symbolize_new_variable
     @ variable! document
     variable! tokens
@@ -550,6 +552,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 
 
 
+( Generate a symbol for a constant and store it in the document's symbol table. )
 : ds.document.symbolize_new_constant
     @ variable! document
     variable! tokens
@@ -559,6 +562,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 
 
 
+( Tokenize the given document's source code and store that token list in the document structure. )
 : ds.document.generate_tokens  ( document_variable -- )
     @ variable! document
 
@@ -603,6 +607,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
         index ++!
     repeat
 ;
+
 
 
 
