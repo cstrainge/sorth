@@ -169,7 +169,6 @@
 
 
 : ( immediate description: "Defines comment syntax."
-              signature: "( <words_to_be_ignored> )"
     begin
         word ")" =
     until
