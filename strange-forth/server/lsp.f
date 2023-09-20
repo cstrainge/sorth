@@ -3,6 +3,8 @@
 ( implementation and not all messages and constants are supported yet. )
 
 
+
+
 ( Base LSP error codes. )
 -32700 constant lsp.parse_error
 -32600 constant lsp.invalid_request
@@ -26,10 +28,13 @@ jsonrpc.reserved_error_range_end constant lsp.server_error_end
 
 
 
+
 ( What kind of document sync do we support. )
 0 constant lsp.text_document_sync_kind.none
 1 constant lsp.text_document_sync_kind.full
 2 constant lsp.text_document_sync_kind.incremental
+
+
 
 
 ( Types of log messages supported by the protocol. )
