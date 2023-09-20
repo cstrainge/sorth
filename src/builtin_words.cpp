@@ -2379,7 +2379,7 @@ namespace sorth
 
         ADD_NATIVE_WORD(interpreter, "exit_failure", word_exit_failure,
                         "Constant value for a process fail exit code.",
-                        " -- falure");
+                        " -- failure");
 
         ADD_NATIVE_WORD(interpreter, "true", word_true,
                         "Push the value true onto the data stack.",
