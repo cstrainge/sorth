@@ -255,8 +255,9 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 
 
 ( Scan the tokens for a specific word token, keyword.  Starting at base_index and ending at )
-( end_word.  Give "" to scan until end of the document.  Then return the next token if it is a )
-( string token.  If the next token is not a string token, the search is considered failed. )
+( end_word.  Give an empty string to scan until end of the document.  Then return the next token )
+( if it is a string token.  If the next token is not a string token, the search is considered )
+( failed. )
 : ds.document.scan_for_keyword_string  ( base_index keyword end_word tokens -- [string] was_found? )
     variable! tokens
     variable! end_word
@@ -294,8 +295,8 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 
 
 
-( Given a string surrounded in ""s, remove those quotes and return the new string. )
-: ds.document.remove_string_quotes  ( string -- dequoted_string )
+( Given a string surrounded in quotes, remove those quotes and return the new string. )
+: ds.document.remove_string_quotes  ( string -- de-quoted_string )
     variable! string
 
     ( Note that we assume that the string is quoted and don't check. )

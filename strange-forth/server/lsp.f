@@ -182,7 +182,8 @@ false variable! lsp.should_exit_now     ( Shutdown prep is done, exit the messag
 
 
 
-( )
+( Core message processing loop.  Wait for incoming JSON-RPC messages and attempt to dispatch them. )
+( This word does not return until lsp.handle_exit is called. )
 : lsp.process_message_loop  ( -- )
     begin
         try
