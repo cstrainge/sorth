@@ -620,7 +620,6 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 
         ds.symbol_table @              is_value_hash_table?
         document ds.document.symbols@  is_value_hash_table?
-        dump_stack
         &&
         if
             ds.symbol_table @  document ds.document.symbols@  {}.+ drop
@@ -644,14 +643,11 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
         variable! info
         variable! name
 
-        word_info.signature info @ #@  ds.document.tokenize_string
-                                       ds.document.signature_to_markdown
-                                       variable! signature
-
         #.new ds.document.symbol {
             is_immediate -> word_info.is_immediate info @ #@ ,
             description -> word_info.description info @ #@ ,
-            signature ->  signature @ ,
+            signature ->  word_info.signature info @ #@  ds.document.tokenize_string
+                                                         ds.document.signature_to_markdown ,
             type -> ds.document.symbol_type:word
         }
         ds.base_symbols { name @ }!!
@@ -672,11 +668,19 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 : ds.insert_document  ( uri version contents -- )
     ds.document.new variable! new_document
 
+"****" new_document ds.document.uri@ + "****" + .cr
+"****" new_document ds.document.uri@ + "****" + .cr
+"****" new_document ds.document.uri@ + "****" + .cr
+
     new_document @ ds.document_store { new_document ds.document.uri@ }!!
+
     new_document ds.document.generate_tokens
+"****" "Tokens generated." + "****" + .cr
     new_document ds.document.generate_symbols
+"****" "Symbols generated." + "****" + .cr
 
     ds.regenerate_master_symbol_list
+"****" "Symbol table regenerated." + "****" + .cr
 ;
 
 
@@ -706,5 +710,77 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
     variable! uri
     variable! location
 
-    false
+    location tk.location.line@ variable! line
+    location tk.location.character@ variable! character
+
+    variable document
+    variable tokens
+
+    variable size
+    variable index
+    variable token
+
+    false variable! found_word?
+
+    uri @  ds.find_document
+    if
+"-- Found document. --" .cr
+        document !
+        document ds.document.token_list@  tokens !
+        tokens [].size@@  size !
+
+        begin
+            index @  size @  <
+        while
+            tokens [ index @ ]@@  token !
+
+            token tk.token.is_word?
+            if
+"-- word: " token tk.token.location.line@ + ", " + token tk.token.location.character@ + "->" + token tk.token.contents@ + .cr
+                line @  token tk.token.location.line@  =
+                if
+                    character @  token tk.token.location.character@  >=
+                    character @  token tk.token.location.character@
+                                 token tk.token.contents@ string.size@  +  <
+                    &&
+                    if
+                        true found_word? !
+                        break
+                    then
+                then
+            then
+
+            line @  token tk.token.location.line@  <
+            if
+"**** Gone too far. " line @ + "->" + token tk.token.location.line@ + .cr
+                break
+            then
+
+            index ++!
+        repeat
+    else
+        "Did not find document: " uri @ + .cr
+    then
+
+    found_word? @
+    if
+        token @
+        true
+    else
+        false
+    then
+;
+
+
+
+: ds.find_symbol  ( word -- [ds.document.symbol] was_found? )
+    variable! found_word
+
+    found_word @  ds.symbol_table @  {}?
+    if
+        ds.symbol_table { found_word @ }@@
+        true
+    else
+        false
+    then
 ;
