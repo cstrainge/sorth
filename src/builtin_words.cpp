@@ -3,6 +3,7 @@
 #include <termios.h>
 #include <unistd.h>
 #include <cstdlib>
+#include <iomanip>
 
 #include "sorth.h"
 
@@ -941,11 +942,11 @@ namespace sorth
         auto& location = input_tokens[current_token].location;
 
         interpreter->constructor()->stack.push({
+                .is_immediate = false,
+                .is_hidden = false,
                 .name = name,
                 .description = "",
-                .location = location,
-                .is_immediate = false,
-                .is_hidden = false
+                .location = location
             });
 
     }
