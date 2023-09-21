@@ -6,13 +6,13 @@
 
 
 ( Convert an array to a json compatible string. )
-: to_json_array hidden  ( array -- formatted_string )
+: json.to_json_array hidden  ( array -- formatted_string )
     variable! array_value
     0 variable! index
     "[ " variable! array_str
 
     begin
-        array_str @ array_value [ index @ ]@@ to_json_value + array_str !
+        array_str @ array_value [ index @ ]@@ json.to_json_value + array_str !
 
         index @ array_value [].size@@ -- <
         if
@@ -27,11 +27,44 @@
 ;
 
 
+
+
+: json.filter_json_string hidden  ( string -- filtered_string )
+    variable! original
+    "" variable! new
+
+    original string.size@@ variable! size
+    variable index
+    variable next_char
+
+    begin
+        index @  size @  <
+    while
+        index @  original @  string.[]@  next_char !
+
+        next_char @
+        case
+            "\n" of "\\n" next_char ! endof
+            "\t" of "\\t" next_char ! endof
+            "\"" of "\\\"" next_char ! endof
+        endcase
+
+        new @  next_char @  +  new !
+
+        index ++!
+    repeat
+
+    new @
+;
+
+
+
+
 ( Convert a given value to a json formatted string. )
-: to_json_value hidden  ( value -- string )
+: json.to_json_value hidden  ( value -- string )
     dup is_value_string?
     if
-        "\"" swap + "\"" +
+        "\"" swap json.filter_json_string + "\"" +
     else
         dup is_value_hash_table?
         if
@@ -39,7 +72,7 @@
         else
             dup is_value_array?
             if
-                to_json_array
+                json.to_json_array
             else
                 dup is_value_number?
                 dup is_value_boolean?
@@ -72,7 +105,7 @@
         variable! value
         variable! name
 
-        "\"" name @ to_string + "\"" + ": " + value @ to_json_value + ", " +
+        "\"" name @ to_string + "\"" + ": " + value @ json.to_json_value + ", " +
         new_json @ swap + new_json !
     ;
 
@@ -98,7 +131,7 @@
         variable! value
         variable! key
 
-        "\"" key @ to_string + "\"" + ": " + value @ to_json_value + ", " +
+        "\"" key @ to_string + "\"" + ": " + value @ json.to_json_value + ", " +
         new_json @ swap + new_json !
     ;
 
@@ -182,11 +215,15 @@
 ;
 
 
+
+
 ( Increment the current location and string positions. )
 : json.string.inc hidden ( character json_string_var_index -- )
     over json.string.location@@ json.location.inc
     dup json.string.index@@ ++ swap json.string.index!!
 ;
+
+
 
 
 ( Take a peek at the next character in the stream without advancing the pointer. )
@@ -198,6 +235,8 @@
 ;
 
 
+
+
 ( Check to see if the pointer is at the end of the string or not. )
 : json.string.eos@ hidden ( json.string_var -- is_eos )
     dup json.string.index@@
@@ -205,6 +244,8 @@
 
     >=
 ;
+
+
 
 
 ( Get a character from the string and advance the pointer. )
@@ -220,6 +261,8 @@
 ;
 
 
+
+
 ( Report an error in the json string. )
 : json.error hidden  ( message json.string --  )
     @ variable! json_source
@@ -230,6 +273,8 @@
     "[" location json.location.line@@ + ", " + location json.location.column@@ + "]: " +
     message @ + throw
 ;
+
+
 
 
 ( Skip past any whitespace in the json string. )
@@ -248,6 +293,8 @@
 ;
 
 
+
+
 ( Expect the next character in the string is the one given.  Throw an error if not. )
 : json.expect_char hidden ( char json.string -- )
     @ variable! json_source
@@ -261,6 +308,8 @@
         json_source json.error
     then
 ;
+
+
 
 
 ( Expect a specific substring from the json string.  Throw an error if it's missing. )
@@ -278,6 +327,8 @@
         index @ size @ >=
     until
 ;
+
+
 
 
 ( Read a string literal from the json source. )
@@ -314,6 +365,8 @@
 
     new_string @
 ;
+
+
 
 
 ( Read an array of values from the json source. )
@@ -353,6 +406,8 @@
 ;
 
 
+
+
 ( Is the given character considered numeric? )
 : json.is_numeric? hidden  ( character -- is_numeric? )
     variable! next_char
@@ -365,6 +420,8 @@
 
     ||
 ;
+
+
 
 
 ( Read a numeric value from the json string. )
@@ -381,6 +438,8 @@
 
     new_number_text @ string.to_number
 ;
+
+
 
 
 ( Read a literal value from the json input. )
@@ -413,6 +472,8 @@
 
     new_value @
 ;
+
+
 
 
 ( Read a hash value from the json string in key/value pairs. )
