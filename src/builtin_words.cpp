@@ -2357,7 +2357,7 @@ namespace sorth
 
         ADD_NATIVE_WORD(interpreter, "swap", word_swap,
                         "Swap the top 2 values on the data stack.",
-                        "a b -- a b");
+                        "a b -- b a");
 
         ADD_NATIVE_WORD(interpreter, "over", word_over,
                         "Make a copy of the top value and place the copy under the second.",
