@@ -1,5 +1,5 @@
 
-( Implantation of the source text tokenizer and supporting structures. Everything in this file )
+( Implementation of the source text tokenizer and supporting structures. Everything in this file )
 ( falls under the tk. namespace. )
 
 
