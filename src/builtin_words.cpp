@@ -2258,7 +2258,7 @@ namespace sorth
 
         ADD_NATIVE_WORD(interpreter, "{}.iterate", word_hash_table_iterate,
                         "Iterate through a hash table and call a word for each item.",
-                        "word_index -- ");
+                        "word_index hash_table -- ");
 
 
         // Math ops.
