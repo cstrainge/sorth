@@ -1,10 +1,16 @@
 
+#include <iostream>
 #include "sorth.h"
 
 #ifdef __APPLE__
 
     #include <assert.h>
     #include <mach-o/dyld.h>
+
+#elif __linux__
+
+    #include <linux/limits.h>
+    #include <unistd.h>
 
 #endif
 
@@ -30,7 +36,23 @@ namespace
 
             base_path = std::filesystem::canonical(&buffer[0]).remove_filename();
 
-        #elif
+        #elif __linux__
+
+            char buffer [PATH_MAX + 1];
+            ssize_t count = 0;
+
+            memset(buffer, 0, PATH_MAX + 1);
+
+            count = readlink("/proc/self/exe", buffer, PATH_MAX);
+
+            if (count < 0)
+            {
+                throw std::runtime_error("Executable path could not be read, " +
+                                         std::string(strerror(errno)) + ".");
+            }
+
+            base_path = std::filesystem::canonical(buffer).remove_filename();
+        #else
 
             throw std::runtime_error("get_executable_directory is unimplemented on this platform.");
 
