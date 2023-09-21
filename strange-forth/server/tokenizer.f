@@ -375,13 +375,23 @@
 
 
 
-( This this character look like it's probably part of a numeric string? )
-: tk.is_numeric?  ( character -- bool )
+( Is the character a numeric digit? )
+: tk.is_digit?
     variable! next_char
 
     next_char @ "0" >=
     next_char @ "9" <=
     &&
+;
+
+
+
+
+( This this character look like it's probably part of a numeric string? )
+: tk.is_numeric?  ( character -- bool )
+    variable! next_char
+
+    next_char @ tk.is_digit?
 
     next_char @ "." =
     ||
@@ -402,23 +412,36 @@
     variable! text
     tk.token_type:word variable! token_type
 
-    true variable! is_a_number
+    true variable! is_a_number?
+    false variable! found_digit?
+
     0 variable! index
     text @ string.size@ variable! count
+
+    variable next_char
 
     begin
         index @ count @ <
     while
-        index @ text @ string.[]@ tk.is_numeric? true <>
+        index @  text @  string.[]@  next_char !
+
+        next_char @ tk.is_numeric? true <>
         if
-            false is_a_number !
+            false is_a_number? !
             break
+        then
+
+        next_char @  tk.is_digit?
+        if
+            true found_digit?
         then
 
         index ++!
     repeat
 
-    is_a_number @
+    is_a_number? @
+    found_digit? @
+    &&
     if
         text @ string.to_number text !
         tk.token_type:number token_type !
