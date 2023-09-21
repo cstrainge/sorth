@@ -710,6 +710,22 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 
 
 
+( Given a VS Code uri, search our document collection and try to return the document in question. )
+: ds.find_document  ( uri -- [document] was_found? )
+    variable! uri
+
+    uri @  ds.document_store @  {}?
+    if
+        ds.document_store { uri @ }@@
+        true
+    else
+        false
+    then
+;
+
+
+
+
 ( Create an store a new document within our document store.  All extra information needed from the )
 ( source text is also generated at this time.  For example a collection of symbols as defined )
 ( within the document. )
@@ -727,16 +743,31 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 
 
 
-( Given a VS Code uri, search our document collection and try to return the document in question. )
-: ds.find_document  ( uri -- [document] was_found? )
+( Update a document's text and regenerate it's supporting information. This word acts much like )
+( ds.insert.document. )
+: ds.update_document  ( uri version contents -- )
+    variable! contents
+    variable! version
     variable! uri
 
-    uri @  ds.document_store @  {}?
+    variable document
+
+    uri @ ds.find_document
     if
-        ds.document_store { uri @ }@@
-        true
+        document !
+
+        uri @       document ds.document.uri!
+        version @   document ds.document.version!
+
+        ( TODO: Change this to enable partial updates. )
+        contents @  document ds.document.contents!
+
+        document    ds.document.generate_tokens
+        document    ds.document.generate_symbols
+
+        ds.regenerate_master_symbol_list
     else
-        false
+        uri @  version @  contents @  ds.insert_document
     then
 ;
 

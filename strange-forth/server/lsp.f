@@ -180,6 +180,8 @@ false variable! lsp.should_exit_now     ( Shutdown prep is done, exit the messag
 
 
 : lsp.on:text_document/did_open lsp.message_registrar { "textDocument/didOpen" }!! ;
+: lsp.on:text_document/did_change lsp.message_registrar { "textDocument/didChange" }!! ;
+: lsp.on:text_document/did_save lsp.message_registrar { "textDocument/didSave" }!! ;
 : lsp.on:text_document/hover lsp.message_registrar { "textDocument/hover" }!! ;
 : lsp.on:text_document/document_highlight lsp.message_registrar { "textDocument/documentHighlight" }!! ;
 : lsp.on:text_document/definition lsp.message_registrar { "textDocument/definition" }!! ;

@@ -132,7 +132,28 @@ ls.standard_words ds.add_std_symbols
     "Uri:     " uri @ +           lsp.log_message
     "Version: " version @ +       lsp.log_message
 
+    "Begin document processing..." lsp.log_message
+
     uri @ version @ document @ ds.insert_document
+
+    "Document processing complete." lsp.log_message
+;
+
+
+
+
+: ls.handle:text_document/did_change
+    variable! params
+
+    ( TODO: Change things so that we can accept partial updates. )
+
+    params { "textDocument" }@@ { "uri" }@ variable! uri
+    params { "textDocument" }@@ { "version" }@ variable! version
+    params { "contentChanges" }@@ [ 0 ]@ { "text" }@ variable! document
+
+    "Document updated, beginning processing..." lsp.log_message
+
+    uri @ version @ document @ ds.update_document
 
     "Document processing complete." lsp.log_message
 ;
@@ -250,17 +271,18 @@ ls.standard_words ds.add_std_symbols
 
 
 ( Register our handlers with the LSP message processor, )
-` ls.handle:initialize lsp.on:initialize
+` ls.handle:initialize  lsp.on:initialize
 ` ls.handle:initialized lsp.on:initialized
-` ls.handle:shutdown lsp.on:shutdown
-` ls.handle:exit lsp.on:exit
+` ls.handle:shutdown    lsp.on:shutdown
+` ls.handle:exit        lsp.on:exit
 
 ` ls.handle:$/set_trace lsp.on:$/set_trace
 
-` ls.handle:text_document/did_open lsp.on:text_document/did_open
+` ls.handle:text_document/did_open           lsp.on:text_document/did_open
+` ls.handle:text_document/did_change         lsp.on:text_document/did_change
 ` ls.handle:text_document/document_highlight lsp.on:text_document/document_highlight
-` ls.handle:text_document/hover lsp.on:text_document/hover
-` ls.handle:text_document/definition lsp.on:text_document/definition
+` ls.handle:text_document/hover              lsp.on:text_document/hover
+` ls.handle:text_document/definition         lsp.on:text_document/definition
 
 
 
