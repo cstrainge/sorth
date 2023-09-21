@@ -4,6 +4,7 @@
 
 
 
+
 ( Internal document store state. )
 {}.new variable! ds.document_store  ( All documents are stored here, indexed by uri. )
 

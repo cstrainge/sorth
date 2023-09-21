@@ -18,7 +18,7 @@ words.get{} constant ls.standard_words
 
 
 ( Get the path to the socket from the command line arguments, then properly connect to it. )
-"Opening LSP connection to client.".cr
+"Opening LSP connection to client." .cr
 
 "--pipe=" string.size@ 0 args [ 0 ]@ string.remove constant socket_path
 socket_path socket.connect variable! server_fd
@@ -44,6 +44,7 @@ ls.standard_words ds.add_std_symbols
 ( sent yet and simply respond with a simple set of capabilities. )
 ( This word should be improved to configure and better report the server capabilities. )
 : ls.handle:initialize ( message_params -- response_data was_successful )
+
     ( TODO: Read the message params. )
 
     "Server received initialize message." lsp.log_message
@@ -180,13 +181,9 @@ ls.standard_words ds.add_std_symbols
     if
         found_word !
 
-        "--Word was found: " found_word tk.token.contents@ + "--" + lsp.log_message
-
         found_word tk.token.contents@  ds.find_symbol
         if
             symbol !
-
-            "--Symbol was found--" lsp.log_message
 
             "### " found_word tk.token.contents@ + "\\n\\n" +
 
