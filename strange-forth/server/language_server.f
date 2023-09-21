@@ -34,6 +34,7 @@ socket_path socket.connect variable! server_fd
 
 
 
+
 ( Make sure to add the standard symbols to the symbol table. )
 ls.standard_words ds.add_std_symbols
 
@@ -43,7 +44,7 @@ ls.standard_words ds.add_std_symbols
 ( Handle the initialize message sent from the language client. We don't examine the parameters )
 ( sent yet and simply respond with a simple set of capabilities. )
 ( This word should be improved to configure and better report the server capabilities. )
-: ls.handle:initialize ( message_params -- response_data was_successful )
+: ls.handle:initialize  ( message_params -- response_data was_successful )
 
     ( TODO: Read the message params. )
 
