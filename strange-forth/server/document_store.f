@@ -319,6 +319,40 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 
 
 
+( Filter strings so that they don't interfere with Markdown formatting. )
+: ds.document.filter_markdown  ( original -- formatted )
+    variable! original
+    "" variable! new
+
+    original string.size@@ variable! size
+    variable index
+
+    variable next_char
+
+    begin
+        index @  size @  <
+    while
+        index @  original @  string.[]@  next_char !
+
+        next_char @
+        case
+            "[" of  "\\\\["  next_char !  endof
+            "]" of  "\\\\]"  next_char !  endof
+            "<" of  "\\\\<"  next_char !  endof
+            ">" of  "\\\\>"  next_char !  endof
+        endcase
+
+        new @  next_char @  +  new !
+
+        index ++!
+    repeat
+
+    new @
+;
+
+
+
+
 ( Take a list time and convert it to a markdown table item.  If the index isn't in the list an )
 ( empty table item will be generated instead. )
 : ds.document.signature_table_item  ( index list -- table_item_string )
@@ -327,7 +361,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 
     index @  list [].size@@  <
     if
-        "| "  tk.token.contents list [ index @ ]@@ #@  +  " |" +
+        "| "  tk.token.contents list [ index @ ]@@ #@  ds.document.filter_markdown  +  " |" +
     else
         "|    |"
     then
@@ -430,7 +464,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
     if
         pre_list @  post_list @  ds.document.signature_markdown_table
     else
-        pre_list @  ds.document.stringify_comment
+        pre_list @  ds.document.stringify_comment  ds.document.filter_markdown
     then
 ;
 
@@ -447,11 +481,13 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
     start_index @ "description:" ";" tokens @ ds.document.scan_for_keyword_string
     if
         description !
-        description tk.token.contents@  ds.document.remove_string_quotes  description !
+        description tk.token.contents@  ds.document.remove_string_quotes
+                                        ds.document.filter_markdown       description !
     else
         start_index @ tokens @ ds.document.scan_for_previous_comment
         if
-            tk.token.contents swap #@  ds.document.stringify_comment  description !
+            tk.token.contents swap #@  ds.document.stringify_comment
+                                       ds.document.filter_markdown    description !
         then
     then
 
