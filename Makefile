@@ -1,5 +1,5 @@
 SHELL := bash
-.SHELLFLAGS := -eu -o pipefail -c  
+.SHELLFLAGS := -eu -o pipefail -c
 .ONESHELL:
 .DEFAULT_GOAL := help
 MAKEFLAGS += --warn-undefined-variables
@@ -19,7 +19,7 @@ ifeq ($(OS),Darwin)
 	ARCH ?= $(shell arch)
 else ifeq ($(OS),Linux)
 	ARCH ?= $(shell uname -m)
-else iferq ($(OS),Windows)
+else ifeq ($(OS),Windows)
 	ARCH ?= $(shell uname -m)
 endif
 
@@ -47,7 +47,7 @@ $(BUILD)/sorth: build $(SOURCES) ## Build binary
 		-o ./$@
 	strip ./$@
 
-.PHONY: build 
+.PHONY: build
  $(BUILD):
 	install -d $(BUILD) || true
 
