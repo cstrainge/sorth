@@ -288,6 +288,6 @@ ls.standard_words ds.add_std_symbols
 
 
 ( All of our init has completed, so run the main message loop and wait for incoming requests. )
-" Handlers registered, starting main loop." .cr
+"Handlers registered, starting main loop." .cr
 
 lsp.process_message_loop

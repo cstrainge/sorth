@@ -1,5 +1,6 @@
 
 import * as path from 'path';
+import * as fs from 'fs';
 import * as vscode from 'vscode';
 import * as lsp from 'vscode-languageclient/node';
 
@@ -9,31 +10,17 @@ let client: lsp.LanguageClient;
 
 export function activate(context: vscode.ExtensionContext)
 {
-	console.log('Congratulations, your extension "strange-forth" is now active!');
-
-	let disposable = vscode.commands.registerCommand('strange-forth.helloWorld',
-        () =>
-        {
-		    vscode.window.showInformationMessage('Hello World from Strange Forth language!');
-	    });
-
-    let disposable2 = vscode.commands.registerCommand('strange-forth.funkTown',
-        () =>
-        {
-            vscode.window.showInformationMessage("Client is running? " + client.isRunning() + ".");
-        });
-
+	console.log('Strange Forth language service is now active!');
 
     const currentPlatform = process.platform;
     const currentArch = process.arch;
 
-	context.subscriptions.push(disposable);
-    context.subscriptions.push(disposable2);
 
+    const sorthDevExe = context.asAbsolutePath(path.join("..", "sorth_lsp"));
+    const sorthExe = fs.existsSync(sorthDevExe) ? sorthDevExe
+                                                : context.asAbsolutePath("sorth_lsp");
 
-    // const sorthExe = context.asAbsolutePath(path.join("..", "sorth_lsp"));
-    const sorthExe = context.asAbsolutePath("sorth_lsp");
-
+    console.log(`Launching language server: ${sorthExe}.`);
 
     const server: lsp.Executable = {
             command: sorthExe,
@@ -51,11 +38,11 @@ export function activate(context: vscode.ExtensionContext)
             debug: server
         };
 
-    console.log("Exe: " + sorthExe);
 
     const clientOptions: lsp.LanguageClientOptions = {
             documentSelector: [ { scheme: 'file', language: 'strangeforth' } ]
         };
+
 
     client = new lsp.LanguageClient('StrangeForthServer',
                                     'Strange Forth',
@@ -64,8 +51,6 @@ export function activate(context: vscode.ExtensionContext)
                                     true);
 
     client.start();
-
-    console.log(client.isRunning());
 }
 
 

@@ -1,10 +1,19 @@
 #!/usr/bin/env bash
 
+
 FILE_NAME=sorth_lsp_log.txt
 
 
-echo "Launching server" > $FILE_NAME
-
+echo "Launching dev server" > $FILE_NAME
 shift
 
-exec ./sorth strange-forth/server/language_server.f $@ &>> $FILE_NAME
+
+PLATFORM=$1
+ARCH=$2
+
+shift
+shift
+
+
+echo "Running under ${PLATFORM} on ${ARCH}." &>> $FILE_NAME
+exec ../sorth strange-forth/server/language_server.f $@ &>> $FILE_NAME
