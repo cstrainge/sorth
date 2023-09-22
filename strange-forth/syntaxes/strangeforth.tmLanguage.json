@@ -8,13 +8,19 @@
 		},
 		{
 			"include": "#strings"
-		}
+		},
+        {
+            "include": "#comment"
+        },
+        {
+            "include": "#constant"
+        }
 	],
 	"repository": {
 		"keywords": {
 			"patterns": [{
 				"name": "keyword.control.strangeforth",
-				"match": "\\b(immediate|hidden|case|of|endof|endcase|if|else|then|begin|while|until|repeat|continue|break|try|catch|endcatch|:|;|variable|constant|include)\\b"
+				"match": "\\b(immediate|hidden|case|of|endof|endcase|if|else|then|begin|while|until|repeat|continue|break|try|catch|endcatch|\\: |\\; |variable\\! |variable|constant|include)\\b"
 			}]
 		},
 		"strings": {
@@ -31,7 +37,7 @@
         "comment": {
             "patterns": [
 				{
-					"match": "(?<=^|\\s)(\\.?\\( [^)]*\\))",
+					"match": "\\([^)]*[\\s\\n]|\\)",
 					"name": "comment.block"
 				}
 			]
@@ -39,7 +45,7 @@
         "constant": {
 			"patterns": [
 				{
-					"match": "(?<=^|\\s)([$#%]?[-+]?[0-9]+(\\.[0-9]*e(-?[0-9]+)|\\.?[0-9a-fA-F]*))(?=\\s)",
+					"match": "(?<=^|\\s)([$#%]?[-+]?[0-9]+(\\.[0-9]*e(-?[0-9]+)|\\.?[0-9a-fA-F]*))(?=\\s)|true|false",
 					"name": "constant.numeric.forth"
 				}
 			]

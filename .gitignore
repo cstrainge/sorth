@@ -10,5 +10,10 @@ test.bin
 
 sorth_lsp_log.txt
 
+package-bin/
+
 strange-forth/node_modules/
 strange-forth/out/
+strange-forth/bin/
+
+*.vsix

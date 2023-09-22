@@ -3,6 +3,7 @@
 #include <termios.h>
 #include <unistd.h>
 #include <cstdlib>
+#include <iomanip>
 
 #include "sorth.h"
 
@@ -941,11 +942,11 @@ namespace sorth
         auto& location = input_tokens[current_token].location;
 
         interpreter->constructor()->stack.push({
+                .is_immediate = false,
+                .is_hidden = false,
                 .name = name,
                 .description = "",
-                .location = location,
-                .is_immediate = false,
-                .is_hidden = false
+                .location = location
             });
 
     }
@@ -2356,7 +2357,7 @@ namespace sorth
 
         ADD_NATIVE_WORD(interpreter, "swap", word_swap,
                         "Swap the top 2 values on the data stack.",
-                        "a b -- a b");
+                        "a b -- b a");
 
         ADD_NATIVE_WORD(interpreter, "over", word_over,
                         "Make a copy of the top value and place the copy under the second.",

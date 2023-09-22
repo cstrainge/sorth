@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+
+function bundle
+{
+    echo "Bundling $1 to $2."
+
+    rm -rf $2/*
+
+    mkdir -p $2
+    mkdir -p $2/std
+
+    chmod +x $1
+    xattr -d com.apple.quarantine $1
+
+    cp ${1} ${2}/sorth
+
+    cp ./std.f $2
+    cp -r ./std/* $2/std
+}
+
+
+rm -rf ./strange-forth/bin/*
+
+bundle ./package-bin/sorth-macos-13-arm64        ./strange-forth/bin/arm64/darwin/
+bundle ./package-bin/sorth-macos-13-x86_64       ./strange-forth/bin/x64/darwin/
+bundle ./package-bin/sorth-ubuntu-latest-arm64   ./strange-forth/bin/arm64/linux/
+bundle ./package-bin/sorth-ubuntu-latest-x86_64  ./strange-forth/bin/x64/linux/
+
+
+pushd strange-forth
+
+vsce package
+
+popd

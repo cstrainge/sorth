@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+FILE_NAME=sorth_lsp_log.txt
+
+
+echo "Launching server" > $FILE_NAME
+
+shift
+
+PLATFORM=$1
+ARCH=$2
+
+shift
+shift
+
+echo "Server launching with: ${PLATFORM}--${ARCH}" &>> $FILE_NAME
+
+
+exec ./bin/${ARCH}/${PLATFORM}/sorth server/language_server.f $@ &>> $FILE_NAME

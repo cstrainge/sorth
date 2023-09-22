@@ -152,31 +152,12 @@
 
 ( Read a full message from the JSON RPC client.  Then convert the json contents into a hash table. )
 : jsonrpc.read_message  ( -- message_hash )
-    "Waiting for incoming message." .cr
-
     jsonrpc.read_headers variable! header
     variable json_body
 
     header jsonrpc.header.content_length@@ jsonrpc.read_string json_body !
 
-    "Read Message: " header @ to_string + .cr
-
-    json_body @ .cr
-
     json_body @ {}.from_json
-
-
-    ( For now log the details of this message to our server log. As the server stabilizes this )
-    ( should be removed or replaced with a bitter logging system. )
-    dup "id" swap {}?
-    if
-        dup { "id" }@     "ID:     " swap + .cr
-    then
-
-    dup "method" swap {}?
-    if
-        dup { "method" }@ "method: " swap + .cr
-    then
 ;
 
 
@@ -196,18 +177,9 @@
         "\"id\": " + id @ + ", " +
     then
 
-    "\"" + response_key @ + "\": " + response_value @ + " }" +
+    "\"" + response_key @ + "\": " + response_value @ + " }" +  variable! message
 
-    variable! message
-
-    "Content-Length: " message @ string.size@ + "\r\n\r\n" + message @ + message !
-
-    ( Log the message and send it along to the client.  As the server stabilizes this logging )
-    ( should either be made more robust or just removed. )
-    "---[ Responding ]------" .cr
-    message @ .cr
-    message @ jsonrpc.write_string
-    "-----------------------" .cr
+    "Content-Length: " message @ string.size@ + "\r\n\r\n" + message @ +  jsonrpc.write_string
 ;
 
 
@@ -229,12 +201,5 @@
     "\"method\": \"" + method @ + "\", \"params\": " + params @ {}.to_json + " }" +
     variable! message
 
-    "Content-Length: " message @ string.size@ + "\r\n\r\n" + message @ + message !
-
-    ( Log the message and send it along to the client.  As the server stabilizes this logging )
-    ( should either be made more robust or just removed. )
-    "---[ Transmitting ]----" .cr
-    message @ .cr
-    message @ jsonrpc.write_string
-    "-----------------------" .cr
+    "Content-Length: " message @ string.size@ + "\r\n\r\n" + message @ +  jsonrpc.write_string
 ;

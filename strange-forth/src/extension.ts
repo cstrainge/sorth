@@ -1,5 +1,6 @@
 
 import * as path from 'path';
+import * as fs from 'fs';
 import * as vscode from 'vscode';
 import * as lsp from 'vscode-languageclient/node';
 
@@ -9,33 +10,24 @@ let client: lsp.LanguageClient;
 
 export function activate(context: vscode.ExtensionContext)
 {
-	console.log('Congratulations, your extension "strange-forth" is now active!');
+	console.log('Strange Forth language service is now active!');
 
-	let disposable = vscode.commands.registerCommand('strange-forth.helloWorld',
-        () =>
-        {
-		    vscode.window.showInformationMessage('Hello World from Strange Forth language!');
-	    });
-
-    let disposable2 = vscode.commands.registerCommand('strange-forth.funkTown',
-        () =>
-        {
-            vscode.window.showInformationMessage("Client is running? " + client.isRunning() + ".");
-        });
-
-	context.subscriptions.push(disposable);
-    context.subscriptions.push(disposable2);
+    const currentPlatform = process.platform;
+    const currentArch = process.arch;
 
 
-    const sorthExe = context.asAbsolutePath(path.join("..", "sorth_lsp"));
-    const lspScript = context.asAbsolutePath(path.join("server", "language_server.f"));
+    const sorthDevExe = context.asAbsolutePath(path.join("..", "sorth_lsp"));
+    const sorthExe = fs.existsSync(sorthDevExe) ? sorthDevExe
+                                                : context.asAbsolutePath("sorth_lsp");
+
+    console.log(`Launching language server: ${sorthExe}.`);
 
     const server: lsp.Executable = {
             command: sorthExe,
-            args: [ sorthExe ],
+            args: [ sorthExe, currentPlatform, currentArch ],
             transport: lsp.TransportKind.pipe,
             options: {
-                cwd: context.asAbsolutePath(".."),
+                cwd: context.asAbsolutePath("."),
                 detached: false,
                 shell: true
             }
@@ -46,11 +38,11 @@ export function activate(context: vscode.ExtensionContext)
             debug: server
         };
 
-    console.log("Exe: " + sorthExe);
 
     const clientOptions: lsp.LanguageClientOptions = {
             documentSelector: [ { scheme: 'file', language: 'strangeforth' } ]
         };
+
 
     client = new lsp.LanguageClient('StrangeForthServer',
                                     'Strange Forth',
@@ -59,8 +51,6 @@ export function activate(context: vscode.ExtensionContext)
                                     true);
 
     client.start();
-
-    console.log(client.isRunning());
 }
 
 
