@@ -5,7 +5,7 @@
   "license": "MIT",
   "repository": { "url": "https://github.com/cstrainge/sorth/tree/main" },
   "publisher": "cstrainge",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "keywords": [ "Forth", "language" ],
   "engines": {
     "vscode": "^1.82.0"
