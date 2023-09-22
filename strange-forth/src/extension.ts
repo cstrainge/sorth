@@ -23,19 +23,24 @@ export function activate(context: vscode.ExtensionContext)
             vscode.window.showInformationMessage("Client is running? " + client.isRunning() + ".");
         });
 
+
+    const currentPlatform = process.platform;
+    const currentArch = process.arch;
+
 	context.subscriptions.push(disposable);
     context.subscriptions.push(disposable2);
 
 
-    const sorthExe = context.asAbsolutePath(path.join("..", "sorth_lsp"));
-    const lspScript = context.asAbsolutePath(path.join("server", "language_server.f"));
+    // const sorthExe = context.asAbsolutePath(path.join("..", "sorth_lsp"));
+    const sorthExe = context.asAbsolutePath("sorth_lsp");
+
 
     const server: lsp.Executable = {
             command: sorthExe,
-            args: [ sorthExe ],
+            args: [ sorthExe, currentPlatform, currentArch ],
             transport: lsp.TransportKind.pipe,
             options: {
-                cwd: context.asAbsolutePath(".."),
+                cwd: context.asAbsolutePath("."),
                 detached: false,
                 shell: true
             }

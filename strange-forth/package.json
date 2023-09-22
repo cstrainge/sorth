@@ -2,6 +2,9 @@
   "name": "strange-forth",
   "displayName": "Strange Forth",
   "description": "Language support for Strange Forth",
+  "license": "MIT",
+  "repository": { "url": "https://github.com/cstrainge/sorth/tree/main" },
+  "publisher": "cstrainge",
   "version": "0.0.0",
   "engines": {
     "vscode": "^1.82.0"
