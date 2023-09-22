@@ -14,9 +14,9 @@ One mark of the language's growing maturity is that the language server itself i
 
 MacOS or Linux, (currently only tested with Ubuntu,) on x86-64 and Arm64
 
-### 0.2.0
+### 0.1.1
 
-TBD
+Updated the Readme with more information about the status of the project.
 
 ### 0.1.0
 
