@@ -5,7 +5,7 @@
   "license": "MIT",
   "repository": { "url": "https://github.com/cstrainge/sorth/tree/main" },
   "publisher": "cstrainge",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "icon": "./assets/strange-forth-logo.png",
   "keywords": [ "Forth", "language" ],
   "engines": {
@@ -21,7 +21,7 @@
         {
             "id": "strangeforth",
             "aliases": [ "Strange Forth", "strangeforth" ],
-            "extensions": [ ".f" ],
+            "extensions": [ ".f", "*.sf" ],
             "configuration": "./language-configuration.json"
         }
     ],

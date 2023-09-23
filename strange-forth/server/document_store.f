@@ -579,11 +579,127 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 
 
 
+( Create symbols for all of the field accessors. )
+: ds.document.add_struct_field_symbols  ( fields descriptions -- )
+    variable! descriptions
+    variable! fields
+    variable! name_token
+
+    name_token tk.token.contents@  variable! name_text
+
+    fields [].size@@  variable! size
+    variable index
+
+    begin
+        index @  size @  <
+    while
+        #.new ds.document.symbol {
+            is_immediate -> false ,
+            description -> descriptions [ index @ ]@@ ,
+            signature -> "" ,
+            location -> name_token tk.token.location@ ,
+            type -> ds.document.symbol_type:struct
+        }
+        document ds.document.symbols@ { fields [ index @ ]@@ }!
+
+        #.new ds.document.symbol {
+            is_immediate -> false ,
+            description -> "Push index for structure field " fields [ index @ ]@@  +
+                           " -- " + descriptions [ index @ ]@@ + ,
+            signature -> " -- field_index" ds.document.tokenize_string
+                                           ds.document.signature_to_markdown ,
+            location -> name_token tk.token.location@ ,
+            type -> ds.document.symbol_type:struct
+        }
+        document ds.document.symbols@ { name_text @ "." + fields [ index @ ]@@ + }!
+
+        index ++!
+    repeat
+;
+
+
+
+
 ( Generate a symbol for a structure and store it in the document's symbol table. )
-: ds.document.symbolize_new_struct
+: ds.document.symbolize_new_struct  ( start_index tokens document -- )
     @ variable! document
     variable! tokens
-    variable! index
+    variable! start_index
+
+    tokens [ start_index @ ++ ]@@ variable! name_token
+    "" variable! description
+    0 [].new variable! fields
+    0 [].new variable! field_descriptions
+
+    start_index @ tokens @ ds.document.scan_for_previous_comment
+    if
+        tk.token.contents swap #@  ds.document.stringify_comment
+                                   ds.document.filter_markdown    description !
+    then
+
+    start_index @ ++ ++  variable! index
+    tokens [].size@@  variable! size
+    variable next_token
+    variable found
+
+    begin
+        index @  size @  <
+    while
+        tokens [ index @ ]@@  next_token !
+
+        next_token tk.token.is_word?
+        if
+            next_token tk.token.contents@ ";"  =
+            if
+                break
+            then
+
+            fields [].size++!!
+            field_descriptions [].size++!!
+
+            found ++!
+
+            next_token tk.token.contents@  fields [ found @ -- ]!!
+            index @  tokens @  ds.document.scan_for_next_comment
+            if
+                tk.token.contents swap #@  ds.document.stringify_comment
+                                           ds.document.filter_markdown
+                                           field_descriptions [ found @ -- ]!!
+            else
+                "" field_descriptions [ found @ -- ]!!
+            then
+        then
+
+        index ++!
+    repeat
+
+    found @  0>
+    if
+        0 index !
+        description @  "\\n\\n__Fields:__\\n| Name | Description |\\n"  +
+                                           "| :--- | :---        |\\n"  +  description !
+
+        begin
+            index @  found @  <
+        while
+            description @ "| " + fields [ index @ ]@@ + " | " + field_descriptions [ index @ ]@@ +
+                          " |\\n" +
+                          description !
+
+            index ++!
+        repeat
+    then
+
+    #.new ds.document.symbol {
+        is_immediate -> false ,
+        description -> description @ ,
+        signature -> "" ,
+        location -> name_token tk.token.location@ ,
+        type -> ds.document.symbol_type:struct
+    }
+    document ds.document.symbols@ { name_token tk.token.contents@ }!
+
+    name_token @  fields @  field_descriptions @  ds.document.add_struct_field_symbols
 ;
 
 
@@ -594,6 +710,28 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
     @ variable! document
     variable! tokens
     variable! index
+    variable description
+
+    tokens [ index @ ++ ]@@ variable! name_token
+
+    index @ ++  tokens @  ds.document.scan_for_next_comment
+    if
+        tk.token.contents swap #@  ds.document.stringify_comment
+                                   ds.document.filter_markdown
+                                   description !
+    else
+        "Push index for variable, " name_token tk.token.contents@ + "." +  description !
+    then
+
+    #.new ds.document.symbol {
+        is_immediate -> false ,
+        description -> description @ ,
+        signature -> " -- variable_index" ds.document.tokenize_string
+                                          ds.document.signature_to_markdown ,
+        location -> name_token tk.token.location@ ,
+        type -> ds.document.symbol_type:variable
+    }
+    document ds.document.symbols@ { name_token tk.token.contents@ }!
 ;
 
 
@@ -604,6 +742,28 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
     @ variable! document
     variable! tokens
     variable! index
+    variable description
+
+    tokens [ index @ ++ ]@@ variable! name_token
+
+    index @ ++  tokens @  ds.document.scan_for_next_comment
+    if
+        tk.token.contents swap #@  ds.document.stringify_comment
+                                   ds.document.filter_markdown
+                                   description !
+    else
+        "Push constant value, " name_token tk.token.contents@ + "." +  description !
+    then
+
+    #.new ds.document.symbol {
+        is_immediate -> false ,
+        description -> description @ ,
+        signature -> " -- value" ds.document.tokenize_string
+                                 ds.document.signature_to_markdown ,
+        location -> name_token tk.token.location@ ,
+        type -> ds.document.symbol_type:constant
+    }
+    document ds.document.symbols@ { name_token tk.token.contents@ }!
 ;
 
 
