@@ -73,7 +73,7 @@ ls.standard_words ds.add_std_symbols
 
 
 ( The init process has completed. )
-: ls.handle:initialized
+: ls.handle:initialized  ( -- )
     "Client/server connection has been successfully initialized." lsp.log_message
 ;
 
@@ -81,7 +81,7 @@ ls.standard_words ds.add_std_symbols
 
 
 ( We have been requested to begin shutdown. )
-: ls.handle:shutdown
+: ls.handle:shutdown  ( -- )
     "The server is shutting down." lsp.log_message
 
     lsp.begin_shutdown
@@ -95,7 +95,7 @@ ls.standard_words ds.add_std_symbols
 
 
 ( Ok, now the client wants us to exit for real. )
-: ls.handle:exit
+: ls.handle:exit  ( -- )
     "Final exit notification received." lsp.log_message
 
     lsp.handle_exit
@@ -142,7 +142,9 @@ ls.standard_words ds.add_std_symbols
 
 
 
-: ls.handle:text_document/did_change
+( Sent when a documented has been edited in the client.  We update our version of the document and )
+( then handle tokenizing and light parsing, just like ls.handle:text_document/did_open. )
+: ls.handle:text_document/did_change  ( params -- )
     variable! params
 
     ( TODO: Change things so that we can accept partial updates. )
