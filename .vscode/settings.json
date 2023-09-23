@@ -45,6 +45,7 @@
 
     "cSpell.enableFiletypes":
     [
-        "forth"
+        "forth",
+        "strangeforth"
     ]
 }
