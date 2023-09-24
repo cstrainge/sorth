@@ -83,8 +83,8 @@ namespace sorth
                                "Could not read terminal information, " +
                                std::string(strerror(errno)) + ".");
 
-            interpreter->push(size.ws_row);
-            interpreter->push(size.ws_col);
+            interpreter->push((int64_t)size.ws_row);
+            interpreter->push((int64_t)size.ws_col);
         }
 
 

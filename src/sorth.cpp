@@ -94,7 +94,7 @@ int main(int argc, char* argv[])
 
             for (int i = 0; i < argc - 2; ++i)
             {
-                (*array)[i] = argv[i + 2];
+                (*array)[i] = std::string(argv[i + 2]);
             }
 
             ADD_NATIVE_WORD(interpreter,
