@@ -17,10 +17,12 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 
 
 ( Constants for the various symbol types we can find in a source document. )
-0 constant ds.document.symbol_type:word
-1 constant ds.document.symbol_type:struct
-2 constant ds.document.symbol_type:variable
-3 constant ds.document.symbol_type:constant
+0 constant ds.document.symbol_type:word       ( The symbol represents a general purpose word. )
+1 constant ds.document.symbol_type:struct     ( The symbol represents a word for accessing a )
+                                              ( struct.  Words like field accessors and )
+                                              ( constructors. )
+2 constant ds.document.symbol_type:variable   ( The symbol represents a variable access word. )
+3 constant ds.document.symbol_type:constant   ( The symbol represents a constant. )
 
 
 ( Represent one of the words found defined in the source code. )
@@ -692,6 +694,16 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 
     #.new ds.document.symbol {
         is_immediate -> false ,
+        description -> "Create a new instance of the structure, " name_token tk.token.contents@ + ,
+        signature -> " -- " name_token tk.token.contents@ +  ds.document.tokenize_string
+                                                             ds.document.signature_to_markdown ,
+        location -> name_token tk.token.location@ ,
+        type -> ds.document.symbol_type:struct
+    }
+    document ds.document.symbols@ { name_token tk.token.contents@ ".new" + }!
+
+    #.new ds.document.symbol {
+        is_immediate -> false ,
         description -> description @ ,
         signature -> "" ,
         location -> name_token tk.token.location@ ,
@@ -938,7 +950,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 ( This search will only return a word, so if the location lands on a comment or string, or other )
 ( type of literal, the search will fail.  Note that if the location lands on document whitespace )
 ( nothing will be found in that situation either. )
-: ds.scan_for_word  ( uri tk.location -- [tk.token] was_found? )
+: ds.scan_for_word  ( tk.location uri -- [tk.token] was_found? )
     variable! uri
     variable! location
 

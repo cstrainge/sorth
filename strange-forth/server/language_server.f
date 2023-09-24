@@ -182,13 +182,13 @@ ls.standard_words ds.add_std_symbols
 : ls.handle:text_document/hover
     variable! params
 
-    params { "position" }@@ { "line" }@ variable! line
-    params { "position" }@@ { "character" }@ variable! character
+    params { "position" }@@ { "line" }@ variable! new_line
+    params { "position" }@@ { "character" }@ variable! new_character
     params { "textDocument" }@@ { "uri" }@ variable! uri
 
-    "Handle document hover request."           lsp.log_message
-    "uri:      " uri @ +                       lsp.log_message
-    "Position: " line @ + ", " + character @ + lsp.log_message
+    "Handle document hover request."                   lsp.log_message
+    "uri:      " uri @ +                               lsp.log_message
+    "Position: " new_line @ + ", " + new_character @ + lsp.log_message
 
     ( Documents look for file, and scan for the word at the location. )
     ( Take that word and look it up in our dictionary. )
@@ -198,8 +198,8 @@ ls.standard_words ds.add_std_symbols
     variable description
 
     uri @ #.new tk.location {
-        line -> line @ ,
-        character -> character @
+        line -> new_line @ ,
+        character -> new_character @
     }
     uri @ ds.scan_for_word
     if
