@@ -2,6 +2,10 @@
 
 Latest updates to the published version of this package.
 
+### 0.1.5
+
+Fixed some issues with the Linux build.
+
 ### 0.1.4
 
 Will generate symbols for structs, variables, and constants now.

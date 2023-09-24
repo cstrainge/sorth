@@ -14,7 +14,9 @@ One mark of the language's growing maturity is that the language server itself i
 
 MacOS or Linux, (currently only tested with Ubuntu,) on x86-64 and Arm64
 
-### 0.1.0 - 0.1.4
+### 0.1.0 - 0.1.5
+
+Fixed some small problems with the Linux build.
 
 Will generate symbols for structs, variables, and constants now.
 
