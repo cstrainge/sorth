@@ -47,5 +47,7 @@
     [
         "forth",
         "strangeforth"
-    ]
+    ],
+
+    "cmake.configureOnOpen": false
 }
