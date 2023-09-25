@@ -12,7 +12,7 @@ namespace sorth
         {
             stream << "# " << data->definition->name << " ";
 
-            for (int64_t i = 0; i < data->fields.size(); ++i)
+            for (size_t i = 0; i < data->fields.size(); ++i)
             {
                 stream << data->definition->fieldNames[i] << ": "
                        << data->fields[i] << " ";

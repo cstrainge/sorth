@@ -50,6 +50,10 @@
 
 	#include "posix_io_words.h"
 
+#elif defined(_WIN64)
+
+    #include "win_io_words.h"
+
 #endif
 
 #include "user_words.h"

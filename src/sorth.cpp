@@ -2,21 +2,22 @@
 #include <iostream>
 #include "sorth.h"
 
-#ifdef __APPLE__
+#if defined(__APPLE__)
 
     #include <assert.h>
     #include <mach-o/dyld.h>
 
-#elif __linux__
+#elif defined(__linux__)
 
     #include <linux/limits.h>
     #include <unistd.h>
 
-#elif _WIN32 || _WIN64
+#elif defined(_WIN64)
 
     #include <Windows.h>
 
 #endif
+
 
 
 
@@ -28,7 +29,7 @@ namespace
     {
         std::filesystem::path base_path;
 
-        #ifdef __APPLE__
+        #if defined(__APPLE__)
 
             uint32_t buffer_size = 0;
 
@@ -40,7 +41,7 @@ namespace
 
             base_path = std::filesystem::canonical(&buffer[0]).remove_filename();
 
-        #elif __linux__
+        #elif defined(__linux__)
 
             char buffer [PATH_MAX + 1];
             ssize_t count = 0;
@@ -57,7 +58,7 @@ namespace
 
             base_path = std::filesystem::canonical(buffer).remove_filename();
 
-        #elif _WIN32 || _WIN64
+        #elif defined(_WIN64)
 
             char buffer [ MAX_PATH + 1];
 
@@ -113,13 +114,7 @@ int main(int argc, char* argv[])
 
         sorth::register_builtin_words(interpreter);
         sorth::register_terminal_words(interpreter);
-
-        #if defined(__APPLE__) || defined(__linux__)
-
-            sorth::register_io_words(interpreter);
-
-        #endif
-
+        sorth::register_io_words(interpreter);
         sorth::register_user_words(interpreter);
 
         auto std_lib = interpreter->find_file("std.f");
