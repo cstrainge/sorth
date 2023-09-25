@@ -33,9 +33,21 @@ namespace sorth
         void word_user_os_read(InterpreterPtr& interpreter)
         {
             #ifdef __APPLE__
+
                 interpreter->push("MacOS");
+
+            #elif __linux__
+
+                interpreter->push("Linux");
+
+            #elif _WIN32 || _WIN64
+
+                interpreter->push("Windows");
+
             #else
-                interpreter->push("unknown");
+
+                interpreter->push("Unknown");
+
             #endif
         }
 
