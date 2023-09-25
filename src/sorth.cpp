@@ -114,7 +114,7 @@ int main(int argc, char* argv[])
         sorth::register_builtin_words(interpreter);
         sorth::register_terminal_words(interpreter);
 
-        #ifdef __APPLE__ || __linux__
+        #if defined(__APPLE__) || defined(__linux__)
 
             sorth::register_io_words(interpreter);
 

@@ -46,7 +46,7 @@
 #include "builtin_words.h"
 #include "terminal_words.h"
 
-#ifdef __APPLE__ || __linux__
+#if defined(__APPLE__) || defined(__linux__)
 
 	#include "posix_io_words.h"
 

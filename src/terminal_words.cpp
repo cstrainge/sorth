@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 
-#ifdef __APPLE__ || __linux__
+#if defined(__APPLE__) || defined(__linux__)
 
     #include <termios.h>
     #include <unistd.h>
@@ -25,7 +25,7 @@ namespace sorth
     namespace
     {
 
-        #ifdef __APPLE__ || __linux__
+        #if defined(__APPLE__) || defined(__linux__)
 
             // This part requires posix.  If we want to work on another os, this needs to be ported.
             // We're using this to enable and disable the terminal emulator's raw mode.
@@ -147,7 +147,8 @@ namespace sorth
 
     void register_terminal_words(InterpreterPtr& interpreter)
     {
-        #ifdef __APPLE__ || __linux__
+        #if defined(__APPLE__) || defined(__linux__)
+
             ADD_NATIVE_WORD(interpreter, "term.raw_mode", word_term_raw_mode,
                             "Enter or leave the terminal's 'raw' mode.",
                             "bool -- ");
@@ -160,6 +161,7 @@ namespace sorth
             ADD_NATIVE_WORD(interpreter, "term.key", word_term_key,
                             "Read a keypress from the terminal.",
                             " -- character");
+
         #endif
 
         ADD_NATIVE_WORD(interpreter, "term.flush", word_term_flush,
