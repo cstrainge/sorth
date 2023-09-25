@@ -33,7 +33,7 @@ namespace sorth
             return false;
         }
 
-        for (size_t i = 0; i < rhs->size(); ++i)
+        for (int i = 0; i < rhs->size(); ++i)
         {
             if ((*rhs)[i] != (*lhs)[i])
             {

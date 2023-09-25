@@ -1,10 +1,16 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <termios.h>
-#include <unistd.h>
 #include <fcntl.h>
-#include <sys/ioctl.h>
+
+#ifdef __APPLE__ || __linux__
+
+    #include <termios.h>
+    #include <unistd.h>
+    #include <sys/ioctl.h>
+
+#endif
+
 #include "sorth.h"
 
 
@@ -19,87 +25,90 @@ namespace sorth
     namespace
     {
 
+        #ifdef __APPLE__ || __linux__
 
-        // This part requires posix.  If we want to work on another os, this needs to be ported.
-        // We're using this to enable and disable the terminal emulator's raw mode.
-        struct termios original_termios;
-        bool is_in_raw_mode = false;
+            // This part requires posix.  If we want to work on another os, this needs to be ported.
+            // We're using this to enable and disable the terminal emulator's raw mode.
+            struct termios original_termios;
+            bool is_in_raw_mode = false;
 
 
-        void word_term_raw_mode(InterpreterPtr& interpreter)
-        {
-            auto requested_on = as_numeric<bool>(interpreter, interpreter->pop());
-
-            if (requested_on && (!is_in_raw_mode))
+            void word_term_raw_mode(InterpreterPtr& interpreter)
             {
-                struct termios raw = original_termios;
+                auto requested_on = as_numeric<bool>(interpreter, interpreter->pop());
 
-                auto result = tcgetattr(STDIN_FILENO, &original_termios);
+                if (requested_on && (!is_in_raw_mode))
+                {
+                    struct termios raw = original_termios;
 
-                throw_error_if(result == -1, *interpreter,
-                               "Could not read terminal mode information, " +
-                               std::string(strerror(errno)) + ".");
+                    auto result = tcgetattr(STDIN_FILENO, &original_termios);
 
-                raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
-                raw.c_oflag &= ~(OPOST);
-                raw.c_cflag |= (CS8);
-                raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
-                raw.c_cc[VMIN] = 1;
+                    throw_error_if(result == -1, *interpreter,
+                                   "Could not read terminal mode information, " +
+                                   std::string(strerror(errno)) + ".");
 
-                result = tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
+                    raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
+                    raw.c_oflag &= ~(OPOST);
+                    raw.c_cflag |= (CS8);
+                    raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
+                    raw.c_cc[VMIN] = 1;
 
-                throw_error_if(result == -1, *interpreter,
-                               "Could not set terminal mode, " +
-                               std::string(strerror(errno)) + ".");
+                    result = tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
 
-                is_in_raw_mode = true;
+                    throw_error_if(result == -1, *interpreter,
+                                   "Could not set terminal mode, " +
+                                   std::string(strerror(errno)) + ".");
+
+                    is_in_raw_mode = true;
+                }
+                else if ((!requested_on) && is_in_raw_mode)
+                {
+                    auto result = tcsetattr(STDIN_FILENO, TCSAFLUSH, &original_termios);
+
+                    throw_error_if(result == -1, *interpreter,
+                                   "Could not reset terminal mode, " +
+                                   std::string(strerror(errno)) + ".");
+
+                    is_in_raw_mode = false;
+                }
             }
-            else if ((!requested_on) && is_in_raw_mode)
+
+
+            void word_term_size(InterpreterPtr& interpreter)
             {
-                auto result = tcsetattr(STDIN_FILENO, TCSAFLUSH, &original_termios);
+                struct winsize size;
+
+                auto result = ioctl(STDOUT_FILENO, TIOCGWINSZ, &size);
 
                 throw_error_if(result == -1, *interpreter,
-                               "Could not reset terminal mode, " +
-                               std::string(strerror(errno)) + ".");
+                    "Could not read terminal information, " +
+                    std::string(strerror(errno)) + ".");
 
-                is_in_raw_mode = false;
+                interpreter->push((int64_t)size.ws_row);
+                interpreter->push((int64_t)size.ws_col);
             }
-        }
+
+
+            void word_term_key(InterpreterPtr& interpreter)
+            {
+                char next[2] = { 0 };
+                ssize_t read_chars = 0;
+
+                do
+                {
+                    read_chars = read(STDIN_FILENO, next, 1);
+                } while (read_chars == 0);
+
+                interpreter->push(std::string(next));
+            }
+
+
+        #endif
 
 
         void word_term_flush(InterpreterPtr& interpreter)
         {
             std::cout << std::flush;
-        }
-
-
-        void word_term_size(InterpreterPtr& interpreter)
-        {
-            struct winsize size;
-
-            auto result = ioctl(STDOUT_FILENO, TIOCGWINSZ, &size);
-
-            throw_error_if(result == -1, *interpreter,
-                               "Could not read terminal information, " +
-                               std::string(strerror(errno)) + ".");
-
-            interpreter->push((int64_t)size.ws_row);
-            interpreter->push((int64_t)size.ws_col);
-        }
-
-
-        void word_term_key(InterpreterPtr& interpreter)
-        {
-            char next[2] = { 0 };
-            ssize_t read_chars = 0;
-
-            do
-            {
-                read_chars = read(STDIN_FILENO, next, 1);
-            }
-            while (read_chars == 0);
-
-            interpreter->push(std::string(next));
         }
 
 
@@ -138,23 +147,24 @@ namespace sorth
 
     void register_terminal_words(InterpreterPtr& interpreter)
     {
-        ADD_NATIVE_WORD(interpreter, "term.raw_mode", word_term_raw_mode,
-                        "Enter or leave the terminal's 'raw' mode.",
-                        "bool -- ");
+        #ifdef __APPLE__ || __linux__
+            ADD_NATIVE_WORD(interpreter, "term.raw_mode", word_term_raw_mode,
+                            "Enter or leave the terminal's 'raw' mode.",
+                            "bool -- ");
 
+
+            ADD_NATIVE_WORD(interpreter, "term.size@", word_term_size,
+                            "Return the number or characters in the rows and columns.",
+                            " -- columns rows");
+
+            ADD_NATIVE_WORD(interpreter, "term.key", word_term_key,
+                            "Read a keypress from the terminal.",
+                            " -- character");
+        #endif
 
         ADD_NATIVE_WORD(interpreter, "term.flush", word_term_flush,
                         "Flush the terminals buffers.",
                         " -- ");
-
-        ADD_NATIVE_WORD(interpreter, "term.size@", word_term_size,
-                        "Return the number or characters in the rows and columns.",
-                        " -- columns rows");
-
-
-        ADD_NATIVE_WORD(interpreter, "term.key", word_term_key,
-                        "Read a keypress from the terminal.",
-                        " -- character");
 
         ADD_NATIVE_WORD(interpreter, "term.readline", word_term_read_line,
                         "Read a line of text from the terminal.",

@@ -12,6 +12,10 @@
     #include <linux/limits.h>
     #include <unistd.h>
 
+#elif _WIN32 || _WIN64
+
+    #include <Windows.h>
+
 #endif
 
 
@@ -52,6 +56,37 @@ namespace
             }
 
             base_path = std::filesystem::canonical(buffer).remove_filename();
+
+        #elif _WIN32 || _WIN64
+
+            char buffer [ MAX_PATH + 1];
+
+            memset(buffer, 0, MAX_PATH + 1);
+
+            GetModuleFileNameA(nullptr, buffer, MAX_PATH);
+
+            if (GetLastError() != ERROR_SUCCESS)
+            {
+                char message_buffer[4096];
+                memset(message_buffer, 0, 4096);
+                size_t size = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                                             FORMAT_MESSAGE_FROM_SYSTEM |
+                                             FORMAT_MESSAGE_IGNORE_INSERTS,
+                                             nullptr,
+                                             GetLastError(),
+                                             MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                                             message_buffer,
+                                             0,
+                                             NULL);
+                std::stringstream stream;
+
+                stream << "Could not get the executable directory: " << message_buffer;
+
+                throw std::runtime_error(stream.str());
+            }
+
+            base_path = std::filesystem::canonical(buffer).remove_filename();
+
         #else
 
             throw std::runtime_error("get_executable_directory is unimplemented on this platform.");
@@ -78,7 +113,13 @@ int main(int argc, char* argv[])
 
         sorth::register_builtin_words(interpreter);
         sorth::register_terminal_words(interpreter);
-        sorth::register_io_words(interpreter);
+
+        #ifdef __APPLE__ || __linux__
+
+            sorth::register_io_words(interpreter);
+
+        #endif
+
         sorth::register_user_words(interpreter);
 
         auto std_lib = interpreter->find_file("std.f");
