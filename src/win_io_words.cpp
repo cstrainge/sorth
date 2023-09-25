@@ -20,7 +20,9 @@ namespace sorth
 
 
         [[noreturn]]
-        void throw_windows_error(InterpreterPtr& interpreter, const std::string& message, DWORD code)
+        void throw_windows_error(InterpreterPtr& interpreter,
+                                 const std::string& message,
+                                 DWORD code)
         {
             char message_buffer[4096];
             memset(message_buffer, 0, 4096);
@@ -43,7 +45,8 @@ namespace sorth
 
 
 
-        HANDLE handle_open(InterpreterPtr interpreter, const std::string& path, DWORD flags, DWORD create_flags)
+        HANDLE handle_open(InterpreterPtr interpreter, const std::string& path, DWORD flags,
+                           DWORD create_flags)
         {
             DWORD share_flags =   (flags & GENERIC_READ ? FILE_SHARE_READ : 0)
                                 | (flags & GENERIC_WRITE ? FILE_SHARE_WRITE : 0);
@@ -340,7 +343,8 @@ namespace sorth
             {
                 auto buffer = as_byte_buffer(interpreter, value);
 
-                handle_write_bytes(interpreter, handle, (char*)buffer->data_ptr(), (DWORD)buffer->size());
+                handle_write_bytes(interpreter, handle, (char*)buffer->data_ptr(),
+                                   (DWORD)buffer->size());
             }
             else
             {
@@ -348,7 +352,8 @@ namespace sorth
 
                 buffer << value;
 
-                handle_write_bytes(interpreter, handle, buffer.str().c_str(), (DWORD)buffer.str().size());
+                handle_write_bytes(interpreter, handle, buffer.str().c_str(),
+                                   (DWORD)buffer.str().size());
             }
         }
 
