@@ -24,20 +24,22 @@ namespace sorth
                                  const std::string& message,
                                  DWORD code)
         {
-            char message_buffer[4096];
-            memset(message_buffer, 0, 4096);
-            size_t size = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                                         FORMAT_MESSAGE_FROM_SYSTEM |
-                                         FORMAT_MESSAGE_IGNORE_INSERTS,
-                                         nullptr,
-                                         code,
-                                         MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                                         message_buffer,
-                                         0,
-                                         NULL);
+            char message_buffer[4096 + 1];
+            memset(message_buffer, 0, 4096 + 1);
+            size_t size = 4096;
+
+            size = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM |
+                                  FORMAT_MESSAGE_IGNORE_INSERTS,
+                                  nullptr,
+                                  code,
+                                  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                                  message_buffer,
+                                  size,
+                                  nullptr);
+
             std::stringstream stream;
 
-            stream << "Could not get the executable directory: " << message_buffer;
+            stream << message << message_buffer;
 
             throw_error(*interpreter, stream.str());
         }
@@ -159,8 +161,13 @@ namespace sorth
 
             do
             {
-                pipe = CreateFileA(pipe_path.c_str(), GENERIC_READ | GENERIC_WRITE,
-                                   0, nullptr, OPEN_EXISTING, 0, nullptr);
+                pipe = CreateFileA(pipe_path.c_str(),
+                                   GENERIC_READ | GENERIC_WRITE,
+                                   0,
+                                   nullptr,
+                                   OPEN_EXISTING,
+                                   0,
+                                   nullptr);
             }
             while (   (pipe == INVALID_HANDLE_VALUE)
                    && (GetLastError() == ERROR_PIPE_BUSY)
@@ -169,15 +176,6 @@ namespace sorth
             if (pipe == INVALID_HANDLE_VALUE)
             {
                 throw_windows_error(interpreter, "Could not open pipe: ", GetLastError());
-            }
-
-
-            DWORD mode = PIPE_READMODE_MESSAGE;
-            auto result = SetNamedPipeHandleState(pipe, &mode, nullptr, PIPE_WAIT);
-
-            if (!result)
-            {
-                throw_windows_error(interpreter, "Set pipe state failed: ", GetLastError());
             }
 
             interpreter->push((int64_t)pipe);
