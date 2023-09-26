@@ -245,7 +245,7 @@ namespace sorth
                 "Create a new instance of the structure " + definition_ptr->name + ".",
                 " -- " + definition_ptr->name);
 
-            for (int64_t i = 0; i < definition_ptr->fieldNames.size(); ++i)
+            for (int64_t i = 0; i < (int64_t)definition_ptr->fieldNames.size(); ++i)
             {
                 ADD_NATIVE_WORD(interpreter,
                     definition_ptr->name + "." + definition_ptr->fieldNames[i],
@@ -322,7 +322,7 @@ namespace sorth
             auto original = std::get<ArrayPtr>(value);
             auto new_object = std::make_shared<Array>(original->size());
 
-            for (size_t i = 0; i < original->size(); ++i)
+            for (size_t i = 0; i < (size_t)original->size(); ++i)
             {
                 (*new_object)[i] = deep_copy_value(interpreter, (*original)[i]);
             }

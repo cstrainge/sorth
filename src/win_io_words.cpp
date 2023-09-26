@@ -119,7 +119,7 @@ namespace sorth
 
         void word_file_open(InterpreterPtr& interpreter)
         {
-            DWORD flags = as_numeric<int64_t>(interpreter, interpreter->pop());
+            DWORD flags = (DWORD)as_numeric<int64_t>(interpreter, interpreter->pop());
             auto path = as_string(interpreter, interpreter->pop());
 
             interpreter->push((int64_t)handle_open(interpreter, path, flags, CREATE_ALWAYS));
@@ -130,7 +130,7 @@ namespace sorth
 
         void word_file_create(InterpreterPtr& interpreter)
         {
-            DWORD flags = as_numeric<int64_t>(interpreter, interpreter->pop());
+            DWORD flags = (DWORD)as_numeric<int64_t>(interpreter, interpreter->pop());
             auto path = as_string(interpreter, interpreter->pop());
 
             interpreter->push((int64_t)handle_open(interpreter, path, flags, CREATE_NEW));
@@ -289,7 +289,7 @@ namespace sorth
         void word_file_read_string(InterpreterPtr& interpreter)
         {
             auto handle = (HANDLE)as_numeric<int64_t>(interpreter, interpreter->pop());
-            DWORD size = as_numeric<int64_t>(interpreter, interpreter->pop());
+            DWORD size = (DWORD)as_numeric<int64_t>(interpreter, interpreter->pop());
 
             char* buffer = nullptr;
 

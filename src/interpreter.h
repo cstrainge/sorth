@@ -134,17 +134,17 @@ namespace sorth
     {
         if (std::holds_alternative<bool>(value))
         {
-            return std::get<bool>(value);
+            return (variant)std::get<bool>(value);
         }
 
         if (std::holds_alternative<int64_t>(value))
         {
-            return std::get<int64_t>(value);
+            return (variant)std::get<int64_t>(value);
         }
 
         if (std::holds_alternative<double>(value))
         {
-            return std::get<double>(value);
+            return (variant)std::get<double>(value);
         }
 
         internal::throw_error(*interpreter, "Expected numeric or boolean value.");
