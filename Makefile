@@ -43,10 +43,22 @@ endif
 
 
 ifeq ($(OS),Darwin)
+	OUT_NAME := sorth
+	STRIP_CMD := strip ./$(BUILD)/$(OUT_NAME)
+	CP_CMD := cp std.f $(BUILD)
+	CP_R := cp -r std $(BUILD)
 	SOURCES = $(BASE_SOURCES) src/posix_io_words.cpp
 else ifeq ($(OS),Linux)
+	OUT_NAME := sorth
+	STRIP_CMD := strip ./$(BUILD)/$(OUT_NAME)
+	CP_CMD := cp std.f $(BUILD)
+	CP_R := cp -r std $(BUILD)
 	SOURCES = $(BASE_SOURCES) src/posix_io_words.cpp
 else ifeq ($(OS),Windows)
+	OUT_NAME := sorth.exe
+	STRIP_CMD :=
+	CP_CMD := xcopy /y std.f $(BUILD)
+	CP_R := xcopy /y /s /e /i std $(BUILD)\std
 	SOURCES = $(BASE_SOURCES) src/win_io_words.cpp
 endif
 
@@ -55,7 +67,7 @@ BUILDFLAGS += "-std=c++20"
 BUILDFLAGS += "-O3"
 # BUILDFLAGS += "--target=$(ARCH)"
 
-default: build build/sorth copy_stdlib ## Default
+default: build build/$(OUT_NAME) copy_stdlib ## Default
 
 .PHONY: build
 dist: default ## Dist
@@ -67,20 +79,20 @@ help:  ## Help
 		sed -n 's/^.*:\(.*\): \(.*\)##\(.*\)/\1%%%\3/p' | \
 		column -t -s '%%%'
 
-$(BUILD)/sorth: build $(SOURCES) ## Build binary
+$(BUILD)/$(OUT_NAME): build $(SOURCES) ## Build binary
 	clang++ \
 		$(BUILDFLAGS) \
 		$(SOURCES) \
-		-o ./$@
-	strip ./$@
+		-o ./$(BUILD)/$(OUT_NAME)
+	$(STRIP_CMD)
 
 .PHONY: build
  $(BUILD):
 	install -d $(BUILD) || true
 
 copy_stdlib: build std.f std/* ## Copy stdlib to build directory
-	cp std.f $(BUILD)
-	cp -r std $(BUILD)
+	$(CP_CMD)
+	$(CP_R)
 
 .PHONY: clean
 clean: ## Clean
