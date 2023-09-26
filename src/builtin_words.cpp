@@ -2123,7 +2123,7 @@ namespace sorth
 
         ADD_NATIVE_WORD(interpreter, "string.find", word_string_find,
                         "Find the first instance of a string within another.",
-                        "string -- index");
+                        "search_string string -- index");
 
         ADD_NATIVE_WORD(interpreter, "string.[]@", word_string_index_read,
                         "Read a character from the given string.",
