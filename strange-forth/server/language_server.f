@@ -7,7 +7,6 @@
 
 
 
-
 ( Get a copy of the dictionary before we've added any words.  This way we have a consistent set )
 ( of words that represent the standard library. )
 words.get{} constant ls.standard_words
@@ -17,10 +16,23 @@ words.get{} constant ls.standard_words
 
 
 
-( Get the path to the socket from the command line arguments, then properly connect to it. )
+( Get the path to the socket from the command line arguments, then properly connect to it. On Unix )
+( based systems it is passed as --pipe=<pipe-path> as one argument.  On Windows systems it is )
+( passed as two arguments --pipe <pipe-path>.  On windows the launching batch file ignores the  )
+( --pipe parameter and just passes the path itself. )
 "Opening LSP connection to client." .cr
 
-"--pipe=" string.size@ 0 args [ 0 ]@ string.remove constant socket_path
+
+"--pipe="  args [ 0 ]@  string.find  0  =
+if
+    "--pipe=" string.size@  0  args [ 0 ]@  string.remove  constant socket_path
+else
+    args [ 0 ]@ constant socket_path
+then
+
+
+"Using socket path: " socket_path + .cr
+
 socket_path socket.connect variable! server_fd
 
 
