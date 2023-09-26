@@ -9,7 +9,25 @@ BUILD := build
 SOURCEDIR := src
 DISTDIR := dist
 
-SOURCES := $(wildcard $(SOURCEDIR)/*.cpp)
+BASE_SOURCES := src/array.cpp \
+                src/builtin_words.cpp \
+                src/byte_buffer.cpp \
+                src/code_constructor.cpp \
+                src/data_object.cpp \
+                src/dictionary.cpp \
+                src/error.cpp \
+                src/hash_table.cpp \
+                src/interpreter.cpp \
+                src/location.cpp \
+                src/operation_code.cpp \
+                src/sorth.cpp \
+                src/source_buffer.cpp \
+                src/terminal_words.cpp \
+                src/tokenize.cpp \
+                src/user_words.cpp \
+                src/value.cpp
+
+
 ifeq ($(OS),Windows_NT)
 	OS := Windows
 else
@@ -21,6 +39,15 @@ else ifeq ($(OS),Linux)
 	ARCH ?= $(shell uname -m)
 else ifeq ($(OS),Windows)
 	ARCH ?= $(shell uname -m)
+endif
+
+
+ifeq ($(OS),Darwin)
+	SOURCES = $(BASE_SOURCES) src/posix_io_words.cpp
+else ifeq ($(OS),Linux)
+	SOURCES = $(BASE_SOURCES) src/posix_io_words.cpp
+else ifeq ($(OS),Windows)
+	SOURCES = $(BASE_SOURCES) src/win_io_words.cpp
 endif
 
 
