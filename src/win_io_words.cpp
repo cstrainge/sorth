@@ -1,7 +1,5 @@
-
+#if defined __WIN32 || defined _WIN32 || defined WIN32 || defined _WIN64 || defined __WIN64 || defined WIN64 || defined __WINNT
 #include "sorth.h"
-
-
 
 namespace sorth
 {
@@ -463,3 +461,5 @@ namespace sorth
 
 
 }
+
+#endif // if _WIN32

@@ -5,96 +5,110 @@ SHELL := bash
 MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 
+CXX := clang++
+CXXFLAGS = -O3 -std=c++20
+GCC_CXXFLAGS = -DMESSAGE='"Compiled with GCC"'
+CLANG_CXXFLAGS = -DMESSAGE='"Compiled with Clang"'
+UNKNOWN_CXXFLAGS = -DMESSAGE='"Compiled with an unknown compiler"'
+
 BUILD := build
 SOURCEDIR := src
 DISTDIR := dist
+TARGET ?= sorth
 
-BASE_SOURCES := src/array.cpp \
-                src/builtin_words.cpp \
-                src/byte_buffer.cpp \
-                src/code_constructor.cpp \
-                src/data_object.cpp \
-                src/dictionary.cpp \
-                src/error.cpp \
-                src/hash_table.cpp \
-                src/interpreter.cpp \
-                src/location.cpp \
-                src/operation_code.cpp \
-                src/sorth.cpp \
-                src/source_buffer.cpp \
-                src/terminal_words.cpp \
-                src/tokenize.cpp \
-                src/user_words.cpp \
-                src/value.cpp
+SOURCES := $(shell find $(SOURCEDIR) -name '*.cpp')
 
-
-ifeq ($(OS),Windows_NT)
-	OS := Windows
-else
+ifneq ($(OS),Windows_NT)
 	OS := $(shell uname -s)
 endif
-ifeq ($(OS),Darwin)
-	ARCH ?= $(shell arch)
-else ifeq ($(OS),Linux)
-	ARCH ?= $(shell uname -m)
-else ifeq ($(OS),Windows)
-	ARCH ?= $(shell uname -m)
+
+# versioning
+TAG_COMMIT := $(shell git rev-list --abbrev-commit --tags --max-count=1)
+DATE := $(shell git log -1 --format=%cd --date=format:"%Y%m%d")
+# `2>/dev/null` suppress errors and `|| true` suppress the error codes.
+TAG := $(shell git describe --abbrev=0 --tags ${TAG_COMMIT} 2>/dev/null || true)
+ifeq ($(TAG),)
+	TAG := dev
+endif
+COMMIT :=$(shell git rev-parse HEAD | cut -c 1-8)
+# here we strip the version prefix
+VERSION := $(TAG:v%=%)-$(COMMIT)-$(DATE)
+
+CXXFLAGS += -DVERSION="$(VERSION)" 
+
+# target, optional https://clang.llvm.org/docs/CrossCompilation.html
+ifneq ($(CXXTARGET),)
+	CXXFLAGS += -target $(CXXTARGET)
+endif 
+
+ifeq ($(CXX),g++)
+  CXXFLAGS += $(GCC_CXXFLAGS)
+else ifeq ($(CXX),clang)
+  CXXFLAGS += $(CLANG_CXXFLAGS)
+else ifeq ($(CXX),c++) # not sure if this is a good assumption, but it works for CI and local builds on MacOS
+  CXXFLAGS += $(CLANG_CXXFLAGS)
+else
+  CXXFLAGS += $(UNKNOWN_CXXFLAGS)
 endif
 
 
 ifeq ($(OS),Darwin)
-	OUT_NAME := sorth
-	STRIP_CMD := strip ./$(BUILD)/$(OUT_NAME)
 	CP_CMD := cp std.f $(BUILD)
 	CP_R := cp -r std $(BUILD)
-	SOURCES = $(BASE_SOURCES) src/posix_io_words.cpp
 else ifeq ($(OS),Linux)
-	OUT_NAME := sorth
-	STRIP_CMD := strip ./$(BUILD)/$(OUT_NAME)
+	CXXFLAGS += -fuse-ld=lld
+# optionally use libatomic on arm
+ifeq ($(CXXTARGET),arm-unknown-linux-gnu)
+	CXXFLAGS += -latomic -mfloat-abi=soft
+endif
 	CP_CMD := cp std.f $(BUILD)
 	CP_R := cp -r std $(BUILD)
-	SOURCES = $(BASE_SOURCES) src/posix_io_words.cpp
-else ifeq ($(OS),Windows)
-	OUT_NAME := sorth.exe
-	STRIP_CMD :=
-	CP_CMD := xcopy /y std.f $(BUILD)
-	CP_R := xcopy /y /s /e /i std $(BUILD)\std
-	SOURCES = $(BASE_SOURCES) src/win_io_words.cpp
+else ifeq ($(OS),Windows_NT)
+	TARGET := $(TARGET).exe
+	CP_CMD := robocopy "." "$(BUILD)" "std.f" || true
+	CP_R := robocopy "std" "$(BUILD)\std" /e || true
 endif
 
-
-BUILDFLAGS += "-std=c++20"
-BUILDFLAGS += "-O3"
-# BUILDFLAGS += "--target=$(ARCH)"
-
-default: build build/$(OUT_NAME) copy_stdlib ## Default
-
-.PHONY: build
-dist: default ## Dist
-	install -d $(DISTDIR)
-	zip -r $(DISTDIR)/sorth.zip $(BUILD)/*
+default: $(BUILD)/$(TARGET) copy_stdlib strip ## Default
 
 help:  ## Help
 	@grep -E -H '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 		sed -n 's/^.*:\(.*\): \(.*\)##\(.*\)/\1%%%\3/p' | \
 		column -t -s '%%%'
 
-$(BUILD)/$(OUT_NAME): build $(SOURCES) ## Build binary
-	clang++ \
-		$(BUILDFLAGS) \
-		$(SOURCES) \
-		-o ./$(BUILD)/$(OUT_NAME)
-	$(STRIP_CMD)
-
-.PHONY: build
- $(BUILD):
+$(BUILD)/$(TARGET): $(SOURCES) ## Build binary
 	install -d $(BUILD) || true
+	$(CXX) \
+		$(CXXFLAGS) \
+		$(SOURCES) \
+		-o ./$(BUILD)/$(TARGET)
 
-copy_stdlib: build std.f std/* ## Copy stdlib to build directory
+.PHONY: strip
+strip: $(BUILD)/$(TARGET)
+ifeq ($(OS),Darwin)
+	strip -x $(BUILD)/$(TARGET)
+else ifeq ($(OS),Linux)
+ifneq ($(CXXTARGET),arm-unknown-linux-gnu)
+	strip -s $(BUILD)/$(TARGET)
+endif
+else ifeq ($(OS),Windows_NT)
+	strip $(BUILD)/$(TARGET)
+endif
+
+copy_stdlib: $(BUILD)/std.f $(BUILD)/std/* ## Copy stdlib to build directory
+
+$(BUILD)/std.f: std.f ## Copy std.f to build directory
 	$(CP_CMD)
+
+$(BUILD)/std/*: std/* ## Copy std/* to build directory
 	$(CP_R)
+
+bundle: ## Bundle binary assets for vsce
+
+vsce: bundle ## Build VSCode extension
+	cde strange-forth
+	vsce package
 
 .PHONY: clean
 clean: ## Clean
 	rm -rf build || true
-	rm -rf dist || true
