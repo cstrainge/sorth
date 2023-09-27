@@ -12,10 +12,6 @@
     #include <linux/limits.h>
     #include <unistd.h>
 
-#elif defined(_WIN64)
-
-    #include <Windows.h>
-
 #endif
 
 

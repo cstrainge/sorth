@@ -994,7 +994,12 @@ then
 ( If we have the user environment available, include some more useful words. )
 defined? user.env@
 if
-    "std/user.f" include
+    user.os  "Windows"  =
+    if
+        "std/win_user.f" include
+    else
+        "std/user.f" include
+    then
 then
 
 
