@@ -64,4 +64,51 @@ namespace sorth::internal
     }
 
 
+
+    #if defined(_WIN64)
+
+
+        [[noreturn]]
+        void throw_windows_error(const Interpreter& interpreter,
+                                 const std::string& message,
+                                 DWORD code)
+        {
+            char message_buffer[4096 + 1];
+            memset(message_buffer, 0, 4096 + 1);
+            size_t size = 4096;
+
+            size = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM |
+                                  FORMAT_MESSAGE_IGNORE_INSERTS,
+                                  nullptr,
+                                  code,
+                                  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                                  message_buffer,
+                                  size,
+                                  nullptr);
+
+            std::stringstream stream;
+
+            stream << message << message_buffer;
+
+            throw_error(interpreter, stream.str());
+        }
+
+
+
+        void throw_windows_error_if(bool condition, const Interpreter& interpreter,
+                                    const std::string& message,
+                                    DWORD code)
+        {
+            if (condition)
+            {
+                throw_windows_error(interpreter, message, code);
+            }
+        }
+
+
+
+    #endif
+
+
+
 }

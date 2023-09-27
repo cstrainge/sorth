@@ -1,6 +1,4 @@
 
-#include <Windows.h>
-
 #include "sorth.h"
 
 
@@ -16,34 +14,6 @@ namespace sorth
 
     namespace
     {
-
-
-
-        [[noreturn]]
-        void throw_windows_error(InterpreterPtr& interpreter,
-                                 const std::string& message,
-                                 DWORD code)
-        {
-            char message_buffer[4096 + 1];
-            memset(message_buffer, 0, 4096 + 1);
-            size_t size = 4096;
-
-            size = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM |
-                                  FORMAT_MESSAGE_IGNORE_INSERTS,
-                                  nullptr,
-                                  code,
-                                  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                                  message_buffer,
-                                  size,
-                                  nullptr);
-
-            std::stringstream stream;
-
-            stream << message << message_buffer;
-
-            throw_error(*interpreter, stream.str());
-        }
-
 
 
 
@@ -63,7 +33,7 @@ namespace sorth
 
             if (handle == INVALID_HANDLE_VALUE)
             {
-                throw_windows_error(interpreter, "Could not open file: ", GetLastError());
+                throw_windows_error(*interpreter, "Could not open file: ", GetLastError());
             }
 
             return handle;
@@ -84,7 +54,7 @@ namespace sorth
                 return buffer;
             }
 
-            throw_windows_error(interpreter, "File read byte failed: ", GetLastError());
+            throw_windows_error(*interpreter, "File read byte failed: ", GetLastError());
         }
 
 
@@ -112,7 +82,7 @@ namespace sorth
 
             if (!result)
             {
-                throw_windows_error(interpreter, "File write failed: ", GetLastError());
+                throw_windows_error(*interpreter, "File write failed: ", GetLastError());
             }
         }
 
@@ -135,7 +105,7 @@ namespace sorth
             DWORD flags = (DWORD)as_numeric<int64_t>(interpreter, interpreter->pop());
             auto path = as_string(interpreter, interpreter->pop());
 
-            interpreter->push((int64_t)handle_open(interpreter, path, flags, CREATE_NEW));
+            interpreter->push((int64_t)handle_open(interpreter, path, flags, CREATE_ALWAYS));
         }
 
 
@@ -147,7 +117,7 @@ namespace sorth
 
             if (!CloseHandle(handle))
             {
-                throw_windows_error(interpreter, "Could not close handle: ", GetLastError());
+                throw_windows_error(*interpreter, "Could not close handle: ", GetLastError());
             }
         }
 
@@ -175,7 +145,7 @@ namespace sorth
 
             if (pipe == INVALID_HANDLE_VALUE)
             {
-                throw_windows_error(interpreter, "Could not open pipe: ", GetLastError());
+                throw_windows_error(*interpreter, "Could not open pipe: ", GetLastError());
             }
 
             interpreter->push((int64_t)pipe);
@@ -194,7 +164,7 @@ namespace sorth
 
             if (!GetFileSizeEx(handle, &file_size))
             {
-                throw_windows_error(interpreter, "Get file size failed: ", GetLastError());
+                throw_windows_error(*interpreter, "Get file size failed: ", GetLastError());
             }
 
             interpreter->push((int64_t)file_size.QuadPart);
@@ -256,7 +226,7 @@ namespace sorth
             }
             else
             {
-                throw_windows_error(interpreter, "File EOF check failed: ", GetLastError());
+                throw_windows_error(*interpreter, "File EOF check failed: ", GetLastError());
             }
 
             interpreter->push(is_eof);
@@ -315,7 +285,7 @@ namespace sorth
 
                 if (!result)
                 {
-                    throw_windows_error(interpreter, "Get file read failed: ", GetLastError());
+                    throw_windows_error(*interpreter, "Get file read failed: ", GetLastError());
                 }
 
                 interpreter->push(std::string(buffer));
