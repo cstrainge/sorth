@@ -28,9 +28,14 @@ export function activate(context: vscode.ExtensionContext)
 
     console.log(`Detected platform: ${currentPlatform}/${currentArch}.`);
 
-    const sorthDevExe = context.asAbsolutePath(path.join("..", "sorth_lsp" + extension(currentPlatform)));
-    const sorthExe = fs.existsSync(sorthDevExe) ? sorthDevExe
-                                                : context.asAbsolutePath("sorth_lsp" + extension(currentPlatform));
+
+    const sorthDevExe = context.asAbsolutePath(path.join("..",
+                                                         "sorth_lsp" + extension(currentPlatform)));
+
+    const sorthExe = fs.existsSync(sorthDevExe)
+        ? sorthDevExe
+        : context.asAbsolutePath("sorth_lsp" + extension(currentPlatform));
+
 
     console.log(`Launching language server: ${sorthExe}.`);
 
