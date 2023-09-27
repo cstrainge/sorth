@@ -2,17 +2,18 @@
 #include <iostream>
 #include "sorth.h"
 
-#ifdef __APPLE__
+#if defined(__APPLE__)
 
     #include <assert.h>
     #include <mach-o/dyld.h>
 
-#elif __linux__
+#elif defined(__linux__)
 
     #include <linux/limits.h>
     #include <unistd.h>
 
 #endif
+
 
 
 
@@ -24,7 +25,7 @@ namespace
     {
         std::filesystem::path base_path;
 
-        #ifdef __APPLE__
+        #if defined(__APPLE__)
 
             uint32_t buffer_size = 0;
 
@@ -36,7 +37,7 @@ namespace
 
             base_path = std::filesystem::canonical(&buffer[0]).remove_filename();
 
-        #elif __linux__
+        #elif defined(__linux__)
 
             char buffer [PATH_MAX + 1];
             ssize_t count = 0;
@@ -52,6 +53,37 @@ namespace
             }
 
             base_path = std::filesystem::canonical(buffer).remove_filename();
+
+        #elif defined(_WIN64)
+
+            char buffer [ MAX_PATH + 1];
+
+            memset(buffer, 0, MAX_PATH + 1);
+
+            GetModuleFileNameA(nullptr, buffer, MAX_PATH);
+
+            if (GetLastError() != ERROR_SUCCESS)
+            {
+                char message_buffer[4096];
+                memset(message_buffer, 0, 4096);
+                size_t size = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                                             FORMAT_MESSAGE_FROM_SYSTEM |
+                                             FORMAT_MESSAGE_IGNORE_INSERTS,
+                                             nullptr,
+                                             GetLastError(),
+                                             MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                                             message_buffer,
+                                             0,
+                                             NULL);
+                std::stringstream stream;
+
+                stream << "Could not get the executable directory: " << message_buffer;
+
+                throw std::runtime_error(stream.str());
+            }
+
+            base_path = std::filesystem::canonical(buffer).remove_filename();
+
         #else
 
             throw std::runtime_error("get_executable_directory is unimplemented on this platform.");
@@ -94,7 +126,7 @@ int main(int argc, char* argv[])
 
             for (int i = 0; i < argc - 2; ++i)
             {
-                (*array)[i] = argv[i + 2];
+                (*array)[i] = std::string(argv[i + 2]);
             }
 
             ADD_NATIVE_WORD(interpreter,

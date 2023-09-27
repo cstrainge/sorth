@@ -7,7 +7,6 @@
 
 
 
-
 ( Get a copy of the dictionary before we've added any words.  This way we have a consistent set )
 ( of words that represent the standard library. )
 words.get{} constant ls.standard_words
@@ -17,10 +16,23 @@ words.get{} constant ls.standard_words
 
 
 
-( Get the path to the socket from the command line arguments, then properly connect to it. )
+( Get the path to the socket from the command line arguments, then properly connect to it. On Unix )
+( based systems it is passed as --pipe=<pipe-path> as one argument.  On Windows systems it is )
+( passed as two arguments --pipe <pipe-path>.  On windows the launching batch file ignores the  )
+( --pipe parameter and just passes the path itself. )
 "Opening LSP connection to client." .cr
 
-"--pipe=" string.size@ 0 args [ 0 ]@ string.remove constant socket_path
+
+"--pipe="  args [ 0 ]@  string.find  0  =
+if
+    "--pipe=" string.size@  0  args [ 0 ]@  string.remove  constant socket_path
+else
+    args [ 0 ]@ constant socket_path
+then
+
+
+"Using socket path: " socket_path + .cr
+
 socket_path socket.connect variable! server_fd
 
 
@@ -73,7 +85,7 @@ ls.standard_words ds.add_std_symbols
 
 
 ( The init process has completed. )
-: ls.handle:initialized
+: ls.handle:initialized  ( -- )
     "Client/server connection has been successfully initialized." lsp.log_message
 ;
 
@@ -81,7 +93,7 @@ ls.standard_words ds.add_std_symbols
 
 
 ( We have been requested to begin shutdown. )
-: ls.handle:shutdown
+: ls.handle:shutdown  ( -- )
     "The server is shutting down." lsp.log_message
 
     lsp.begin_shutdown
@@ -95,7 +107,7 @@ ls.standard_words ds.add_std_symbols
 
 
 ( Ok, now the client wants us to exit for real. )
-: ls.handle:exit
+: ls.handle:exit  ( -- )
     "Final exit notification received." lsp.log_message
 
     lsp.handle_exit
@@ -142,7 +154,9 @@ ls.standard_words ds.add_std_symbols
 
 
 
-: ls.handle:text_document/did_change
+( Sent when a documented has been edited in the client.  We update our version of the document and )
+( then handle tokenizing and light parsing, just like ls.handle:text_document/did_open. )
+: ls.handle:text_document/did_change  ( params -- )
     variable! params
 
     ( TODO: Change things so that we can accept partial updates. )
@@ -180,13 +194,13 @@ ls.standard_words ds.add_std_symbols
 : ls.handle:text_document/hover
     variable! params
 
-    params { "position" }@@ { "line" }@ variable! line
-    params { "position" }@@ { "character" }@ variable! character
+    params { "position" }@@ { "line" }@ variable! new_line
+    params { "position" }@@ { "character" }@ variable! new_character
     params { "textDocument" }@@ { "uri" }@ variable! uri
 
-    "Handle document hover request."           lsp.log_message
-    "uri:      " uri @ +                       lsp.log_message
-    "Position: " line @ + ", " + character @ + lsp.log_message
+    "Handle document hover request."                   lsp.log_message
+    "uri:      " uri @ +                               lsp.log_message
+    "Position: " new_line @ + ", " + new_character @ + lsp.log_message
 
     ( Documents look for file, and scan for the word at the location. )
     ( Take that word and look it up in our dictionary. )
@@ -196,8 +210,8 @@ ls.standard_words ds.add_std_symbols
     variable description
 
     uri @ #.new tk.location {
-        line -> line @ ,
-        character -> character @
+        line -> new_line @ ,
+        character -> new_character @
     }
     uri @ ds.scan_for_word
     if

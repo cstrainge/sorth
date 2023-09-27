@@ -46,11 +46,11 @@ namespace sorth::internal
                         }
                         else if ((token.text[0] == '0') && (token.text[1] == 'x'))
                         {
-                            value = std::stoll(token.text, nullptr, 16);
+                            value = (int64_t)std::stoll(token.text, nullptr, 16);
                         }
                         else
                         {
-                            value = std::stoll(token.text);
+                            value = (int64_t)std::stoll(token.text);
                         }
 
                         stack.top().code.push_back({

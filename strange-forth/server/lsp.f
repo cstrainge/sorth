@@ -55,7 +55,7 @@ jsonrpc.reserved_error_range_end constant lsp.server_error_end
 
 
 ( We're received the final exit call, exit from the message loop now. )
-: lsp.handle_exit
+: lsp.handle_exit  ( -- )
     true lsp.should_exit_now !
 ;
 
@@ -125,7 +125,7 @@ jsonrpc.reserved_error_range_end constant lsp.server_error_end
 
             lsp.message_registrar { method @ }@@ execute
 
-            id @ "" <>
+            id @  ""  <>
             if
                 if
                     id @ swap lsp.success_response
@@ -134,27 +134,33 @@ jsonrpc.reserved_error_range_end constant lsp.server_error_end
                 then
             then
         else
-            id @
+            id @  ""  <>
+            if
+                id @
 
-            {
-                "code" -> lsp.method_not_found ,
-                "message" -> "No registration found for message."
-            }
+                {
+                    "code" -> lsp.method_not_found ,
+                    "message" -> "No registration found for message."
+                }
 
-            lsp.failed_response
+                lsp.failed_response
+            then
         then
     catch
         "Message handling exception." .cr
         .cr
 
-        id @
+        id @  ""  <>
+        if
+            id @
 
-        {
-            "code" -> lsp.internal_error ,
-            "message" -> "Internal error, exception occurred."
-        }
+            {
+                "code" -> lsp.internal_error ,
+                "message" -> "Internal error, exception occurred."
+            }
 
-        lsp.failed_response
+            lsp.failed_response
+        then
     endcatch
 ;
 

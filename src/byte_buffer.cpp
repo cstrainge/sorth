@@ -197,14 +197,32 @@ namespace sorth
 
     std::string ByteBuffer::read_string(int64_t max_size)
     {
-        void* data_ptr =(&bytes[position]);
-        char buffer[max_size + 1];
+        std::string new_string;
+        void* data_ptr = nullptr;
+        char* buffer = nullptr;
 
-        memset(buffer, 0, max_size + 1);
-        memcpy(buffer, data_ptr, max_size);
+        try
+        {
+            data_ptr = (&bytes[position]);
+            buffer = (char*)malloc(max_size + 1);
 
-        std::string new_string = buffer;
-        position += max_size;
+            memset(buffer, 0, max_size + 1);
+            memcpy(buffer, data_ptr, max_size);
+
+            new_string = buffer;
+            position += max_size;
+
+            free(buffer);
+        }
+        catch (...)
+        {
+            if (buffer)
+            {
+                free(buffer);
+            }
+
+            throw;
+        }
 
         return new_string;
     }

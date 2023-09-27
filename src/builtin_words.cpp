@@ -1,7 +1,5 @@
 
 #include <stdlib.h>
-#include <termios.h>
-#include <unistd.h>
 #include <cstdlib>
 #include <iomanip>
 
@@ -247,7 +245,7 @@ namespace sorth
                 "Create a new instance of the structure " + definition_ptr->name + ".",
                 " -- " + definition_ptr->name);
 
-            for (int64_t i = 0; i < definition_ptr->fieldNames.size(); ++i)
+            for (int64_t i = 0; i < (int64_t)definition_ptr->fieldNames.size(); ++i)
             {
                 ADD_NATIVE_WORD(interpreter,
                     definition_ptr->name + "." + definition_ptr->fieldNames[i],
@@ -324,7 +322,7 @@ namespace sorth
             auto original = std::get<ArrayPtr>(value);
             auto new_object = std::make_shared<Array>(original->size());
 
-            for (size_t i = 0; i < original->size(); ++i)
+            for (size_t i = 0; i < (size_t)original->size(); ++i)
             {
                 (*new_object)[i] = deep_copy_value(interpreter, (*original)[i]);
             }
@@ -425,7 +423,7 @@ namespace sorth
         // unregister it now.
 
         at_exit_interpreter = nullptr;
-        at_exit_value = 0;
+        at_exit_value = (int64_t)0;
 
         interpreter->release_context();
         interpreter->clear_stack();
@@ -527,7 +525,7 @@ namespace sorth
         insert_user_instruction(interpreter,
             {
                 .id = OperationCode::Id::read_variable,
-                .value = 0
+                .value = (int64_t)0
             });
     }
 
@@ -537,7 +535,7 @@ namespace sorth
         insert_user_instruction(interpreter,
             {
                 .id = OperationCode::Id::write_variable,
-                .value = 0
+                .value = (int64_t)0
             });
     }
 
@@ -577,7 +575,7 @@ namespace sorth
         insert_user_instruction(interpreter,
             {
                 .id = OperationCode::Id::unmark_loop_exit,
-                .value = 0
+                .value = (int64_t)0
             });
     }
 
@@ -597,7 +595,7 @@ namespace sorth
         insert_user_instruction(interpreter,
             {
                 .id = OperationCode::Id::unmark_catch,
-                .value = 0
+                .value = (int64_t)0
             });
     }
 
@@ -637,7 +635,7 @@ namespace sorth
         insert_user_instruction(interpreter,
             {
                 .id = OperationCode::Id::jump_loop_start,
-                .value = 0
+                .value = (int64_t)0
             });
     }
 
@@ -647,7 +645,7 @@ namespace sorth
         insert_user_instruction(interpreter,
             {
                 .id = OperationCode::Id::jump_loop_exit,
-                .value = 0
+                .value = (int64_t)0
             });
     }
 
@@ -729,7 +727,7 @@ namespace sorth
             else if (top_code[i].id == OperationCode::Id::jump_target)
             {
                 jump_targets.insert({ as_string(interpreter, top_code[i].value), i });
-                top_code[i].value = 0;
+                top_code[i].value = (int64_t)0;
             }
         }
 
@@ -1161,7 +1159,7 @@ namespace sorth
         }
         else
         {
-            interpreter->push(std::strtoll(string.c_str(), nullptr, 10));
+            interpreter->push((int64_t)std::strtoll(string.c_str(), nullptr, 10));
         }
     }
 
@@ -1212,7 +1210,7 @@ namespace sorth
 
                     interpreter->push(",");
                     interpreter->push(";");
-                    interpreter->push(2);
+                    interpreter->push((int64_t)2);
                     word_code_compile_until_words(interpreter);
                     auto found_word = as_string(interpreter, interpreter->pop());
                     --current_token;
@@ -1234,7 +1232,7 @@ namespace sorth
                 }
                 else
                 {
-                    definition_ptr->defaults.push_back(0);
+                    definition_ptr->defaults.push_back((int64_t)0);
                 }
             }
         }
@@ -1753,13 +1751,13 @@ namespace sorth
 
     void word_exit_success(InterpreterPtr& interpreter)
     {
-        interpreter->push(EXIT_SUCCESS);
+        interpreter->push((int64_t)EXIT_SUCCESS);
     }
 
 
     void word_exit_failure(InterpreterPtr& interpreter)
     {
-        interpreter->push(EXIT_FAILURE);
+        interpreter->push((int64_t)EXIT_FAILURE);
     }
 
 
@@ -2125,7 +2123,7 @@ namespace sorth
 
         ADD_NATIVE_WORD(interpreter, "string.find", word_string_find,
                         "Find the first instance of a string within another.",
-                        "string -- index");
+                        "search_string string -- index");
 
         ADD_NATIVE_WORD(interpreter, "string.[]@", word_string_index_read,
                         "Read a character from the given string.",

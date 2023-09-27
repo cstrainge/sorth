@@ -8,6 +8,17 @@ import * as lsp from 'vscode-languageclient/node';
 let client: lsp.LanguageClient;
 
 
+function extension(platform: string): string
+{
+    if (platform == "win32")
+    {
+        return ".bat";
+    }
+
+    return "";
+}
+
+
 export function activate(context: vscode.ExtensionContext)
 {
 	console.log('Strange Forth language service is now active!');
@@ -15,10 +26,16 @@ export function activate(context: vscode.ExtensionContext)
     const currentPlatform = process.platform;
     const currentArch = process.arch;
 
+    console.log(`Detected platform: ${currentPlatform}/${currentArch}.`);
 
-    const sorthDevExe = context.asAbsolutePath(path.join("..", "sorth_lsp"));
-    const sorthExe = fs.existsSync(sorthDevExe) ? sorthDevExe
-                                                : context.asAbsolutePath("sorth_lsp");
+
+    const sorthDevExe = context.asAbsolutePath(path.join("..",
+                                                         "sorth_lsp" + extension(currentPlatform)));
+
+    const sorthExe = fs.existsSync(sorthDevExe)
+        ? sorthDevExe
+        : context.asAbsolutePath("sorth_lsp" + extension(currentPlatform));
+
 
     console.log(`Launching language server: ${sorthExe}.`);
 

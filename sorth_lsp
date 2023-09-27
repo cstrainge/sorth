@@ -16,4 +16,4 @@ shift
 
 
 echo "Running under ${PLATFORM} on ${ARCH}." &>> $FILE_NAME
-exec ../sorth strange-forth/server/language_server.f $@ &>> $FILE_NAME
+exec ../build/sorth ../strange-forth/server/language_server.f $@ &>> $FILE_NAME

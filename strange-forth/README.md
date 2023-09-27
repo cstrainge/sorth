@@ -14,15 +14,19 @@ One mark of the language's growing maturity is that the language server itself i
 
 MacOS or Linux, (currently only tested with Ubuntu,) on x86-64 and Arm64
 
-### 0.1.3
+### 0.1.6
+
+Start of Windows support.
+
+### 0.1.0 - 0.1.5
+
+Fixed some small problems with the Linux build.
+
+Will generate symbols for structs, variables, and constants now.
 
 Added logo.
 
-### 0.1.2
-
 Updated the Readme with more information about the status of the project.
-
-### 0.1.0
 
 Cleaned up some of the logging and made it easier to debug locally.
 

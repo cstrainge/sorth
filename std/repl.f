@@ -2,8 +2,8 @@
 1000 constant repl.history_size
 
 
-user.home "/.sorth_history.txt" + constant repl.history_path
-user.home "/.sorth_init" + constant repl.config_path
+user.home user.path_sep + ".sorth_history.txt" + constant repl.history_path
+user.home user.path_sep + ".sorth_init" + constant repl.config_path
 
 
 repl.history_size [].new variable! repl.history

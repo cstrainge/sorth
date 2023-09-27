@@ -2,6 +2,15 @@
 #pragma once
 
 
+#ifdef _WIN64
+
+	#define _CRT_SECURE_NO_WARNINGS 1
+
+    #include <Windows.h>
+
+#endif
+
+
 #include <iostream>
 #include <filesystem>
 #include <list>
@@ -38,5 +47,15 @@
 #include "interpreter.h"
 #include "builtin_words.h"
 #include "terminal_words.h"
-#include "posix_io_words.h"
+
+#if defined(__APPLE__) || defined(__linux__)
+
+	#include "posix_io_words.h"
+
+#elif defined(_WIN64)
+
+    #include "win_io_words.h"
+
+#endif
+
 #include "user_words.h"

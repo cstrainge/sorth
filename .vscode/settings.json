@@ -33,12 +33,21 @@
 
     "files.exclude":
     {
-        "**/sorth": true,
-        "**/test.bin": true
+        "**/sorth": false,
+        "**/test.bin": true,
+        "**/dist/": true,
+        "**/build/": true,
+        "**/strange-forth/node_modules/": true,
+        "**/strange-forth/out/": true,
+        "**/strange-forth/bin/": true,
+        "**/*.vsix": true
     },
 
     "cSpell.enableFiletypes":
     [
-        "forth"
-    ]
+        "forth",
+        "strangeforth"
+    ],
+
+    "cmake.configureOnOpen": false
 }

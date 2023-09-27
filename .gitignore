@@ -14,6 +14,8 @@ package-bin/
 
 strange-forth/node_modules/
 strange-forth/out/
+build/
+dist/
 strange-forth/bin/
 
 *.vsix

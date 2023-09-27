@@ -65,7 +65,7 @@ namespace sorth
                             std::string(strerror(errno)) + ".");
             }
 
-            interpreter->push(fd);
+            interpreter->push((int64_t)fd);
         }
 
 
@@ -140,7 +140,7 @@ namespace sorth
 
             do
             {
-                result = close(fd);
+                result = close((int64_t)fd);
             }
             while ((result == -1) && (errno == EINTR));
 
@@ -171,7 +171,7 @@ namespace sorth
             throw_error_if(result == -1, *interpreter,
                            "Could connect to socket, " + std::string(strerror(errno)) + ".");
 
-            interpreter->push(fd);
+            interpreter->push((int64_t)fd);
         }
 
 
@@ -436,15 +436,15 @@ namespace sorth
                         "string fd -- ");
 
 
-        ADD_NATIVE_WORD(interpreter, "file.r/o", [](auto intr) { intr->push(O_RDONLY); },
+        ADD_NATIVE_WORD(interpreter, "file.r/o", [](auto intr) { intr->push((int64_t)O_RDONLY); },
                         "Constant for opening a file as read only.",
                         " -- flag");
 
-        ADD_NATIVE_WORD(interpreter, "file.w/o", [](auto intr) { intr->push(O_WRONLY); },
+        ADD_NATIVE_WORD(interpreter, "file.w/o", [](auto intr) { intr->push((int64_t)O_WRONLY); },
                         "Constant for opening a file as write only.",
                         " -- flag");
 
-        ADD_NATIVE_WORD(interpreter, "file.r/w", [](auto intr) { intr->push(O_RDWR); },
+        ADD_NATIVE_WORD(interpreter, "file.r/w", [](auto intr) { intr->push((int64_t)O_RDWR); },
                         "Constant for opening a file for both reading and writing.",
                         " -- flag");
 

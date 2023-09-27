@@ -85,7 +85,7 @@ namespace sorth
             auto value = std::get<ArrayPtr>(key);
             size_t result = 0;
 
-            for (size_t i = 0; i < value->size(); ++i)
+            for (int64_t i = 0; i < value->size(); ++i)
             {
                 result = result ^ (hash_value((*value)[i]) << 1);
             }
