@@ -562,9 +562,9 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 
         name tk.token.is_word?
         if
-            index @ tokens @ ds.document.scan_for_description  description !
-            index @ tokens @ ds.document.scan_for_signature    signature !
-            index @ tokens @ ds.document.scan_for_immediate_flag  is_immediate !
+            index @  tokens @  ds.document.scan_for_description     description !
+            index @  tokens @  ds.document.scan_for_signature       signature !
+            index @  tokens @  ds.document.scan_for_immediate_flag  is_immediate !
 
             #.new ds.document.symbol {
                 is_immediate -> is_immediate @ ,
