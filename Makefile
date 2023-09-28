@@ -34,12 +34,12 @@ COMMIT :=$(shell git rev-parse HEAD | cut -c 1-8)
 # here we strip the version prefix
 VERSION := $(TAG:v%=%)-$(COMMIT)-$(DATE)
 
-CXXFLAGS += -DVERSION="$(VERSION)" 
+CXXFLAGS += -DVERSION=\"$(VERSION)\"
 
 # target, optional https://clang.llvm.org/docs/CrossCompilation.html
 ifneq ($(CXXTARGET),)
 	CXXFLAGS += -target $(CXXTARGET)
-endif 
+endif
 
 ifeq ($(CXX),g++)
   CXXFLAGS += $(GCC_CXXFLAGS)

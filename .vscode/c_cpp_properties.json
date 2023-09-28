@@ -9,7 +9,8 @@
             "defines": [
                 "_DEBUG",
                 "UNICODE",
-                "_UNICODE"
+                "_UNICODE",
+                "VERSION=\"CURRENT_VERSION\""
             ],
             "windowsSdkVersion": "10.0.19041.0",
             "compilerPath": "cl.exe",
@@ -23,7 +24,7 @@
             "includePath": [
                 "${workspaceFolder}/src/**"
             ],
-            "defines": [],
+            "defines": [ "VERSION=\"CURRENT_VERSION\"" ],
             "macFrameworkPath": [
                 "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks"
             ],
@@ -38,7 +39,7 @@
             "includePath": [
                 "${workspaceFolder}/src/**"
             ],
-            "defines": [],
+            "defines": [ "VERSION=\"CURRENT_VERSION\"" ],
             "compilerPath": "/usr/bin/clang",
             "cStandard": "c17",
             "cppStandard": "c++20",
