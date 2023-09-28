@@ -21,11 +21,11 @@ namespace sorth
 
             if (value != nullptr)
             {
-                interpreter->push(value);
+                interpreter->push(std::string(value));
             }
             else
             {
-                interpreter->push("");
+                interpreter->push(std::string(""));
             }
         }
 
@@ -34,19 +34,19 @@ namespace sorth
         {
             #ifdef __APPLE__
 
-                interpreter->push("MacOS");
+                interpreter->push(std::string("MacOS"));
 
             #elif __linux__
 
-                interpreter->push("Linux");
+                interpreter->push(std::string("Linux"));
 
             #elif _WIN32 || _WIN64
 
-                interpreter->push("Windows");
+                interpreter->push(std::string("Windows"));
 
             #else
 
-                interpreter->push("Unknown");
+                interpreter->push(std::string("Unknown"));
 
             #endif
         }
