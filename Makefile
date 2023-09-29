@@ -16,8 +16,6 @@ SOURCEDIR := src
 DISTDIR := dist
 TARGET ?= sorth
 
-SOURCES := $(shell find $(SOURCEDIR) -name '*.cpp')
-
 ifneq ($(OS),Windows_NT)
 	OS := $(shell uname -s)
 endif
@@ -76,11 +74,11 @@ help:  ## Help
 		sed -n 's/^.*:\(.*\): \(.*\)##\(.*\)/\1%%%\3/p' | \
 		column -t -s '%%%'
 
-$(BUILD)/$(TARGET): $(SOURCES) ## Build binary
+$(BUILD)/$(TARGET): src/*.cpp ## Build binary
 	install -d $(BUILD) || true
 	$(CXX) \
 		$(CXXFLAGS) \
-		$(SOURCES) \
+		$^ \
 		-o ./$(BUILD)/$(TARGET)
 
 .PHONY: strip
