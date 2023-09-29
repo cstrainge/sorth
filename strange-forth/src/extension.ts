@@ -5,7 +5,9 @@ import * as vscode from 'vscode';
 import * as lsp from 'vscode-languageclient/node';
 
 
+
 let client: lsp.LanguageClient;
+
 
 
 function extension(platform: string): string
@@ -17,6 +19,7 @@ function extension(platform: string): string
 
     return "";
 }
+
 
 
 export function activate(context: vscode.ExtensionContext)
@@ -72,7 +75,8 @@ export function activate(context: vscode.ExtensionContext)
 
 
 
-export function deactivate(): Thenable<void> | undefined {
+export function deactivate(): Thenable<void> | undefined
+{
     if (!client)
     {
         return undefined;
