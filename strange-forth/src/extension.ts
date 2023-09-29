@@ -10,7 +10,7 @@ let client: lsp.LanguageClient;
 
 function extension(platform: string): string
 {
-    if (platform == "win32")
+    if (platform === "win32")
     {
         return ".bat";
     }
