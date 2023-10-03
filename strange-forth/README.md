@@ -10,13 +10,23 @@ See [the Strange Forth repository](https://github.com/cstrainge/sorth/tree/main)
 
 One mark of the language's growing maturity is that the language server itself is written in Strange Forth, check out [the language server](https://github.com/cstrainge/sorth/tree/main/strange-forth/server) starting with `language_server.f` if you're interested.
 
+## Wiki
+
+Also, there is a [Wiki!](https://github.com/cstrainge/sorth/wiki) where we go over details of the language and help you get started with the interpreter.
+
 ## Requirements
 
 MacOS or Linux, (currently only tested with Ubuntu,) on x86-64 and Arm64
 
+### 0.1.7
+
+Windows support up to par.  Also added a wiki to the project to help describe the language.
+
+
 ### 0.1.6
 
 Start of Windows support.
+
 
 ### 0.1.0 - 0.1.5
 

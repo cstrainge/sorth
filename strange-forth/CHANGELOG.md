@@ -2,6 +2,10 @@
 
 Latest updates to the published version of this package.
 
+### 0.1.7
+
+Windows support up to par.  Also added a wiki to the project to help describe the language.
+
 ### 0.1.6
 
 Start of Windows support.
