@@ -54,7 +54,7 @@ ifeq ($(OS),Darwin)
 	CP_CMD := cp std.f $(BUILD)
 	CP_R := cp -r std $(BUILD)
 else ifeq ($(OS),Linux)
-	CXXFLAGS += -fuse-ld=lld
+	CXXFLAGS += -fuse-ld=lld -static -stdlib=libc++
 # optionally use libatomic on arm
 ifeq ($(CXXTARGET),arm-unknown-linux-gnu)
 	CXXFLAGS += -latomic -mfloat-abi=soft
