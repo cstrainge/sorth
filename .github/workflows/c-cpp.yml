@@ -76,7 +76,7 @@ jobs:
       uses: thedoctor0/zip-release@0.7.1
       with:
         type: 'zip'
-        filename: 'sorth-${{ matrix.target }}.zip'
+        filename: 'sorth-${{ matrix.target }}'
         directory: 'build'
     - name: release
       uses: xresloader/upload-to-github-release@v1
