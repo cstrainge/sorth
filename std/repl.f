@@ -322,6 +322,8 @@ repl.history_size [].new variable! repl.history
     "Strange Forth REPL." .cr
     cr
     "Enter quit, q, or exit to quit the REPL." .cr
+    "Enter .w to show defined words." .cr
+    "Enter show_word <word_name> to list detailed information about a word." .cr
     cr
 
     repl.load_history
