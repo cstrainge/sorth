@@ -3,33 +3,47 @@
   "displayName": "Strange Forth",
   "description": "Language support for Strange Forth",
   "license": "MIT",
-  "repository": { "url": "https://github.com/cstrainge/sorth/tree/main" },
+  "repository": {
+    "url": "https://github.com/cstrainge/sorth/tree/main"
+  },
   "publisher": "cstrainge",
-  "version": "0.1.7",
+  "version": "0.1.9",
   "icon": "./assets/strange-forth-logo.png",
-  "keywords": [ "Forth", "language" ],
+  "keywords": [
+    "Forth",
+    "language"
+  ],
   "engines": {
     "vscode": "^1.82.0"
   },
-  "categories": [ "Programming Languages" ],
-  "activationEvents": [  ],
+  "categories": [
+    "Programming Languages"
+  ],
+  "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
-    "commands": [
-    ],
+    "commands": [],
     "languages": [
-        {
-            "id": "strangeforth",
-            "aliases": [ "Strange Forth", "strangeforth" ],
-            "extensions": [ ".f", "*.sf" ],
-            "configuration": "./language-configuration.json"
-        }
+      {
+        "id": "strangeforth",
+        "aliases": [
+          "Strange Forth",
+          "strangeforth"
+        ],
+        "extensions": [
+          ".f",
+          "*.sf"
+        ],
+        "configuration": "./language-configuration.json"
+      }
     ],
-    "grammars": [{
+    "grammars": [
+      {
         "language": "strangeforth",
         "scopeName": "source.strangeforth",
         "path": "./syntaxes/strangeforth.tmLanguage.json"
-      }]
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
@@ -43,8 +57,8 @@
     "@types/mocha": "^10.0.1",
     "@types/node": "16.x",
     "@types/vscode": "^1.82.0",
-    "@typescript-eslint/eslint-plugin": "^6.4.1",
-    "@typescript-eslint/parser": "^6.4.1",
+    "@typescript-eslint/eslint-plugin": "^5.9.1",
+    "@typescript-eslint/parser": "^3.10.1",
     "@vscode/test-electron": "^2.3.4",
     "eslint": "^8.47.0",
     "glob": "^10.3.3",
