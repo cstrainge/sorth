@@ -1922,11 +1922,11 @@ namespace sorth
         // Words for creating new bytecode.
         ADD_NATIVE_WORD(interpreter, "op.def_variable", word_op_def_variable,
                         "Insert this instruction into the byte stream.",
-                        " -- ");
+                        "new-name -- ");
 
         ADD_NATIVE_WORD(interpreter, "op.def_constant", word_op_def_constant,
                         "Insert this instruction into the byte stream.",
-                        "value -- ");
+                        "new-name -- ");
 
         ADD_NATIVE_WORD(interpreter, "op.read_variable", word_op_read_variable,
                         "Insert this instruction into the byte stream.",

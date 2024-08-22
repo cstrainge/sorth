@@ -18,6 +18,14 @@ Also, there is a [Wiki!](https://github.com/cstrainge/sorth/wiki) where we go ov
 
 MacOS or Linux, (currently only tested with Ubuntu,) on x86-64 and Arm64
 
+### 0.1.9
+
+Some minor fixes.
+
+### 0.1.8
+
+Test packaging.
+
 ### 0.1.7
 
 Windows support up to par.  Also added a wiki to the project to help describe the language.

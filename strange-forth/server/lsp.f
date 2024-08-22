@@ -147,8 +147,7 @@ jsonrpc.reserved_error_range_end constant lsp.server_error_end
             then
         then
     catch
-        "Message handling exception." .cr
-        .cr
+        "Message handling exception.\n" swap + lsp.log_message
 
         id @  ""  <>
         if
@@ -202,8 +201,7 @@ false variable! lsp.should_exit_now     ( Shutdown prep is done, exit the messag
         try
             jsonrpc.read_message lsp.process_message
         catch
-            "An internal error occurred." .cr
-            .cr
+            "An internal error occurred.\n" swap + lsp.log_message
         endcatch
 
         lsp.should_exit_now @

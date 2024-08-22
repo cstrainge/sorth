@@ -22,11 +22,12 @@ function bundle
 
 rm -rf ./strange-forth/bin/*
 
-bundle ./package-bin/sorth-macos-13-arm64        ./strange-forth/bin/arm64/darwin/
-bundle ./package-bin/sorth-macos-13-x86_64       ./strange-forth/bin/x64/darwin/
-bundle ./package-bin/sorth-ubuntu-latest-arm64   ./strange-forth/bin/arm64/linux/
-bundle ./package-bin/sorth-ubuntu-latest-x86_64  ./strange-forth/bin/x64/linux/
-bundle ./package-bin/sorth-windows-x86_64.exe    ./strange-forth/bin/x64/win32/ ".exe"
+bundle ./package-bin/sorth-aarch64-apple-darwin        ./strange-forth/bin/arm64/darwin/
+bundle ./package-bin/sorth-x86_64-apple-darwin         ./strange-forth/bin/x64/darwin/
+bundle ./package-bin/sorth-arm-unknown-linux-gnu       ./strange-forth/bin/arm64/linux/
+bundle ./package-bin/sorth-x86_64-unknown-linux-gnu    ./strange-forth/bin/x64/linux/
+bundle ./package-bin/sorth-x86_64-pc-windows-msvc.exe  ./strange-forth/bin/x64/win32/ ".exe"
+
 
 pushd strange-forth
 
