@@ -40,3 +40,17 @@ cr cr
 "Hello world!" dup string.size@ --
 swap over 1 rot string.remove "." + .cr
 "Cliché but... " swap 0 swap string.[]! .cr
+
+cr
+
+"*
+    This is a multi line string.
+    We're including extra whitespace.
+
+        * This line is indented!
+
+This line is different!
+
+    All done!
+*"
+.
