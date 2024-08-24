@@ -427,21 +427,6 @@
 
 
 
-( Increment and decrement variables. )
-: ++!  description: "Increment a variable by a given value."
-       signature: "value variable -- "
-     dup @ ++ swap !
-;
-
-
-: --!  description: "Decrement a variable by a given value."
-       signature: "value variable -- "
-    dup @ -- swap !
-;
-
-
-
-
 ( String variable words. )
 : string.size@@ description: "Get the length of a string variable."
                 signature: "string_variable -- length"
