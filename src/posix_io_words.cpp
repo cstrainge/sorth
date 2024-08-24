@@ -1,4 +1,7 @@
 
+#include "sorth.h"
+
+
 #if defined(IS_UNIX)
 
 
@@ -7,8 +10,6 @@
 #include <sys/stat.h>
 #include <sys/un.h>
 #include <sys/socket.h>
-
-#include "sorth.h"
 
 
 

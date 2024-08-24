@@ -1,15 +1,8 @@
 
-#if   defined (__WIN32)  \
-   || defined (_WIN32)   \
-   || defined (WIN32)    \
-   || defined (_WIN64)   \
-   || defined (__WIN64)  \
-   || defined (WIN64)    \
-   || defined (__WINNT)
-
-
 #include "sorth.h"
 
+
+#if defined (IS_WINDOWS)
 
 
 
@@ -528,4 +521,4 @@ namespace sorth
 }
 
 
-#endif // if _WIN32
+#endif // if IS_WINDOWS

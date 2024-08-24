@@ -54,7 +54,7 @@ namespace
 
             base_path = std::filesystem::canonical(buffer).remove_filename();
 
-        #elif defined(_WIN64)
+        #elif defined(IS_WINDOWS)
 
             char buffer [ MAX_PATH + 1];
 
