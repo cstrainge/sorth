@@ -2,9 +2,9 @@
 {
     "files.associations":
     {
-        "*.sorth": "forth",
-        ".sorth_init": "forth",
-        "*.h": "cpp"
+        "*.f": "strangeforth",
+        "*.sorth": "strangeforth",
+        ".sorth_init": "strangeforth"
     },
 
     "typescript.tsc.autoDetect": "off",
@@ -24,11 +24,13 @@
         "Forths",
         "npos",
         "readline",
+        "sftmp",
         "sorth",
         "strangeforth",
         "structs",
         "uinteger",
-        "unmark"
+        "unmark",
+        "userprofile"
     ],
 
     "files.exclude":
