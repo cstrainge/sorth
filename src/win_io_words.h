@@ -1,4 +1,12 @@
-#if defined __WIN32 || defined _WIN32 || defined WIN32 || defined _WIN64 || defined __WIN64 || defined WIN64 || defined __WINNT
+
+#if   defined __WIN32  \
+   || defined _WIN32   \
+   || defined WIN32    \
+   || defined _WIN64   \
+   || defined __WIN64  \
+   || defined WIN64    \
+   || defined __WINNT
+
 #pragma once
 
 

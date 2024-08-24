@@ -2,7 +2,33 @@
 #pragma once
 
 
-#ifdef _WIN64
+
+#if   defined (__WIN32)  \
+   || defined (_WIN32)   \
+   || defined (WIN32)    \
+   || defined (_WIN64)   \
+   || defined (__WIN64)  \
+   || defined (WIN64)    \
+   || defined (__WINNT)
+
+    #define IS_WINDOWS 1
+
+#endif
+
+
+
+#if    defined(unix)      \
+    || defined(__unix__)  \
+    || defined(__unix)    \
+    || defined(__APPLE__)
+
+    #define IS_UNIX 1
+
+#endif
+
+
+
+#ifdef IS_WINDOWS
 
 	#define _CRT_SECURE_NO_WARNINGS 1
 
@@ -48,11 +74,11 @@
 #include "builtin_words.h"
 #include "terminal_words.h"
 
-#if defined(__APPLE__) || defined(__linux__)
+#if defined(IS_UNIX)
 
 	#include "posix_io_words.h"
 
-#elif defined(_WIN64)
+#elif defined(IS_WINDOWS)
 
     #include "win_io_words.h"
 

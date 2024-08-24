@@ -1,5 +1,17 @@
-#if defined __WIN32 || defined _WIN32 || defined WIN32 || defined _WIN64 || defined __WIN64 || defined WIN64 || defined __WINNT
+
+#if   defined (__WIN32)  \
+   || defined (_WIN32)   \
+   || defined (WIN32)    \
+   || defined (_WIN64)   \
+   || defined (__WIN64)  \
+   || defined (WIN64)    \
+   || defined (__WINNT)
+
+
 #include "sorth.h"
+
+
+
 
 namespace sorth
 {
@@ -57,6 +69,7 @@ namespace sorth
 
 
 
+
         void handle_write_bytes(InterpreterPtr& interpreter,
                                 HANDLE handle,
                                 const char* buffer,
@@ -98,6 +111,35 @@ namespace sorth
 
 
 
+        void word_file_create_tempfile(InterpreterPtr& interpreter)
+        {
+            DWORD flags = (DWORD)as_numeric<int64_t>(interpreter, interpreter->pop());
+            char temp_path[MAX_PATH + 1] = "";
+            char full_temp_path[MAX_PATH + 1] = "";
+
+            auto result = GetTempPathA(MAX_PATH + 1, temp_path);
+
+            throw_windows_error_if(result == 0,
+                                   *interpreter,
+                                   "Failed to get temp path: ",
+                                   GetLastError());
+
+            result = GetTempFileNameA(temp_path, "sftmp", 0, full_temp_path);
+
+            throw_windows_error_if(result == 0,
+                                   *interpreter,
+                                   "Failed to get generate temporary file name: ",
+                                   GetLastError());
+
+            auto handle = handle_open(interpreter, full_temp_path, flags, CREATE_ALWAYS);
+
+            interpreter->push(std::string(full_temp_path));
+            interpreter->push((int64_t)handle);
+        }
+
+
+
+
         void word_file_create(InterpreterPtr& interpreter)
         {
             DWORD flags = (DWORD)as_numeric<int64_t>(interpreter, interpreter->pop());
@@ -116,6 +158,21 @@ namespace sorth
             if (!CloseHandle(handle))
             {
                 throw_windows_error(*interpreter, "Could not close handle: ", GetLastError());
+            }
+        }
+
+
+
+
+        void word_file_delete(InterpreterPtr& interpreter)
+        {
+            auto path = as_string(interpreter, interpreter->pop());
+            auto result = DeleteFileA(path.c_str());
+
+            if (result == FALSE)
+            {
+                std::string message = "Failed to delete file, " + path + ": ";
+                throw_windows_error(*interpreter, message, GetLastError());
             }
         }
 
@@ -380,9 +437,17 @@ namespace sorth
                         "Create/open a file and return a fd.",
                         "path flags -- fd");
 
+        ADD_NATIVE_WORD(interpreter, "file.create.tempfile", word_file_create_tempfile,
+                        "Create/open an unique temporary file and return it's fd.",
+                        "flags -- path fd");
+
         ADD_NATIVE_WORD(interpreter, "file.close", word_file_close,
                         "Take a fd and close it.",
                         "fd -- ");
+
+        ADD_NATIVE_WORD(interpreter, "file.delete", word_file_delete,
+                        "Delete the specified file.",
+                        "file_path -- ");
 
 
         ADD_NATIVE_WORD(interpreter, "socket.connect", word_socket_connect,
@@ -461,5 +526,6 @@ namespace sorth
 
 
 }
+
 
 #endif // if _WIN32

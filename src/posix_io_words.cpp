@@ -1,4 +1,7 @@
-#if defined(unix) || defined(__unix__) || defined(__unix) || defined(__APPLE__)
+
+#if defined(IS_UNIX)
+
+
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -453,4 +456,5 @@ namespace sorth
 
 }
 
-#endif // If Linux or Darwin
+
+#endif // IS_UNIX

@@ -1,4 +1,7 @@
-#if defined(unix) || defined(__unix__) || defined(__unix) || defined(__APPLE__)
+
+#if defined(IS_UNIX)
+
+
 #pragma once
 
 
@@ -11,4 +14,5 @@ namespace sorth
 
 }
 
-#endif // __unix__
+
+#endif // IS_UNIX
