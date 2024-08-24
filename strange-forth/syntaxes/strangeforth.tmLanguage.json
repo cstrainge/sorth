@@ -36,10 +36,11 @@
 		},
         "comment": {
             "patterns": [
-				{
-					"match": "\\([^)]*[\\s\\n]|\\)",
-					"name": "comment.block"
-				}
+                {
+                    "begin": "\\(",
+                    "end" : "\\)",
+                    "name": "comment.block.strangeforth"
+                }
 			]
         },
         "constant": {
