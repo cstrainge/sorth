@@ -313,7 +313,7 @@
 
 
 ( Expect a specific substring from the json string.  Throw an error if it's missing. )
-: json.expect_string hidden ( expected_str json_source == )
+: json.expect_string hidden ( expected_str json_source -- )
     @ variable! json_source
     variable! expected
 
