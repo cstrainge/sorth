@@ -12,12 +12,15 @@
 ( Implementation of the language's REPL. )
 : repl description: "Sorth's REPL: read, evaluate, and print loop."
        signature: " -- "
-    "Strange Forth REPL." .cr
-    cr
-    "Enter quit, q, or exit to quit the REPL." .cr
-    "Enter .w to show defined words." .cr
-    "Enter show_word <word_name> to list detailed information about a word." .cr
-    cr
+    "*
+       Strange Forth REPL.
+
+       Enter quit, q, or exit to quit the REPL.
+       Enter .w to show defined words.
+       Enter show_word <word_name> to list detailed information about a word.
+
+    *"
+    .
 
     at_exit repl.exit_handler
 
