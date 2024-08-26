@@ -18,6 +18,10 @@ Also, there is a [Wiki!](https://github.com/cstrainge/sorth/wiki) where we go ov
 
 MacOS or Linux, (currently only tested with Ubuntu,) on x86-64 and Arm64
 
+### 0.1.10
+
+Fixed multi-line comments syntax highlighting.
+
 ### 0.1.9
 
 Some minor fixes.
