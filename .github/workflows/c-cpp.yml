@@ -80,8 +80,8 @@ jobs:
         type: 'zip'
         filename: 'sorth-${{ matrix.target }}'
         directory: 'build'
-    - name: List files in dist directory
-      run: ls -al dist
+    - name: List files in build directory
+      run: ls -al build
     - name: release
       uses: xresloader/upload-to-github-release@v1
       env:
