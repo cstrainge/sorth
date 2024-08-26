@@ -1,3 +1,3 @@
 @echo off
 
-dir %2%
+dir %1%

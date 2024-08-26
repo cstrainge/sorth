@@ -64,7 +64,7 @@ jobs:
       env:
         TARGET: sorth-${{ matrix.target }}
     - name: List files in build directory
-      run: ls -al build
+      run: ls build
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v3.1.3
       with:
@@ -81,12 +81,12 @@ jobs:
         filename: 'sorth-${{ matrix.target }}'
         directory: 'build'
     - name: List files in build directory
-      run: ls -al build
+      run: ls build
     - name: release
       uses: xresloader/upload-to-github-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        file: "dist/sorth-${{ matrix.target }}.zip"
+        file: "build/sorth-${{ matrix.target }}.zip"
         tags: true
         draft: true
