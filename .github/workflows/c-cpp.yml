@@ -80,6 +80,8 @@ jobs:
         type: 'zip'
         filename: 'sorth-${{ matrix.target }}'
         directory: 'build'
+    - name: List files in dist directory
+      run: ls -al dist
     - name: release
       uses: xresloader/upload-to-github-release@v1
       env:
@@ -88,4 +90,3 @@ jobs:
         file: "dist/sorth-${{ matrix.target }}.zip"
         tags: true
         draft: true
-
