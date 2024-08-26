@@ -82,11 +82,11 @@ jobs:
         directory: 'build'
     - name: List files in build directory
       run: ls build
-    - name: release
-      uses: xresloader/upload-to-github-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        file: "build/sorth-${{ matrix.target }}.zip"
-        tags: true
-        draft: true
+#    - name: release
+#      uses: xresloader/upload-to-github-release@v1
+#      env:
+#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      with:
+#        file: "build/sorth-${{ matrix.target }}.zip"
+#        tags: true
+#        draft: true
