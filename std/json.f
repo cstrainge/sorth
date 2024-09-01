@@ -1,6 +1,6 @@
 
-( Implementations of the standard library words {}.to_json and {}.from_json, and their helper )
-( words. )
+( Implementations of the standard library words {}.to_json, #.to_json, and {}.from_json, and their )
+( helper words. )
 
 
 
@@ -28,7 +28,7 @@
 
 
 
-
+( Filter out characters can't be in a json string. )
 : json.filter_json_string hidden  ( string -- filtered_string )
     variable! original
     "" variable! new
