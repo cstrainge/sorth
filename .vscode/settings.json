@@ -22,15 +22,18 @@
         "endcatch",
         "endof",
         "Forths",
+        "libatomic",
         "npos",
         "readline",
         "sftmp",
         "sorth",
         "strangeforth",
         "structs",
+        "thedoctor",
         "uinteger",
         "unmark",
-        "userprofile"
+        "userprofile",
+        "xresloader"
     ],
 
     "files.exclude":
