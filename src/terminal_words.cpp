@@ -178,7 +178,7 @@ namespace sorth
             void word_term_size(InterpreterPtr& interpreter)
             {
                 HANDLE std_out_handle = INVALID_HANDLE_VALUE;
-                CONSOLE_SCREEN_BUFFER_INFO info = { .dwSize = sizeof(CONSOLE_SCREEN_BUFFER_INFO) };
+                CONSOLE_SCREEN_BUFFER_INFO info = { 0 };
 
                 std_out_handle = GetStdHandle(STD_OUTPUT_HANDLE);
 
