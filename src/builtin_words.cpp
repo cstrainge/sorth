@@ -1176,64 +1176,30 @@ namespace sorth
 
     void word_data_definition(InterpreterPtr& interpreter)
     {
-        auto& current_token = interpreter->constructor()->current_token;
-        auto& input_tokens = interpreter->constructor()->input_tokens;
+        bool found_initializers = as_numeric<bool>(interpreter, interpreter->pop());
+        ArrayPtr fields = as_array(interpreter, interpreter->pop());
+        std::string name = as_string(interpreter, interpreter->pop());
+        ArrayPtr defaults;
 
-        ++current_token;
-        DataObjectDefinitionPtr definition_ptr = std::make_shared<DataObjectDefinition>();
-        definition_ptr->name = input_tokens[current_token].text;
-
-        for (++current_token; current_token < input_tokens.size(); ++current_token)
+        if (found_initializers)
         {
-            if (input_tokens[current_token].text == "(")
+            defaults = as_array(interpreter, interpreter->pop());
+        }
+
+        DataObjectDefinitionPtr definition_ptr = std::make_shared<DataObjectDefinition>();
+
+        definition_ptr->name = name;
+
+        definition_ptr->fieldNames.resize(fields->size());
+        definition_ptr->defaults.resize(fields->size());
+
+        for (int i = 0; i < fields->size(); ++i)
+        {
+            definition_ptr->fieldNames[i] = as_string(interpreter, (*fields)[i]);
+
+            if (defaults)
             {
-                interpreter->execute_word("(");
-            }
-            else if (input_tokens[current_token].text == ";")
-            {
-                break;
-            }
-            else
-            {
-                auto field_name = input_tokens[current_token].text;
-                definition_ptr->fieldNames.push_back(field_name);
-
-                if (input_tokens[current_token + 1].text == "->")
-                {
-                    ++current_token;
-
-                    throw_error_if(current_token >= input_tokens.size(), *interpreter,
-                                   "Unexpected end of token stream.");
-
-                    // Push code block
-                    interpreter->constructor()->stack.push({});
-
-                    interpreter->push(",");
-                    interpreter->push(";");
-                    interpreter->push((int64_t)2);
-                    word_code_compile_until_words(interpreter);
-                    auto found_word = as_string(interpreter, interpreter->pop());
-                    --current_token;
-
-                    if (found_word == ",")
-                    {
-                        ++current_token;
-                    }
-
-                    auto top_code = interpreter->constructor()->stack.top().code;
-                    interpreter->constructor()->stack.pop();
-
-                    throw_error_if(top_code.empty(), *interpreter, "Expected expression.");
-
-                    interpreter->execute_code(field_name + ".init", top_code);
-
-                    auto default_value = interpreter->pop();
-                    definition_ptr->defaults.push_back(default_value);
-                }
-                else
-                {
-                    definition_ptr->defaults.push_back((int64_t)0);
-                }
+                definition_ptr->defaults[i] = (*defaults)[i];
             }
         }
 

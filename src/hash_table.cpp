@@ -12,7 +12,7 @@ namespace sorth
 
     std::ostream& operator <<(std::ostream& stream, const HashTablePtr& table)
     {
-        static int indent = 0;
+        static thread_local int indent = 0;
 
         auto write_indent = [&]()
             {
@@ -48,7 +48,7 @@ namespace sorth
     {
         auto& r_rhs = *rhs;
         auto& r_lhs = *lhs;
-        
+
         if (r_rhs.size() != r_lhs.size())
         {
             return false;
