@@ -36,8 +36,6 @@ namespace sorth
                 Dictionary dictionary;
                 WordList word_handlers;
 
-                DefinitionList definitions;
-
                 VariableList variables;
 
                 OptionalConstructor code_constructor;
@@ -146,7 +144,6 @@ namespace sorth
             dictionary.mark_context();
             word_handlers.mark_context();
             variables.mark_context();
-            definitions.mark_context();
         }
 
 
@@ -155,7 +152,6 @@ namespace sorth
             dictionary.release_context();
             word_handlers.release_context();
             variables.release_context();
-            definitions.release_context();
         }
 
 
