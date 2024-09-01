@@ -37,4 +37,9 @@ then
 
 cr
 
-table @ {}.to_json .cr
+table @ {}.to_json variable! json_text
+json_text @ {}.from_json variable! new_table
+
+json_text @ .cr
+cr
+new_table @ .cr

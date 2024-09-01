@@ -753,6 +753,7 @@
 : # immediate description: "Beginning of a structure definition."
               signature: "# name field_name [ -> default_value ] ... ;"
     word variable! struct_name
+    false variable! is_hidden
     variable field_name
 
     0 [].new variable! fields
@@ -770,6 +771,11 @@
 
         field_name @
         case
+            "hidden" of
+                    true is_hidden !
+                    continue
+                endof
+
             "(" of
                 "(" execute
                 continue
@@ -814,6 +820,7 @@
 
     struct_name @        op.push_constant_value
     fields @             op.push_constant_value
+    is_hidden @          op.push_constant_value
     found_initializers @ op.push_constant_value
 
     ` # op.execute

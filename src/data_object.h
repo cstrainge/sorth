@@ -14,6 +14,9 @@ namespace sorth
         using NameList = std::vector<std::string>;
 
         std::string name;     // The name of the type.
+
+        bool is_hidden;       // Is the structure and it's words hidden from the word list?
+
         NameList fieldNames;  // Names of all the fields.
         ValueList defaults;   // The default values of these fields.
     };

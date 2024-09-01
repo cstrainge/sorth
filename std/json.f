@@ -149,15 +149,9 @@
 
 
 ( Keep track of the line/column we are on in the input json. )
-# json.location line column ;
-
-
-( Create a new instance of the structure, properly initialized. )
-: json.location.new hidden ( -- new_location )
-    json.location.new
-
-    dup 1 json.location.line rot rot #!
-    dup 1 json.location.column rot rot #!
+# json.location hidden
+    line -> 1 ,
+    column -> 1
 ;
 
 
@@ -190,7 +184,11 @@
 ( String structure used for parsing json.  We use it to keep track of where we are in the string )
 ( during parsing.  For in a logical line/colum way and directly as in the index into the string )
 ( variable. )
-# json.string location index source ;
+# json.string hidden
+    location -> json.location.new ,
+    index -> 0 ,
+    source
+;
 
 
 ( Member variable accessors they take a variable index and set/get the value of the field. )
@@ -207,9 +205,7 @@
 : json.string.new hidden ( string -- json.string )
     json.string.new variable! new_json
 
-    json.location.new new_json json.string.location!!
-    0                 new_json json.string.index!!
-                      new_json json.string.source!!
+    ( string ) new_json json.string.source!!
 
     new_json @
 ;

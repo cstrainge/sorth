@@ -223,10 +223,15 @@ namespace sorth
 
 
 
-        void create_data_definition_words(InterpreterPtr& interpreter,
-                                          DataObjectDefinitionPtr& definition_ptr)
+        void create_data_definition_words(const Location& location,
+                                          InterpreterPtr& interpreter,
+                                          DataObjectDefinitionPtr& definition_ptr,
+                                          bool is_hidden = false)
         {
-            ADD_NATIVE_WORD(interpreter, definition_ptr->name + ".new",
+            const bool is_immediate = false;
+            const bool is_scripted = false;
+
+            interpreter->add_word(definition_ptr->name + ".new",
                 [definition_ptr](auto interpreter)
                 {
                     DataObjectPtr new_object = std::make_shared<DataObject>();
@@ -242,17 +247,24 @@ namespace sorth
 
                     interpreter->push(new_object);
                 },
+                location,
+                is_immediate,
+                is_hidden,
+                is_scripted,
                 "Create a new instance of the structure " + definition_ptr->name + ".",
                 " -- " + definition_ptr->name);
 
             for (int64_t i = 0; i < (int64_t)definition_ptr->fieldNames.size(); ++i)
             {
-                ADD_NATIVE_WORD(interpreter,
-                    definition_ptr->name + "." + definition_ptr->fieldNames[i],
+                interpreter->add_word(definition_ptr->name + "." + definition_ptr->fieldNames[i],
                     [i](auto interpreter)
                     {
                         interpreter->push(i);
                     },
+                    location,
+                    is_immediate,
+                    is_hidden,
+                    is_scripted,
                     "Access the structure field + " + definition_ptr->fieldNames[i] + ".",
                     " -- structure_field_index");
             }
@@ -277,9 +289,9 @@ namespace sorth
         DataObjectDefinitionPtr word_info_definition = make_word_info_definition();
 
 
-        void register_word_info_struct(InterpreterPtr& interpreter)
+        void register_word_info_struct(const Location& location, InterpreterPtr& interpreter)
         {
-            create_data_definition_words(interpreter, word_info_definition);
+            create_data_definition_words(location, interpreter, word_info_definition);
         }
 
 
@@ -1176,7 +1188,10 @@ namespace sorth
 
     void word_data_definition(InterpreterPtr& interpreter)
     {
+        Location location = interpreter->get_current_location();
+
         bool found_initializers = as_numeric<bool>(interpreter, interpreter->pop());
+        bool is_hidden = as_numeric<bool>(interpreter, interpreter->pop());
         ArrayPtr fields = as_array(interpreter, interpreter->pop());
         std::string name = as_string(interpreter, interpreter->pop());
         ArrayPtr defaults;
@@ -1205,7 +1220,7 @@ namespace sorth
 
         // Create the words to allow the script to access this definition.  The word
         // <definition_name>.new will always hold a base reference to our definition object.
-        create_data_definition_words(interpreter, definition_ptr);
+        create_data_definition_words(location, interpreter, definition_ptr, is_hidden);
     }
 
 
@@ -1994,7 +2009,8 @@ namespace sorth
                         "Get the next word in the token stream.",
                         " -- next_word");
 
-        register_word_info_struct(interpreter);
+        PathPtr path = std::make_shared<std::filesystem::path>(__FILE__);
+        register_word_info_struct(Location(path, __LINE__, 1), interpreter);
 
         ADD_NATIVE_WORD(interpreter, "words.get{}", word_get_word_table,
                         "Get a copy of the word table as it exists at time of calling.",
