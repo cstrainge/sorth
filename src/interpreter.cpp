@@ -75,6 +75,7 @@ namespace sorth
                 virtual std::vector<std::string> get_inverse_lookup_list() override;
 
                 virtual void execute_word(const std::string& word) override;
+                virtual void execute_word(const internal::Word& word) override;
                 virtual void execute_word(const Location& location, const Word& word) override;
 
                 virtual void execute_code(const std::string& name, const ByteCode& code) override;
@@ -89,6 +90,7 @@ namespace sorth
                 virtual Value pop() override;
 
             public:
+                virtual VariableList& get_variables() override;
                 virtual const Dictionary& get_dictionary() const override;
 
             public:
@@ -295,6 +297,12 @@ namespace sorth
 
             auto this_ptr = shared_from_this();
             word_handlers[word_entry.handler_index].function(this_ptr);
+        }
+
+
+        void InterpreterImpl::execute_word(const internal::Word& word)
+        {
+            execute_word(current_location, word);
         }
 
 
@@ -648,6 +656,12 @@ namespace sorth
             stack.pop_front();
 
             return next;
+        }
+
+
+        VariableList& InterpreterImpl::get_variables()
+        {
+            return variables;
         }
 
 

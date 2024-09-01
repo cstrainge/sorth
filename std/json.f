@@ -155,14 +155,6 @@
 ;
 
 
-( Member variable accessors they take a variable index and set/get the value of the field. )
-: json.location.line!!    hidden  json.location.line   swap @ #! ;
-: json.location.column!!  hidden  json.location.column swap @ #! ;
-
-: json.location.line@@    hidden  json.location.line   swap @ #@ ;
-: json.location.column@@  hidden  json.location.column swap @ #@ ;
-
-
 ( Take a character and properly increment the line/column as needed. )
 : json.location.inc  hidden  ( character json.location --  )
     variable! location
@@ -189,16 +181,6 @@
     index -> 0 ,
     source
 ;
-
-
-( Member variable accessors they take a variable index and set/get the value of the field. )
-: json.string.location!!  hidden  json.string.location swap @ #! ;
-: json.string.index!!     hidden  json.string.index    swap @ #! ;
-: json.string.source!!    hidden  json.string.source   swap @ #! ;
-
-: json.string.location@@  hidden  json.string.location swap @ #@ ;
-: json.string.index@@     hidden  json.string.index    swap @ #@ ;
-: json.string.source@@    hidden  json.string.source   swap @ #@ ;
 
 
 ( Create a new initialized instance of the parsing structure. )

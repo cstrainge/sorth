@@ -46,6 +46,7 @@ namespace sorth
             virtual std::vector<std::string> get_inverse_lookup_list() = 0;
 
             virtual void execute_word(const std::string& word) = 0;
+            virtual void execute_word(const internal::Word& word) = 0;
             virtual void execute_word(const internal::Location& location,
                                       const internal::Word& word) = 0;
 
@@ -60,7 +61,9 @@ namespace sorth
             virtual void push(const Value& value) = 0;
             virtual Value pop() = 0;
 
+
         public:
+            virtual VariableList& get_variables() = 0;
             virtual const internal::Dictionary& get_dictionary() const = 0;
 
         public:

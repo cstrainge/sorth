@@ -254,6 +254,13 @@ namespace sorth
                 "Create a new instance of the structure " + definition_ptr->name + ".",
                 " -- " + definition_ptr->name);
 
+            auto [ swap_found, swap ] = interpreter->find_word("swap");
+            auto [ read_found, read_var ] = interpreter->find_word("@");
+            auto [ struct_write_found, struct_write ] = interpreter->find_word("#!");
+            auto [ struct_read_found, struct_read ] = interpreter->find_word("#@");
+
+            auto [ print_stack_found, print_stack ] = interpreter->find_word(".s");
+
             for (int64_t i = 0; i < (int64_t)definition_ptr->fieldNames.size(); ++i)
             {
                 interpreter->add_word(definition_ptr->name + "." + definition_ptr->fieldNames[i],
@@ -267,6 +274,89 @@ namespace sorth
                     is_scripted,
                     "Access the structure field + " + definition_ptr->fieldNames[i] + ".",
                     " -- structure_field_index");
+
+                if (swap_found && read_found && struct_write_found && struct_read_found)
+                {
+                    auto field_writer = [i, swap, struct_write](auto interpreter)
+                        {
+                            interpreter->push(i);
+                            interpreter->execute_word(swap);
+                            interpreter->execute_word(struct_write);
+                        };
+
+                    auto field_reader = [i, swap, struct_read](auto interpreter)
+                        {
+                            interpreter->push(i);
+                            interpreter->execute_word(swap);
+                            interpreter->execute_word(struct_read);
+                        };
+
+                    auto var_field_writer = [i, swap, struct_write](auto interpreter)
+                        {
+                            interpreter->push(i);
+                            interpreter->execute_word(swap);
+
+                            auto variables = interpreter->get_variables();
+                            auto index = as_numeric<int64_t>(interpreter, interpreter->pop());
+                            interpreter->push(variables[index]);
+
+                            interpreter->execute_word(struct_write);
+                        };
+
+                    auto var_field_reader = [i, print_stack, swap, struct_read](auto interpreter)
+                        {
+                            interpreter->push(i);
+                            interpreter->execute_word(swap);
+
+                            auto variables = interpreter->get_variables();
+                            auto index = as_numeric<int64_t>(interpreter, interpreter->pop());
+                            interpreter->push(variables[index]);
+
+                            interpreter->execute_word(struct_read);
+                        };
+
+                    interpreter->add_word(
+                        definition_ptr->name + "." + definition_ptr->fieldNames[i] + "!",
+                        field_writer,
+                        location,
+                        is_immediate,
+                        is_hidden,
+                        is_scripted,
+                        "Write to the structure field + " + definition_ptr->fieldNames[i] + ".",
+                        "new_value structure -- ");
+
+                    interpreter->add_word(
+                        definition_ptr->name + "." + definition_ptr->fieldNames[i] + "@",
+                        field_reader,
+                        location,
+                        is_immediate,
+                        is_hidden,
+                        is_scripted,
+                        "Read from structure field + " + definition_ptr->fieldNames[i] + ".",
+                        "structure -- value");
+
+                    interpreter->add_word(
+                        definition_ptr->name + "." + definition_ptr->fieldNames[i] + "!!",
+                        var_field_writer,
+                        location,
+                        is_immediate,
+                        is_hidden,
+                        is_scripted,
+                        "Write to the structure field + " + definition_ptr->fieldNames[i] +
+                            "in a variable.",
+                        "new_value structure_var -- ");
+
+                    interpreter->add_word(
+                        definition_ptr->name + "." + definition_ptr->fieldNames[i] + "@@",
+                        var_field_reader,
+                        location,
+                        is_immediate,
+                        is_hidden,
+                        is_scripted,
+                        "Read from the structure field + " + definition_ptr->fieldNames[i] +
+                            "in a variable.",
+                        "structure_var -- value");
+                }
             }
         }
 
