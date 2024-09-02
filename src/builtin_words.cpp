@@ -67,8 +67,7 @@ namespace sorth
                 }
 
             public:
-                void show(std::ostream& stream,
-                          InterpreterPtr& interpreter,
+                void show(std::ostream& stream, InterpreterPtr& interpreter,
                           const std::vector<std::string>& inverse_list)
                 {
                     for (size_t i = 0; i < code.size(); ++i)
