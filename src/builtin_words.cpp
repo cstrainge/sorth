@@ -254,12 +254,20 @@ namespace sorth
                 "Create a new instance of the structure " + definition_ptr->name + ".",
                 " -- " + definition_ptr->name);
 
-            auto [ swap_found, swap ] = interpreter->find_word("swap");
-            auto [ read_found, read_var ] = interpreter->find_word("@");
-            auto [ struct_write_found, struct_write ] = interpreter->find_word("#!");
-            auto [ struct_read_found, struct_read ] = interpreter->find_word("#@");
+            auto swap_tuple = interpreter->find_word("swap");
+            auto struct_write_tuple = interpreter->find_word("#!");
+            auto struct_read_tuple = interpreter->find_word("#@");
 
-            auto [ print_stack_found, print_stack ] = interpreter->find_word(".s");
+            // Work around for older compilers that can't handle destructured variables being passed
+            // into a lambda function.
+            auto swap_found = std::get<0>(swap_tuple);
+            auto swap = std::get<1>(swap_tuple);
+
+            auto struct_write_found = std::get<0>(struct_write_tuple);
+            auto struct_write = std::get<1>(struct_write_tuple);
+
+            auto struct_read_found = std::get<0>(struct_read_tuple);
+            auto struct_read = std::get<1>(struct_read_tuple);
 
             for (int64_t i = 0; i < (int64_t)definition_ptr->fieldNames.size(); ++i)
             {
@@ -275,7 +283,7 @@ namespace sorth
                     "Access the structure field + " + definition_ptr->fieldNames[i] + ".",
                     " -- structure_field_index");
 
-                if (swap_found && read_found && struct_write_found && struct_read_found)
+                if (swap_found && struct_write_found && struct_read_found)
                 {
                     auto field_writer = [i, swap, struct_write](auto interpreter)
                         {
@@ -303,7 +311,7 @@ namespace sorth
                             interpreter->execute_word(struct_write);
                         };
 
-                    auto var_field_reader = [i, print_stack, swap, struct_read](auto interpreter)
+                    auto var_field_reader = [i, swap, struct_read](auto interpreter)
                         {
                             interpreter->push(i);
                             interpreter->execute_word(swap);
