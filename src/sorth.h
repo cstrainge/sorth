@@ -24,6 +24,12 @@
 
     #define IS_UNIX 1
 
+    #if defined(__APPLE__)
+
+        #define IS_MACOS 1
+
+    #endif
+
 #endif
 
 
@@ -73,6 +79,8 @@
 #include "interpreter.h"
 #include "builtin_words.h"
 #include "terminal_words.h"
+#include "sorth_ext_internal.h"
+
 
 #if defined(IS_UNIX)
 
@@ -83,5 +91,6 @@
     #include "win_io_words.h"
 
 #endif
+
 
 #include "user_words.h"
