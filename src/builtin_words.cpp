@@ -67,7 +67,8 @@ namespace sorth
                 }
 
             public:
-                void show(std::ostream& stream, InterpreterPtr& interpreter,
+                void show(std::ostream& stream,
+                          InterpreterPtr& interpreter,
                           const std::vector<std::string>& inverse_list)
                 {
                     for (size_t i = 0; i < code.size(); ++i)
@@ -79,22 +80,55 @@ namespace sorth
                         {
                             auto index = as_numeric<int64_t>(interpreter, code[i].value);
 
-                            stream << code[i].id
-                                << "  " << index;
-
+                            stream << code[i].id << "  ";
 
                             if (inverse_list[index] != "")
                             {
-                                stream << " -> " << inverse_list[index];
+                                stream << inverse_list[index] << ", (" << index << ")";
+                            }
+                            else
+                            {
+                                stream << index;
                             }
 
                             stream << std::endl;
+                        }
+                        else if (   (code[i].id == OperationCode::Id::push_constant_value)
+                                 && (is_string(code[i].value)))
+                        {
+                            auto string = as_string(interpreter, code[i].value);
+
+                            stream << code[i].id << "  " << stringify(string) << std::endl;
                         }
                         else
                         {
                             stream << code[i] << std::endl;
                         }
                     }
+                }
+
+            private:
+                std::string stringify(const std::string& input)
+                {
+                    std::string output = "\"";
+
+                    for (size_t i = 0; i < input.size(); ++i)
+                    {
+                        char next = input[i];
+
+                        switch (next)
+                        {
+                            case '\n': output += "\\n";  break;
+                            case '\t': output += "\\n";  break;
+                            case '\"': output += "\\\""; break;
+
+                            default:   output += next;   break;
+                        }
+                    }
+
+                    output += "\"";
+
+                    return output;
                 }
         };
 
