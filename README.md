@@ -30,7 +30,8 @@ For more details with getting started and playing with the language please see t
 
 There is still a lot to do with the language... Non exhaustively some things that would really help the usefulness of the language...
 
- - [ ] The language needs a module system and a C interface where we can load external code.  Currently the only way to extend the language is through scripts and by editing the interpreter itself.  So interop with ohter languages is a must.
+ - [-] The language needs a module system and a C interface where we can load external code.  Currently the only way to extend the language is through scripts and by editing the interpreter itself.  So interop with ohter languages is a must.
+ - Working on Windows, but segfaults in Linux and MacOS.
  - [ ] Continue to build out the io words.  For example, currently we can not create IPC servers with the language.
  - [ ] Refactor the fancy repl.  It works as a first cut byt there are way too many corner cases it doesn't handle.
  - [ ] In that light, we need to identify and eliminate bugs.  We need to elevate the test script to a full testing system and integrate it with our CI processes.
