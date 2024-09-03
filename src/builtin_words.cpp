@@ -313,7 +313,7 @@ namespace sorth
                     is_immediate,
                     is_hidden,
                     is_scripted,
-                    "Access the structure field + " + definition_ptr->fieldNames[i] + ".",
+                    "Access the structure field " + definition_ptr->fieldNames[i] + ".",
                     " -- structure_field_index");
 
                 if (swap_found && struct_write_found && struct_read_found)
@@ -363,7 +363,7 @@ namespace sorth
                         is_immediate,
                         is_hidden,
                         is_scripted,
-                        "Write to the structure field + " + definition_ptr->fieldNames[i] + ".",
+                        "Write to the structure field " + definition_ptr->fieldNames[i] + ".",
                         "new_value structure -- ");
 
                     interpreter->add_word(
@@ -373,7 +373,7 @@ namespace sorth
                         is_immediate,
                         is_hidden,
                         is_scripted,
-                        "Read from structure field + " + definition_ptr->fieldNames[i] + ".",
+                        "Read from structure field " + definition_ptr->fieldNames[i] + ".",
                         "structure -- value");
 
                     interpreter->add_word(
@@ -383,8 +383,8 @@ namespace sorth
                         is_immediate,
                         is_hidden,
                         is_scripted,
-                        "Write to the structure field + " + definition_ptr->fieldNames[i] +
-                            "in a variable.",
+                        "Write to the structure field " + definition_ptr->fieldNames[i] +
+                            " in a variable.",
                         "new_value structure_var -- ");
 
                     interpreter->add_word(
@@ -394,8 +394,8 @@ namespace sorth
                         is_immediate,
                         is_hidden,
                         is_scripted,
-                        "Read from the structure field + " + definition_ptr->fieldNames[i] +
-                            "in a variable.",
+                        "Read from the structure field " + definition_ptr->fieldNames[i] +
+                            " in a variable.",
                         "structure_var -- value");
                 }
             }
