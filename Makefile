@@ -8,6 +8,11 @@ MAKEFLAGS += --no-builtin-rules
 CXX := clang++
 CXX_VERSION := $(shell $(CXX) --version)
 
+ifeq ($(OS),Windows_NT)
+	CXX_VERSION := $(subst \,\\,$(CXX_VERSION))
+endif
+
+
 CXXFLAGS = -O3 -std=c++20
 GCC_CXXFLAGS = -DMESSAGE='"Compiled with GCC: $(CXX_VERSION)"'
 CLANG_CXXFLAGS = -DMESSAGE='"Compiled with Clang: $(CXX_VERSION)"'
