@@ -57,7 +57,7 @@ ifeq ($(OS),Darwin)
 	CP_R := cp -r std $(BUILD)
 	CP_H := cp src/sorth_ext.h $(BUILD)
 else ifeq ($(OS),Linux)
-	CXXFLAGS += -fuse-ld=lld
+	CXXFLAGS += -fuse-ld=lld -ldl
 
 	ifeq ($(CXXTARGET),x86_64-unknown-linux-gnu)
 		CXXFLAGS += -static -stdlib=libc++
