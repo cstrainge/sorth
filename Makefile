@@ -9,7 +9,7 @@ CXX := clang++
 CXX_VERSION := $(shell $(CXX) --version)
 
 ifeq ($(OS),Windows_NT)
-	CXX_VERSION := $(subst \,\\,$(CXX_VERSION))
+	CXX_VERSION := $(subst \,\\\\,$(CXX_VERSION))
 endif
 
 
