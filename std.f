@@ -907,8 +907,8 @@
                 endof
 
             "(" of
-                "(" execute
-                continue
+                    "(" execute
+                    continue
                 endof
 
             "->" of
