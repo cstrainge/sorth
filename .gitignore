@@ -18,4 +18,11 @@ build/
 dist/
 strange-forth/bin/
 
+sample_module/libsample_module.so
+sample_module/libsample_module.so.1.0.0
+sample_module/sample_module.dylib
+sample_module/sample_module.o
+sample_module/sample_module.so
+sample_module/sample_module.dll
+
 *.vsix
