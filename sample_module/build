@@ -1,3 +1,10 @@
 #!/usr/bin/env bash
 
-clang++ -std=c++20 -I../src -shared sample_module.cpp -o sample_module.dylib
+#clang++ -fpic -std=c++20 -I../src -shared sample_module.cpp -o sample_module.dylib
+
+clang -c -fPIC -g -Wall -I../src sample_module.c
+clang -shared -W1 -o libsample_module.so.1.0.0 sample_module.o -lc
+
+ln -s libsample_module.so.1.0.0 libsample_module.so
+ln -s libsample_module.so sample_module.so
+ln -s libsample_module.so sample_module.dylib

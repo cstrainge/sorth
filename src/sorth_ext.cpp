@@ -75,7 +75,7 @@ namespace sorth
         }
 
 
-        bool as_bool(InterpreterRef_t interpreter_ref, ValueRef_t value_ref)
+        BOOL as_bool(InterpreterRef_t interpreter_ref, ValueRef_t value_ref)
         {
             if (is_numeric(value_ref->value))
             {
@@ -110,13 +110,13 @@ namespace sorth
         }
 
 
-        bool is_numeric(ValueRef_t value_ref)
+        BOOL is_numeric(ValueRef_t value_ref)
         {
             return is_numeric(value_ref->value);
         }
 
 
-        bool is_string(ValueRef_t value_ref)
+        BOOL is_string(ValueRef_t value_ref)
         {
             return is_string(value_ref->value);
         }
@@ -134,7 +134,7 @@ namespace sorth
         }
 
 
-        void set_bool(ValueRef_t value_ref, bool new_value)
+        void set_bool(ValueRef_t value_ref, BOOL new_value)
         {
             value_ref->value = new_value;
         }
@@ -186,7 +186,7 @@ namespace sorth
                             WordHandlerRef_t handler,
                             const char* file,
                             size_t line,
-                            bool is_immediate,
+                            BOOL is_immediate,
                             const char* description,
                             const char* signature)
         {
@@ -276,8 +276,8 @@ namespace sorth
                                token.location,
                                "Failed to load external library.");
 
-                registration =
-                          (HandlerRegistrationRef_t)GetProcAddress(handle, "register_module_words");
+                registration = (HandlerRegistrationRef_t)GetProcAddress(handle,
+                                                                        "register_module_words");
 
                 throw_error_if(registration == nullptr,
                                token.location,
@@ -296,10 +296,11 @@ namespace sorth
 
                 throw_error_if(handle == nullptr,
                                token.location,
-                               std::string("Failed to load external library:") + dlerror() + ".");
+                               std::string("Failed to load external library: ") + dlerror() + ".");
 
-                HandlerRegistrationRef_t registration =
-                                   (HandlerRegistrationRef_t)dlsym(handle, "register_module_words");
+                dlerror();
+
+                registration = (HandlerRegistrationRef_t)dlsym(handle, "register_module_words");
 
                 throw_error_if(registration == nullptr,
                                token.location,

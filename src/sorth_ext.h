@@ -27,16 +27,16 @@ typedef struct Interpreter_t* InterpreterRef_t;
 
 typedef struct SorthApi_t* SorthApiRef_t;
 
+typedef int BOOL;
 
 typedef struct HandlerResult
 {
-    bool was_successful;
+    BOOL was_successful;
     char* error_message;
 }
 HandlerResult_t;
 
 typedef HandlerResult_t (*WordHandlerRef_t)(InterpreterRef_t, SorthApiRef_t);
-
 
 
 typedef struct SorthApi_t
@@ -46,16 +46,16 @@ typedef struct SorthApi_t
 
     int64_t (*as_int)(InterpreterRef_t interpreter_ref, ValueRef_t value_ref);
     double (*as_float)(InterpreterRef_t interpreter_ref, ValueRef_t value_ref);
-    bool (*as_bool)(InterpreterRef_t interpreter_ref, ValueRef_t value_ref);
+    BOOL (*as_bool)(InterpreterRef_t interpreter_ref, ValueRef_t value_ref);
     char* (*as_string)(InterpreterRef_t interpreter_ref, ValueRef_t value_ref);
     void (*free_string)(char* str);
 
-    bool (*is_numeric)(ValueRef_t value_ref);
-    bool (*is_string)(ValueRef_t value_ref);
+    BOOL (*is_numeric)(ValueRef_t value_ref);
+    BOOL (*is_string)(ValueRef_t value_ref);
 
     void (*set_int)(ValueRef_t value_ref, int64_t new_value);
     void (*set_float)(ValueRef_t value_ref, double new_value);
-    void (*set_bool)(ValueRef_t value_ref, bool new_value);
+    void (*set_bool)(ValueRef_t value_ref, BOOL new_value);
     void (*set_string)(ValueRef_t value_ref, const char* new_value);
 
     void (*halt)(InterpreterRef_t interpreter);
@@ -70,7 +70,7 @@ typedef struct SorthApi_t
                      WordHandlerRef_t handler,
                      const char* file,
                      size_t line,
-                     bool is_immediate,
+                     BOOL is_immediate,
                      const char* description,
                      const char* signature);
 }
