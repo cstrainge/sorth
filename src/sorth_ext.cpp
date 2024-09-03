@@ -277,7 +277,7 @@ namespace sorth
                                "Failed to load external library.");
 
                 registration =
-                           (HandlerRegistrationRef_t)GetProcAddress(handle, "register_module_words");
+                          (HandlerRegistrationRef_t)GetProcAddress(handle, "register_module_words");
 
                 throw_error_if(registration == nullptr,
                                token.location,
@@ -287,7 +287,7 @@ namespace sorth
             #elif defined(IS_UNIX)
 
                 #ifdef IS_MACOS
-                    //module_name += ".dylib";
+                    module_name += ".dylib";
                 #else
                     module_name += ".so";
                 #endif
