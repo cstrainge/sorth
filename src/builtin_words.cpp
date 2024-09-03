@@ -1292,6 +1292,15 @@ namespace sorth
     }
 
 
+    void word_string_add(InterpreterPtr& interpreter)
+    {
+        auto str_b = as_string(interpreter, interpreter->pop());
+        auto str_a = as_string(interpreter, interpreter->pop());
+
+        interpreter->push(str_a + str_b);
+    }
+
+
     void word_string_to_number(InterpreterPtr& interpreter)
     {
         auto string = as_string(interpreter, interpreter->pop());
@@ -1478,6 +1487,38 @@ namespace sorth
 
         interpreter->push(array_dest);
     }
+
+
+    void word_push_front(InterpreterPtr& interpreter)
+    {
+        auto array = as_array(interpreter, interpreter->pop());
+        auto value = interpreter->pop();
+
+        array->push_front(value);
+    }
+
+    void word_push_back(InterpreterPtr& interpreter)
+    {
+        auto array = as_array(interpreter, interpreter->pop());
+        auto value = interpreter->pop();
+
+        array->push_back(value);
+    }
+
+    void word_pop_front(InterpreterPtr& interpreter)
+    {
+        auto array = as_array(interpreter, interpreter->pop());
+
+        interpreter->push(array->pop_front(interpreter));
+    }
+
+    void word_pop_back(InterpreterPtr& interpreter)
+    {
+        auto array = as_array(interpreter, interpreter->pop());
+
+        interpreter->push(array->pop_back(interpreter));
+    }
+
 
 
     void word_buffer_new(InterpreterPtr& interpreter)
@@ -2254,6 +2295,10 @@ namespace sorth
                         "Read a character from the given string.",
                         "index string -- character");
 
+        ADD_NATIVE_WORD(interpreter, "string.+", word_string_add,
+                        "Add a string onto the end of another.",
+                        "str_a str_b -- new_str");
+
         ADD_NATIVE_WORD(interpreter, "string.to_number", word_string_to_number,
                         "Convert a string into a number.",
                         "string -- number");
@@ -2314,6 +2359,22 @@ namespace sorth
                         "Take two arrays and deep copy the contents from the second into the "
                         "first.",
                         "dest source -- dest");
+
+        ADD_NATIVE_WORD(interpreter, "[].push_front!", word_push_front,
+                        "Push a value to the front of an array.",
+                        "value array -- ");
+
+        ADD_NATIVE_WORD(interpreter, "[].push_back!", word_push_back,
+                        "Push a value to the end of an array.",
+                        "value array -- ");
+
+        ADD_NATIVE_WORD(interpreter, "[].pop_front!", word_pop_front,
+                        "Pop a value from the front of an array.",
+                        "array -- value");
+
+        ADD_NATIVE_WORD(interpreter, "[].pop_back!", word_pop_back,
+                        "Pop a value from the back of an array.",
+                        "array -- value");
 
 
         // ByteBuffer operations.

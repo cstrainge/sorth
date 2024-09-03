@@ -455,6 +455,11 @@
 ;
 
 
+: string.[]@@
+    @ string.[]@
+;
+
+
 : string.remove! description: "Remove a count of characters from the given variable."
                  signature: "count position string_variable -- updated_string"
     variable! var_index
@@ -462,6 +467,42 @@
     var_index @ @ string.remove
     var_index @ !
 ;
+
+
+: string.substring description: "Extract a substring from an existing string."
+                   signature: "start end string -- substring"
+    variable! string
+
+    variable! end_index
+    variable! start_index
+
+    start_index @ variable! index
+
+    "" variable! sub_string
+
+    start_index @  string @ string.size@  >=
+    end_index @    string @ string.size@  >=
+    ||
+    if
+        "Substring indices are out of bounds." throw
+    then
+
+    start_index @  end_index @  >
+    if
+        "Start and end index in reverse order." throw
+    then
+
+    begin
+        index @  end_index @  <=
+    while
+        sub_string @  index @ string @ string.[]@  +  sub_string !
+        index ++!
+    repeat
+
+    sub_string @
+;
+
+
 
 
 
@@ -522,6 +563,25 @@
 ;
 
 
+: [].push_front!! description: "Push a new value to the top of an array variable."
+                  signature: "value array_variable -- "
+    @ [].push_front!
+;
+
+: [].push_back!! description: "Push a new value to the end of an array variable."
+                  signature: "value array_variable -- "
+    @ [].push_back!
+;
+
+: [].pop_front!! description: "Pop a value from the top of an array variable."
+                  signature: "array_variable -- value"
+    @ [].pop_front!
+;
+
+: [].pop_back!! description: "Pop a value from the bottom of an array variable."
+                  signature: "array_variable -- value"
+    @ [].pop_back!
+;
 
 
 : [ immediate
@@ -652,6 +712,74 @@
 : ]@@ immediate description: "End of the [ index ] syntax.  Indicates an array variable read."
     sentinel_word
 ;
+
+
+
+: string.format  description: "Format a string where occurrences of {} are replaced with stack values."
+                 signature: "[variables] format_string -- formatted_string"
+    0 [].new variable! snippets
+    0 [].new variable! values
+
+    variable! format_str
+
+    format_str string.size@@ variable! length
+    0 variable! char_index
+    "" variable! format_snippet
+
+    variable next
+
+    begin
+        char_index @  length @  <
+    while
+        char_index @  format_str @  string.[]@  next !
+
+        next @
+        case
+            "{" of
+                    char_index ++!
+                    char_index @  format_str @  string.[]@  next !
+
+                    next @  "}"  <>
+                    if
+                        "Missing end } for format specifier." throw
+                    then
+
+                    format_snippet @  snippets  [].push_back!!
+                    ( Stack Var )       values  [].push_front!!
+
+                    "" format_snippet !
+                endof
+
+            format_snippet @  next @  +  format_snippet !
+        endcase
+
+        char_index ++!
+    repeat
+
+    0 variable! snippet_index
+    "" variable! output_string
+
+    begin
+        snippet_index @  snippets [].size@@  <
+    while
+        output_string @  snippets [ snippet_index @ ]@@  +  output_string !
+
+        snippet_index @  values [].size@@  <
+        if
+            output_string @  values [ snippet_index @ ]@@ to_string  +  output_string !
+        then
+
+        snippet_index ++!
+    repeat
+
+    format_snippet string.size@@  0>
+    if
+        output_string @  format_snippet @  +  output_string !
+    then
+
+    output_string @
+;
+
 
 
 

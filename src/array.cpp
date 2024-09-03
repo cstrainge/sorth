@@ -66,5 +66,43 @@ namespace sorth
         items.resize((size_t)new_size);
     }
 
+    void Array::push_front(const Value& value)
+    {
+        items.insert(items.begin(), value);
+    }
+
+    void Array::push_back(const Value& value)
+    {
+        items.push_back(value);
+    }
+
+    Value Array::pop_front(InterpreterPtr& interpreter)
+    {
+        if (items.empty())
+        {
+            internal::throw_error(*interpreter, "Popping from an empty array.");
+        }
+
+        Value value = items[0];
+
+        items.erase(items.begin());
+
+        return value;
+    }
+
+    Value Array::pop_back(InterpreterPtr& interpreter)
+    {
+        if (items.empty())
+        {
+            internal::throw_error(*interpreter, "Popping from an empty array.");
+        }
+
+        Value value = items[0];
+
+        items.pop_back();
+
+        return value;
+    }
+
 
 }
