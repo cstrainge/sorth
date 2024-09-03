@@ -51,8 +51,8 @@ namespace sorth::internal
 
         for (const auto& word : new_dictionary)
         {
-            stream << std::setw(max) << word.first << " "
-                   << std::setw(6) << word.second.handler_index;
+            stream << std::left << std::setw(max) << word.first << "  "
+                   << std::right << std::setw(6) << word.second.handler_index;
 
             if (word.second.is_immediate)
             {
