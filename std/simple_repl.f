@@ -12,15 +12,18 @@
 ( Implementation of the language's REPL. )
 : repl description: "Sorth's REPL: read, evaluate, and print loop."
        signature: " -- "
+
+    sorth.version
     "*
        Strange Forth REPL.
+       Version: {}
 
        Enter quit, q, or exit to quit the REPL.
        Enter .w to show defined words.
        Enter show_word <word_name> to list detailed information about a word.
 
     *"
-    .
+    string.format .
 
     at_exit repl.exit_handler
 
