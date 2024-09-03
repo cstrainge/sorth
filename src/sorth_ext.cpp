@@ -199,9 +199,18 @@ namespace sorth
                     {
                         auto result = handler(&interpreter_ref, &api_ref);
 
-                        internal::throw_error_if(!result.was_successful,
-                                                  *interpreter,
-                                                  result.error_message);
+                        if (!result.was_successful)
+                        {
+                            if (result.error_message != nullptr)
+                            {
+                                internal::throw_error(*interpreter, result.error_message);
+                            }
+                            else
+                            {
+                                internal::throw_error(*interpreter,
+                                         std::string("The word, ") + name + ", returned an error.");
+                            }
+                        }
                     }
                     catch (...)
                     {
@@ -255,9 +264,25 @@ namespace sorth
             auto& token = interpreter->constructor()->input_tokens[current_token];
             auto module_name = token.text;
 
+            HandlerRegistrationRef_t registration = nullptr;
+
             #ifdef IS_WINDOWS
 
-                module_name ++ ".dll";
+                module_name += ".dll";
+
+                HMODULE handle = LoadLibraryA(module_name.c_str());
+
+                throw_error_if(handle == nullptr,
+                               token.location,
+                               "Failed to load external library.");
+
+                registration =
+                           (HandlerRegistrationRef_t)GetProcAddress(handle, "register_module_words");
+
+                throw_error_if(registration == nullptr,
+                               token.location,
+                               "Could not find the registration function in the library, " +
+                               module_name + ".");
 
             #elif defined(IS_UNIX)
 
@@ -267,14 +292,12 @@ namespace sorth
                     module_name += ".so";
                 #endif
 
-std::cout << "Loading module " << module_name << std::endl;
                 void* handle = dlopen(module_name.c_str(), RTLD_NOW);
 
                 throw_error_if(handle == nullptr,
                                token.location,
                                std::string("Failed to load external library:") + dlerror() + ".");
 
-std::cout << "Loaded." << std::endl;
                 HandlerRegistrationRef_t registration =
                                    (HandlerRegistrationRef_t)dlsym(handle, "register_module_words");
 
@@ -283,13 +306,12 @@ std::cout << "Loaded." << std::endl;
                                "Could not find the registration function in the library, " +
                                module_name + ": " + dlerror() + ".");
 
-std::cout << "Preparing API." << std::endl;
-                auto interpreter_ref = Interpreter_t { .interpreter = interpreter };
-                auto api_ref = new_api_ref();
-
-std::cout << "Calling registration function." << std::endl;
-                registration(&interpreter_ref, &api_ref);
             #endif
+
+            auto interpreter_ref = Interpreter_t { .interpreter = interpreter };
+            auto api_ref = new_api_ref();
+
+            registration(&interpreter_ref, &api_ref);
         }
 
 

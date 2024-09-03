@@ -17,10 +17,9 @@ HandlerResult_t word_hello(InterpreterRef_t interpreter, SorthApiRef_t api)
 
 
 
-extern "C" void register_module_words(InterpreterRef_t interpreter, SorthApiRef_t api)
+extern "C" __declspec(dllexport)
+void register_module_words(InterpreterRef_t interpreter, SorthApiRef_t api)
 {
-    std::cout << "Module loaded." << std::endl;
-
     api->add_word(interpreter,
                   "sample.hello",
                   word_hello,
