@@ -1931,6 +1931,12 @@ namespace sorth
     }
 
 
+    void word_print_compiler(InterpreterPtr& interpreter)
+    {
+        interpreter->push(std::string(MESSAGE));
+    }
+
+
     void word_show_bytecode(InterpreterPtr& interpreter)
     {
         interpreter->showing_bytecode() = as_numeric<bool>(interpreter, interpreter->pop());
@@ -2524,6 +2530,11 @@ namespace sorth
         ADD_NATIVE_WORD(interpreter, "sorth.version", word_print_sorth_version,
                         "Get the current version of the interpreter.",
                         " -- version_string");
+
+
+        ADD_NATIVE_WORD(interpreter, "sorth.compiler", word_print_compiler,
+                        "Get the compiler that built the interpreter.",
+                        " -- compiler_info");
 
 
         ADD_NATIVE_WORD(interpreter, "show_bytecode", word_show_bytecode,
