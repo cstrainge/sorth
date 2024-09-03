@@ -715,8 +715,10 @@
 
 
 
-: string.format  description: "Format a string where occurrences of {} are replaced with stack values."
-                 signature: "[variables] format_string -- formatted_string"
+: string.format
+    description: "Format a string where occurrences of {} are replaced with stack values."
+    signature: "[variables] format_string -- formatted_string"
+
     0 [].new variable! snippets
     0 [].new variable! values
 
