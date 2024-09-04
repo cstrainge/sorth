@@ -455,7 +455,8 @@
 ;
 
 
-: string.[]@@
+: string.[]@@ description: "Read a character from a given string variable."
+              signature: "index variable -- character"
     @ string.[]@
 ;
 
