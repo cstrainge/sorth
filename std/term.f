@@ -1,7 +1,24 @@
 
 ( Some useful words when dealing with the terminal. )
+
+
 "\027"         constant term.esc  ( Terminal escape character. )
 term.esc "[" + constant term.csi  ( Control sequence introducer. )
+
+
+: term.fgc description: "Take a 256 colour number and turn it into a foreground escape sequence."
+           signature: "colour_number -- escape_sequence"
+    term.csi "38;5;" + swap + "m" +
+;
+
+: term.bgc description: "Take a 256 colour number and turn it into a background escape sequence."
+           signature: "colour_number -- escape_sequence"
+    term.csi "48;5;" + swap + "m" +
+;
+
+
+term.csi "0;0m" + constant term.crst  ( Sequence to reset the colours to defaults. )
+
 
 
 ( Read from the terminal and expect it to be a specific character.  If it isn't a match an )
@@ -107,7 +124,6 @@ term.esc "[" + constant term.csi  ( Control sequence introducer. )
 ;
 
 
-( Clear the entire line the cursor is on. )
 : term.clear_line  description: "Clear the entire line the cursor is on."
                    signature: " -- "
     term.csi "2K\r" + term.!
