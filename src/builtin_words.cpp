@@ -1727,6 +1727,15 @@ namespace sorth
     }
 
 
+    void word_mod(InterpreterPtr& interpreter)
+    {
+        auto b = as_numeric<int64_t>(interpreter, interpreter->pop());
+        auto a = as_numeric<int64_t>(interpreter, interpreter->pop());
+
+        interpreter->push(a % b);
+    }
+
+
     void word_logic_and(InterpreterPtr& interpreter)
     {
         logic_op(interpreter, [](auto a, auto b) { return a && b; });
@@ -2461,6 +2470,10 @@ namespace sorth
 
         ADD_NATIVE_WORD(interpreter, "/", word_divide,
                         "Divide 2 numbers.",
+                        "a b -- result");
+
+        ADD_NATIVE_WORD(interpreter, "%", word_mod,
+                        "Mod 2 numbers.",
                         "a b -- result");
 
 
