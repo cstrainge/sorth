@@ -98,7 +98,7 @@ namespace sorth
             DWORD flags = (DWORD)as_numeric<int64_t>(interpreter, interpreter->pop());
             auto path = as_string(interpreter, interpreter->pop());
 
-            interpreter->push((int64_t)handle_open(interpreter, path, flags, CREATE_ALWAYS));
+            interpreter->push((int64_t)handle_open(interpreter, path, flags, OPEN_ALWAYS));
         }
 
 

@@ -123,6 +123,30 @@ namespace sorth
 
             void word_term_raw_mode(InterpreterPtr& interpreter)
             {
+                auto flush_events =
+                    []()
+                    {
+                        HANDLE std_in_handle = GetStdHandle(STD_INPUT_HANDLE);
+                        DWORD dwRead;
+                        INPUT_RECORD ir;
+                        DWORD numberOfEvents = 0;
+                        PeekConsoleInput(std_in_handle, nullptr, 0, &numberOfEvents);
+
+                        if (numberOfEvents > 0)
+                        {
+                            while (true)
+                            {
+                                ReadConsoleInput(std_in_handle, &ir, 1, &dwRead);
+
+                                if (   ir.EventType == KEY_EVENT
+                                    && ir.Event.KeyEvent.wVirtualKeyCode == VK_ESCAPE)
+                                {
+                                    break;
+                                }
+                            }
+                        }
+                    };
+
                 HANDLE std_out_handle = GetStdHandle(STD_OUTPUT_HANDLE);
                 HANDLE std_in_handle = GetStdHandle(STD_INPUT_HANDLE);
 
@@ -159,6 +183,9 @@ namespace sorth
                     result = SetConsoleMode(std_out_handle, new_output_mode);
                     throw_windows_error_if(!result, *interpreter, "Set console output mode: ",
                                             GetLastError());
+
+                    flush_events();
+                    is_in_raw_mode = true;
                 }
                 else if ((!requested_on) && is_in_raw_mode)
                 {
@@ -169,6 +196,9 @@ namespace sorth
                     result = SetConsoleMode(std_out_handle, output_mode);
                     throw_windows_error_if(!result, *interpreter, "Set console output mode: ",
                                             GetLastError());
+
+                    flush_events();
+                    is_in_raw_mode = false;
                 }
             }
 
