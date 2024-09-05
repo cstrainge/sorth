@@ -107,13 +107,6 @@ namespace sorth
         #elif defined(_WIN64)
 
 
-            DWORD input_mode;
-            DWORD output_mode;
-            bool is_in_raw_mode = false;
-
-
-
-
             void init_win_console()
             {
                 SetConsoleCP(CP_UTF8);
@@ -146,6 +139,10 @@ namespace sorth
                             }
                         }
                     };
+
+                static DWORD input_mode;
+                static DWORD output_mode;
+                static bool is_in_raw_mode = false;
 
                 HANDLE std_out_handle = GetStdHandle(STD_OUTPUT_HANDLE);
                 HANDLE std_in_handle = GetStdHandle(STD_INPUT_HANDLE);
