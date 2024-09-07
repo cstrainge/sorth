@@ -2362,7 +2362,7 @@ namespace sorth
 
         ADD_NATIVE_WORD(interpreter, "[].size!", word_array_resize,
                         "Grow or shrink the array to the new size.",
-                        "array -- size");
+                        "new_size array -- ");
 
         ADD_NATIVE_WORD(interpreter, "[].+", word_array_plus,
                         "Take two arrays and deep copy the contents from the second into the "
