@@ -334,6 +334,8 @@
 
                 next_char !
             endcase
+        else
+            drop
         then
 
         new_string @ next_char @ + new_string !
@@ -410,6 +412,7 @@
     begin
         json_source json.string.eos@ '
         json_source json.string.peek@ json.is_numeric?
+        &&
     while
         new_number_text @ json_source json.string.next@ + new_number_text !
     repeat
