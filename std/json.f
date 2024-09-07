@@ -470,7 +470,8 @@
         json_source json.skip_whitespace
 
         json_source json.string.eos@ '
-        json_source json.string.peek@ "}" <> &&
+        json_source json.string.peek@ "}" <>
+        &&
     while
         json_source json.read_string key !
 
