@@ -11,6 +11,7 @@ esc "[" + constant csi  ( Control sequence introducer. )
     swap +
     "m" +
     swap +
+    " " +
     .
 ;
 

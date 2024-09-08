@@ -1,7 +1,7 @@
 
 : loop_until ( -- )
     10 begin
-        "Looping until:" .
+        "Looping until: " .
         -- dup .cr
 
         dup 0<=
@@ -14,7 +14,7 @@
 : loop_while ( -- )
     10 begin -- dup 0>=
     while
-        "Looping while:" .
+        "Looping while: " .
         dup .cr
     repeat
 
