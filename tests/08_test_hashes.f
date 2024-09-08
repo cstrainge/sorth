@@ -13,7 +13,7 @@
 variable! table
 
 
-table ?
+table .cr
 
 
 cr

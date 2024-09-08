@@ -4,7 +4,7 @@
 
 
 ( Print out the blank buffer. )
-bytes ? cr
+bytes .cr cr
 
 
 ( Write a few values into the buffer. )
@@ -25,7 +25,7 @@ file.close
 
 
 ( Show the buffer as it is now. )
-bytes ?
+bytes .cr
 
 
 ( Move the buffer index back to the beginning. )
@@ -57,7 +57,7 @@ cr
 -1         bytes buffer.i32!!
 0x10101010 bytes buffer.i32!!
 
-bytes ?
+bytes .cr
 
 cr
 

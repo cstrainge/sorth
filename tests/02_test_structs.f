@@ -14,12 +14,12 @@ variable fp
 
 
 ( The raw value we get from variable creation. )
-"New variable:            " . fp ?
+"New variable:            " . fp .cr
 
 
 ( Create an instance of the struct foo and store it in our variable. )
 foo.new fp !
-"Uninitialized struct:    " . fp ?
+"Uninitialized struct:    " . fp .cr
 
 
 ( Assign some values to the first two fields. )
@@ -33,4 +33,4 @@ foo.new fp !
 350 bar.z foo.c fp #@@ #!
 
 ( Finally print the whole thing. )
-"Initialized struct(s):   " . fp ?
+"Initialized struct(s):   " . fp .cr
