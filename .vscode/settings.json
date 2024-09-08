@@ -41,6 +41,7 @@
     {
         "**/sorth": false,
         "**/test.bin": true,
+        "**/obj/": true,
         "**/dist/": true,
         "**/build/": true,
         "**/strange-forth/node_modules/": true,

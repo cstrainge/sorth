@@ -14,6 +14,7 @@ package-bin/
 
 strange-forth/node_modules/
 strange-forth/out/
+obj/
 build/
 dist/
 strange-forth/bin/

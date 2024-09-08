@@ -87,12 +87,22 @@ help:  ## Help
 		sed -n 's/^.*:\(.*\): \(.*\)##\(.*\)/\1%%%\3/p' | \
 		column -t -s '%%%'
 
-$(BUILD)/$(TARGET): src/*.cpp ## Build binary
+SRC_DIR = src
+OBJ_DIR = obj
+
+SRCS = $(wildcard $(SRC_DIR)/*.cpp)
+OBJS = $(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
+
+$(BUILD)/$(TARGET): $(OBJS) ## Build binary
 	install -d $(BUILD) || true
 	$(CXX) \
 		$(CXXFLAGS) \
-		$^ \
+		$(OBJS) \
 		-o ./$(BUILD)/$(TARGET)
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+	install -d $(OBJ_DIR) || true
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 .PHONY: strip
 strip: $(BUILD)/$(TARGET)
@@ -126,4 +136,5 @@ vsce: bundle ## Build VSCode extension
 
 .PHONY: clean
 clean: ## Clean
-	rm -rf build || true
+	rm -rf $(BUILD) || true
+	rm -rf $(OBJ_DIR) || true
