@@ -339,7 +339,6 @@
 : .  description: "Print a value with a space."
      signature: "value -- "
     term.!
-    " " term.!
 ;
 
 
@@ -365,12 +364,6 @@
 : .hcr  description: "Print a hex value and a new line."
         signature: "value -- "
     .hex cr
-;
-
-
-: ?  description: "Print the value of a variable with a new line."
-     signature: "value -- "
-    @ .cr
 ;
 
 

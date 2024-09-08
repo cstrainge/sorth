@@ -18,8 +18,8 @@ table ?
 
 cr
 
-key1 . table @ { key1 }@ .cr
-key2 . table @ { key2 }@ .cr
+key1  table @ { key1 }@  "{} {}" string.format .cr
+key2  table @ { key2 }@  "{} {}" string.format .cr
 
 
 

@@ -35,18 +35,18 @@ bytes ?
 ( Read the values back from the buffer. )
 cr
 
-"i32:" . bytes buffer.i32@@ .cr
-"f32:" . bytes buffer.f32@@ .cr
-"f64:" . bytes buffer.f64@@ .cr
-"Str:" . 16 bytes buffer.string@@ .cr
-"Str:" . 32 bytes buffer.string@@ .cr
-"Str:" . 6 bytes buffer.string@@ .cr
+"i32: " . bytes buffer.i32@@ .cr
+"f32: " . bytes buffer.f32@@ .cr
+"f64: " . bytes buffer.f64@@ .cr
+"Str: " . 16 bytes buffer.string@@ .cr
+"Str: " . 32 bytes buffer.string@@ .cr
+"Str: " . 6 bytes buffer.string@@ .cr
 
 
 ( Move the buffer back to position 0 and read the first value again this time as an unsigned int. )
 0 bytes buffer.position!!
 
-"u32:" . bytes buffer.u32@@ .cr
+"u32: " . bytes buffer.u32@@ .cr
 
 cr
 
@@ -63,5 +63,5 @@ cr
 
 0 bytes buffer.position!!
 
-"i32:" . bytes buffer.i32@@ .hcr
-"i32:" . bytes buffer.i32@@ .hcr
+"i32: " . bytes buffer.i32@@ .hcr
+"i32: " . bytes buffer.i32@@ .hcr
