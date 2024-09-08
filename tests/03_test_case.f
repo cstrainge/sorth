@@ -1,7 +1,7 @@
 
 ( Just a really basic test of the case statement. )
 : hello_something
-    "Hello" .
+    "Hello " .
 
     case
         1 of "world."        endof
