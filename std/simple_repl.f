@@ -1,7 +1,7 @@
 
 ( Define a user prompt for the REPL. )
 : prompt description: "Prints the user input prompt in the REPL."
-    ">>" .
+    ">> " .
 ;
 
 

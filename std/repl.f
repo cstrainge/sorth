@@ -313,7 +313,7 @@ repl.history_size [].new variable! repl.history
 
 ( Define a user prompt for the REPL. )
 : prompt description: "Prints the user input prompt in the REPL."
-    term.csi "2:34m>" + term.csi + "0:0m>" + .
+    term.csi "2:34m>" + term.csi + "0:0m> " + .
 ;
 
 
