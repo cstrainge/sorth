@@ -101,13 +101,14 @@ namespace sorth
                         }
                         else if (  (   (code[i].id == OperationCode::Id::mark_loop_exit)
                                     || (code[i].id == OperationCode::Id::mark_catch)
+                                    || (code[i].id == OperationCode::Id::jump)
                                     || (code[i].id == OperationCode::Id::jump_if_zero)
                                     || (code[i].id == OperationCode::Id::jump_if_not_zero))
                                  && (is_numeric(code[i].value)))
                         {
                             auto offset = as_numeric<int64_t>(interpreter, code[i].value);
 
-                            stream << code[i] << " -> " << i + offset << std::endl;
+                            stream << code[i].id << "  " << i + offset << std::endl;
                         }
                         else
                         {
