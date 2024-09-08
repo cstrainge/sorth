@@ -645,20 +645,34 @@ namespace sorth
 
     void word_op_def_variable(InterpreterPtr& interpreter)
     {
+        auto value = interpreter->pop();
+
+        if (std::holds_alternative<Token>(value))
+        {
+            value = std::get<Token>(value).text;
+        }
+
         insert_user_instruction(interpreter,
             {
                 .id = OperationCode::Id::def_variable,
-                .value = interpreter->pop()
+                .value = value
             });
     }
 
 
     void word_op_def_constant(InterpreterPtr& interpreter)
     {
+        auto value = interpreter->pop();
+
+        if (std::holds_alternative<Token>(value))
+        {
+            value = std::get<Token>(value).text;
+        }
+
         insert_user_instruction(interpreter,
             {
                 .id = OperationCode::Id::def_constant,
-                .value = interpreter->pop()
+                .value = value
             });
     }
 
@@ -685,10 +699,17 @@ namespace sorth
 
     void word_op_execute(InterpreterPtr& interpreter)
     {
+        auto value = interpreter->pop();
+
+        if (std::holds_alternative<Token>(value))
+        {
+            value = std::get<Token>(value).text;
+        }
+
         insert_user_instruction(interpreter,
             {
                 .id = OperationCode::Id::execute,
-                .value = interpreter->pop()
+                .value = value
             });
     }
 
@@ -967,7 +988,39 @@ namespace sorth
 
     void word_code_execute_source(InterpreterPtr& interpreter)
     {
-        interpreter->process_source(as_string(interpreter, interpreter->pop()));
+        auto code = as_string(interpreter, interpreter->pop());
+        interpreter->process_source(code);
+    }
+
+
+    void word_token_is_string(InterpreterPtr& interpreter)
+    {
+        auto value = interpreter->pop();
+
+        if (std::holds_alternative<Token>(value))
+        {
+            auto token = std::get<Token>(value);
+            interpreter->push(token.type == Token::Type::string);
+        }
+        else
+        {
+            throw_error(*interpreter, "Value not a token.");
+        }
+    }
+
+
+    void word_token_text(InterpreterPtr& interpreter)
+    {
+        auto value = interpreter->pop();
+
+        if (std::holds_alternative<Token>(value))
+        {
+            interpreter->push(std::get<Token>(value).text);
+        }
+        else
+        {
+            throw_error(*interpreter, "Value not a token.");
+        }
     }
 
 
@@ -979,7 +1032,7 @@ namespace sorth
         throw_error_if(current_token >= input_tokens.size(), *interpreter,
                        "word trying to read past the end of the token list.");
 
-        interpreter->push(input_tokens[++current_token].text);
+        interpreter->push(input_tokens[++current_token]);
     }
 
 
@@ -1063,6 +1116,29 @@ namespace sorth
                 .id = OperationCode::Id::word_exists,
                 .value = name
             });
+    }
+
+
+    void word_is_defined_im(InterpreterPtr& interpreter)
+    {
+        auto& current_token = interpreter->constructor()->current_token;
+        auto& input_tokens = interpreter->constructor()->input_tokens;
+
+        ++current_token;
+        auto name = input_tokens[current_token].text;
+
+        auto found = std::get<0>(interpreter->find_word(name));
+
+        interpreter->push(found);
+    }
+
+
+    void word_is_undefined_im(InterpreterPtr& interpreter)
+    {
+        word_is_defined_im(interpreter);
+        auto found = as_numeric<bool>(interpreter, interpreter->pop());
+
+        interpreter->push(!found);
     }
 
 
@@ -2191,6 +2267,16 @@ namespace sorth
                         "string_to_execute -- ???");
 
 
+        // Token words.
+        ADD_NATIVE_WORD(interpreter, "token.is_string?", word_token_is_string,
+                        "Does the token represent a string value?",
+                        "token -- bool");
+
+        ADD_NATIVE_WORD(interpreter, "token.text@", word_token_text,
+                        "Get the text value from a token.",
+                        "token -- string");
+
+
         // Word words.
         ADD_NATIVE_WORD(interpreter, "word", word_word,
                         "Get the next word in the token stream.",
@@ -2214,6 +2300,14 @@ namespace sorth
         ADD_IMMEDIATE_WORD(interpreter, "defined?", word_is_defined,
                            "Is the given word defined?",
                         " -- bool");
+
+        ADD_IMMEDIATE_WORD(interpreter, "[defined?]", word_is_defined_im,
+                           "Evaluate at compile time, is the given word defined?",
+                            " -- bool");
+
+        ADD_IMMEDIATE_WORD(interpreter, "[undefined?]", word_is_undefined_im,
+                           "Evaluate at compile time, is the given word not defined?",
+                            " -- bool");
 
 
         // Exception time
