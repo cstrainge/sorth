@@ -2,14 +2,23 @@
 ( Some useful words when dealing with the terminal. )
 
 
-"\027"         constant term.esc  ( Terminal escape character. )
-term.esc "[" + constant term.csi  ( Control sequence introducer. )
+"\027"         constant term.esc   ( Terminal escape character. )
+term.esc "[" + constant term.csi   ( Control sequence introducer. )
+
+"\03"   constant term.ctrl+c       ( User pressed ctrl+c )
+"\013"  constant term.return       ( User hit the enter key. )
+"\065"  constant term.up_arrow     ( User hit the up arrow key. )
+"\066"  constant term.down_arrow   ( User hit the down arrow key. )
+"\067"  constant term.right_arrow  ( User hit the right arrow key. )
+"\068"  constant term.left_arrow   ( User hit the left arrow key. )
+"\0127" constant term.backspace    ( User hit the backspace key. )
 
 
 : term.fgc description: "Take a 256 colour number and turn it into a foreground escape sequence."
            signature: "colour_number -- escape_sequence"
     term.csi "38;5;" + swap + "m" +
 ;
+
 
 : term.bgc description: "Take a 256 colour number and turn it into a background escape sequence."
            signature: "colour_number -- escape_sequence"
