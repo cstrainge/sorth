@@ -37,8 +37,8 @@
         "comment": {
             "patterns": [
                 {
-                    "begin": "\\(\\s",
-                    "end" : "\\s\\)",
+                    "begin": "(?<!:\\s)\\(\\s",
+                    "end" : "\\s\\)\\s",
                     "name": "comment.block.strangeforth"
                 }
 			]
