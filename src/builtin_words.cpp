@@ -128,6 +128,7 @@ namespace sorth
 
                         switch (next)
                         {
+                            case '\r': output += "\\r";  break;
                             case '\n': output += "\\n";  break;
                             case '\t': output += "\\n";  break;
                             case '\"': output += "\\\""; break;
@@ -2395,11 +2396,11 @@ namespace sorth
 
         ADD_NATIVE_WORD(interpreter, "string.[]!", word_string_insert,
                         "Insert a string into another string.",
-                        "string -- updated_string");
+                        "sub_string position string -- updated_string");
 
         ADD_NATIVE_WORD(interpreter, "string.remove", word_string_remove,
                         "Remove some characters from a string.",
-                        "string -- updated_string");
+                        "count position string -- updated_string");
 
         ADD_NATIVE_WORD(interpreter, "string.find", word_string_find,
                         "Find the first instance of a string within another.",
