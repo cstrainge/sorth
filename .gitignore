@@ -9,6 +9,7 @@ test.bin
 .DS_Store
 
 sorth_lsp_log.txt
+publish.txt
 
 package-bin/
 
