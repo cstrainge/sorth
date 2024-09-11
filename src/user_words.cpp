@@ -34,7 +34,7 @@ namespace sorth
         {
             #ifdef __APPLE__
 
-                interpreter->push(std::string("MacOS"));
+                interpreter->push(std::string("macOS"));
 
             #elif __linux__
 
