@@ -324,7 +324,7 @@
     while
         json_source json.string.next@ next_char !
 
-        next_char @ dup "\\" =
+        next_char @ "\\" =
         if
             json_source json.string.next@ dup
             case
@@ -334,8 +334,6 @@
 
                 next_char !
             endcase
-        else
-            drop
         then
 
         new_string @ next_char @ + new_string !
