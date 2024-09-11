@@ -5,6 +5,12 @@
 "\027"         constant term.esc   ( Terminal escape character. )
 term.esc "[" + constant term.csi   ( Control sequence introducer. )
 
+user.os "macOS" =
+if
+    "\01"   constant term.cmd+left     ( User pressed ⌘+left arrow. )
+    "\05"   constant term.cmd+right    ( User pressed ⌘+right arrow. )
+then
+
 "\03"   constant term.ctrl+c       ( User pressed ctrl+c )
 "\013"  constant term.return       ( User hit the enter key. )
 "\065"  constant term.up_arrow     ( User hit the up arrow key. )

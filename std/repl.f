@@ -82,11 +82,24 @@ user.home user.path_sep + ".sorth_history.json" + constant repl.history.path
 
 ( Append a new item to the head of the history list. )
 : repl.history.append!!  hidden  ( new_command history_var -- )
-    @ variable! history
-      variable! command
+    @ variable! history            ( The history buffer. )
+      variable! command            ( The new command to add to the history. )
+    false variable! is_duplicate?  ( Is this command the same as the previous one?  )
 
-    command @  ""  <>
+    ( If the history isn't empty check to see if the new command is a duplicate of the last )
+    ( entered command. )
+    history repl.history.is_empty??  '
     if
+        command @  history repl.history.buffer@@ [ history repl.history.head@@ ]@  =
+        is_duplicate? !
+    then
+
+    ( If this command isn't empty and a duplicate of the top command, enter it into the history. )
+    is_duplicate? @ '
+    command @  ""  <>
+    &&
+    if
+        ( If this is the first command to be entered, initialize the head/tail/count. )
         history repl.history.is_empty??
         if
             0 history repl.history.head!!
@@ -95,15 +108,21 @@ user.home user.path_sep + ".sorth_history.json" + constant repl.history.path
         else
             history repl.history.is_full??
             if
+                ( The history is full, so advance the tail as the last one is about to be )
+                ( overwritten. )
                 history repl.history.tail++!!
             else
+                ( The history isn't full yet so increment the count to account for the command )
+                ( that we're about to add. )
                 history repl.history.count@@  ++  history repl.history.count!!
             then
 
+            ( Increment the head index wrapping as needed. )
             history repl.history.head++!!
         then
 
-        command @  history repl.history.buffer@@  [ history repl.history.head@@ ]!
+        ( Finally, append the new command to the buffer. )
+        command @ history repl.history.buffer@@ [ history repl.history.head@@ ]!
     then
 ;
 
@@ -203,6 +222,10 @@ user.home user.path_sep + ".sorth_history.json" + constant repl.history.path
 ;
 
 
+10 constant repl.multi_line.max_visible  ( The maximum number of lines the multi-line editor will )
+                                         ( grow to.  The virtual text can be larger than this. )
+
+
 ( The state of the repl's built in editor. )
 # repl.state  hidden
     is_multi_line? -> false , ( What mode are we in? )
@@ -212,6 +235,9 @@ user.home user.path_sep + ".sorth_history.json" + constant repl.history.path
 
     cursor.x -> 0 ,
     cursor.y -> 0 ,
+
+    visible_lines -> 1 ,
+    first_line -> 0 ,
 
     x -> 0 ,                  ( Editor's upper left x corner position. )
     y -> 0 ,                  ( Editor's upper left y corner position. )
@@ -298,11 +324,23 @@ user.home user.path_sep + ".sorth_history.json" + constant repl.history.path
                                 endof
                         endcase
                     endof
+
+                    term.return of
+                        repl.command.mode_switch command !
+                    endof
                 endcase
             endof
 
         term.ctrl+c of
                 repl.command.quit command !
+            endof
+
+        term.cmd+left of
+            repl.command.home command !
+            endof
+
+        term.cmd+right of
+             repl.command.end command !
             endof
 
         term.backspace of
@@ -321,7 +359,164 @@ user.home user.path_sep + ".sorth_history.json" + constant repl.history.path
 ;
 
 
-: repl.multi_line_edit  hidden  ( history_var state_var -- [source_text] bool )
+: repl.multi_line.repaint_line hidden
+    @ variable! state
+      variable! line
+;
+
+
+: repl.multi_line.repaint_current_line  hidden
+    @ variable! state
+
+    state repl.state.cursor.x@@  state repl.multi_line.repaint_line
+;
+
+
+: repl.multi_line.close_out  hidden
+;
+
+
+: repl.multi_line.compute_line  hidden
+    @ variable! state
+
+    ( Compute the cursor line to the actual visible line. )
+    state repl.state.cursor.y@@
+;
+
+
+: repl.multi_line.consolidate_string  hidden
+    @ variable! state
+;
+
+
+: repl.multi_line.adjust_cursor.x  hidden  ( move_x state_var -- )
+    @ variable! state
+      variable! new_x
+;
+
+
+: repl.multi_line.adjust_cursor.y  hidden  ( move_y state_var -- )
+    @ variable! state
+      variable! new_y
+;
+
+
+: repl.multi_line.home  hidden
+    @ variable! state
+;
+
+
+: repl.multi_line.end  hidden
+    @ variable! state
+;
+
+
+: repl.multi_line.delete  hidden
+    @ variable! state
+;
+
+
+: repl.multi-line.insert  hidden
+    @ variable! state
+      variable! char
+
+    state repl.state.lines@@ [ state repl.state.cursor.y@@ ]@ variable! line
+    line @ string.size@ variable! size
+    state repl.state.cursor.x@@ variable! position
+
+    position @  size @  >=
+    if
+        line @ char @ +  line !
+    else
+        char @ position @ line @ string.[]!  line !
+    then
+
+    line @ state repl.state.lines@@ [ state repl.state.cursor.y@@ ]!
+;
+
+
+: repl.multi_line.newline  hidden
+    @ variable! state
+;
+
+
+( Implementation of the multi-lime edit mode. )
+: repl.multi_line.edit  hidden  ( history_var state_var -- [source_text] bool )
+    @ variable! state
+    @ variable! history
+
+    false variable! is_done_editing?  ( Has the user finished editing the text? )
+    variable next_key                 ( Key associated with the command, if any. )
+
+    ( Get the command from the user and figure out what to do. )
+    repl.get_next_command
+    case
+        repl.command.up of
+                -1 state repl.multi_line.adjust_cursor.y
+            endof
+
+        repl.command.down of
+                1 state repl.multi_line.adjust_cursor.y
+            endof
+
+        repl.command.left of
+                -1 state repl.multi_line.adjust_cursor.x
+            endof
+
+        repl.command.right of
+                1 state repl.multi_line.adjust_cursor.x
+            endof
+
+        repl.command.backspace of
+                -1 state repl.multi_line.adjust_cursor.x
+
+                state repl.multi-line.delete
+                state repl.multi_line.repaint_current_line
+            endof
+
+        repl.command.delete of
+                state repl.multi_line.delete
+                state repl.multi_line.repaint_current_line
+            endof
+
+        repl.command.home of
+                state repl.multi_line.home
+            endof
+
+        repl.command.end of
+                state repl.multi_line.end
+            endof
+
+        repl.command.ret of
+                state repl.multi_line.newline
+            endof
+
+        repl.command.quit of
+                state repl.multi_line.close_out
+
+                "exit_failure quit"
+                true is_done_editing? !
+            endof
+
+        repl.command.mode_switch of
+                state repl.multi_line.close_out
+
+                state repl.multi_line.consolidate_string
+                true is_done_editing? !
+            endof
+
+        repl.command.key_press of
+                next_key !
+
+                next_key @  term.is_printable?
+                if
+                    next_key @ state repl.multi-line.insert
+                    state repl.multi_line.repaint_current_line
+                then
+            endof
+    endcase
+
+    is_done_editing? @
 ;
 
 
@@ -374,8 +569,82 @@ user.home user.path_sep + ".sorth_history.json" + constant repl.history.path
 ;
 
 
+( Take a command that potentially has \n new lines and "flatten" it to fit on one editor line. )
+( This is done to easily display the command in the single line mode of the editor.  If the user )
+( then switches to multi-line mode, the original new lines and whitespace are retained. )
+: repl.flatten_command  hidden  ( command -- flat_version )
+       variable! original
+    "" variable! new
+
+    original @ string.size@ variable! size
+    0 variable! index
+    variable next
+    false variable! is_in_string?
+
+    ( Copy original to new while filtering characters. )
+    begin
+        index @  size @  <
+    while
+        index @ original @ string.[]@  next !
+
+        next @
+        case
+            "\n" of
+                    ( Don't copy, unless the newline is in a string, if it is, filter it. )
+                    is_in_string? @
+                    if
+                        new @  "\n"  +  new !
+                    then
+                endof
+
+            "\\" of
+                    index @ ++  size @  <
+                    if
+                        index @ ++  original @  string.[]@  "\""  =
+                        if
+                            index @ ++  index !
+                            new @  "\\\""  +  new !
+                        else
+                            new @  next @  +  new !
+                        then
+                    else
+                        new @  next @  +  new !
+                    then
+                endof
+
+            "\"" of
+                    is_in_string? @  '  is_in_string? !
+                    new @  next @  +  new !
+                endof
+
+            " " of
+                    ( Only copy if the next character isn't also a space, and it isn't the last )
+                    ( character in the command.  If it looks like we're in a string preserve the )
+                    ( whitespace. )
+                    index @ ++  size @  <
+                    if
+                        index @ ++  original @  string.[]@  " "  <>
+                        is_in_string? @
+                        ||
+                        if
+                            new @  next @  +  new !
+                        then
+                    then
+                endof
+
+            ( Otherwise just copy the character. )
+            new @  next @  +  new !
+        endcase
+
+        index ++!
+    repeat
+.s
+    new @
+;
+
+
 ( Implementation of the single line edit mode. )
-: repl.single_line_edit  hidden  ( history_var state_var -- [source_text] edit_finished )
+: repl.single_line.edit  hidden  ( history_var state_var -- [source_text] edit_finished )
     @ variable! state
     @ variable! history
 
@@ -387,13 +656,12 @@ user.home user.path_sep + ".sorth_history.json" + constant repl.history.path
     case
         repl.command.up of
                 state repl.state.history_index@@  --  dup  state repl.state.history_index!!
-                history repl.history.relative@@
+                history repl.history.relative@@  repl.flatten_command
 
                 dup state repl.state.lines@@ [ 0 ]!
                 state repl.single_line.repaint
 
-                string.size@ dup state repl.state.cursor.x!!
-                term.cursor_right!
+                string.size@ dup state repl.state.cursor.x!!  term.cursor_right!
             endof
 
         repl.command.down of
@@ -401,11 +669,12 @@ user.home user.path_sep + ".sorth_history.json" + constant repl.history.path
 
                 dup  0<=
                 if
-                    history repl.history.relative@@  dup  state repl.state.lines@@ [ 0 ]!
+                    history repl.history.relative@@ repl.flatten_command
+
+                    dup  state repl.state.lines@@ [ 0 ]!
                     state repl.single_line.repaint
 
-                    string.size@ dup state repl.state.cursor.x!!
-                    term.cursor_right!
+                    string.size@ dup state repl.state.cursor.x!!  term.cursor_right!
                 else
                     1 state repl.state.history_index!!
 
@@ -487,7 +756,12 @@ user.home user.path_sep + ".sorth_history.json" + constant repl.history.path
         repl.command.quit of
                 "\r\n" term.!
                 "exit_failure quit"
-                true is_done_editing?
+                true is_done_editing? !
+            endof
+
+        repl.command.mode_switch of
+                true state repl.state.is_multi_line?!!
+                state repl.multi_line.repaint_current_line
             endof
 
         repl.command.key_press of
@@ -522,17 +796,17 @@ user.home user.path_sep + ".sorth_history.json" + constant repl.history.path
     term.cursor_position@  state repl.state.x!!
                            state repl.state.y!!
 
-    term.size@  state repl.state.height!!
-                state repl.state.width!!
+    term.size@  drop  1 state repl.state.height!!
+                state repl.state.x@@ - 1 -  state repl.state.width!!
 
     begin
         done @  '
     while
         state repl.state.is_multi_line?@@
         if
-            history state repl.multi_line_edit
+            history state repl.multi_line.edit
         else
-            history state repl.single_line_edit
+            history state repl.single_line.edit
         then
 
         done !
@@ -569,6 +843,7 @@ repl.history.new variable! repl.history.state
 
     ( Print the welcome banner. )
     sorth.version
+    user.os "macOS" = if "⌥+return" else "alt+enter" then
     "*
        Strange Forth REPL.
        Version: {}
@@ -576,6 +851,7 @@ repl.history.new variable! repl.history.state
        Enter quit, q, or exit to quit the REPL.
        Enter .w to show defined words.
        Enter show_word <word_name> to list detailed information about a word.
+       Hit {} to enter multi-line editing mode.
 
     *"
     string.format .cr
