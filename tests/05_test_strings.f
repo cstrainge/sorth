@@ -60,3 +60,20 @@ This line is different!
 "Should say 123: " .  1 3 "012345" string.substring  .cr
 
 "world" 1024 2048 "Hello {}, the value is {} and that's less than {}!" string.format .cr
+
+cr
+
+1024 variable! value
+"Message!" variable! message
+
+value @  message @  "{_8}  :  {<.20}"  string.format  .cr
+value @  message @  "{^_8}  :  {^.20}" string.format  .cr
+value @  message @  "{<_8}  :  {>.20}" string.format  .cr
+
+cr
+
+value @ 2 * value !
+
+value @  message @  "{9} : {<19}"  string.format  .cr
+value @  message @  "{^9} : {^19}" string.format  .cr
+value @  message @  "{<9} : {>19}" string.format  .cr
