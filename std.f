@@ -709,8 +709,8 @@
 
 
 
-( Given a format string and a postition after the begining brackect { extract the substring found )
-( within those brackets, {}  If there no spefier there an empty string, "", is returned instead. )
+( Given a format string and a position after the beginning bracket { extract the substring found )
+( within those brackets, {}  If there no specifier there an empty string, "", is returned instead. )
 ( in both cases an updated index is also returned that points to after the closing bracket, }. )
 : string.format.extract_specifier  hidden  ( index format_string -- new_index specifier_string )
     variable! format_str
@@ -851,7 +851,7 @@
 ;
 
 
-( Given a value and a sub-specifer convert the value to a string and format it according to the )
+( Given a value and a sub-specifier convert the value to a string and format it according to the )
 ( specifier string. )
 : string.format_value  hidden  ( value specifier -- formatted_value )
     variable! specifier
