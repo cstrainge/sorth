@@ -55,6 +55,50 @@ namespace sorth
 }
 
 
+inline std::string stringify(const std::string& input)
+{
+    std::string output = "\"";
+
+    for (size_t i = 0; i < input.size(); ++i)
+    {
+        char next = input[i];
+
+        switch (next)
+        {
+            case '\r': output += "\\r";  break;
+            case '\n': output += "\\n";  break;
+            case '\t': output += "\\n";  break;
+            case '\"': output += "\\\""; break;
+
+            default:   output += next;   break;
+        }
+    }
+
+    output += "\"";
+
+    return output;
+}
+
+
+inline std::string stringify(const sorth::Value& value)
+{
+    std::string result;
+
+    if (std::holds_alternative<std::string>(value))
+    {
+        result = stringify(std::get<std::string>(value));
+    }
+    else
+    {
+        std::stringstream stream;
+
+        stream << value;
+        result = stream.str();
+    }
+
+    return result;
+}
+
 
 namespace std
 {

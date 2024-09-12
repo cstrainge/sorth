@@ -622,7 +622,14 @@ namespace sorth
         {
             for (const auto& value : stack)
             {
-                stream << value << std::endl;
+                if (std::holds_alternative<std::string>(value))
+                {
+                    stream << stringify(value) << std::endl;
+                }
+                else
+                {
+                    stream << value << std::endl;
+                }
             }
         }
 
