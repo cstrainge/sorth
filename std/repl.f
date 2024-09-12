@@ -160,37 +160,40 @@ user.home user.path_sep + ".sorth_history.json" + constant repl.history.path
 : repl.history.load  hidden  ( history_var -- )
     @ variable! history
 
-    repl.history.path file.r/o file.open variable! fd
-    fd @ file.size@ fd @ file.string@ variable! json_text
-
-    json_text @ {}.from_json variable! history_data
-
-    history_data { "version" }@@  1  <>
+    repl.history.path  file.exists?
     if
-        history_data { "version" }@@ "Unknown version, {}, of the history file." string.format .cr
-    else
-        history_data { "max_items" }@@ variable! max_items
-        history_data { "items" }@@ variable! items
-        items [].size@@ variable! count
-        0 variable! index
+        repl.history.path file.r/o file.open variable! fd
+        fd @ file.size@ fd @ file.string@ variable! json_text
 
-        history repl.history.clear!!
+        json_text @ {}.from_json variable! history_data
 
-        history repl.history.max@@  max_items @  <>
+        history_data { "version" }@@  1  <>
         if
-            max_items @ history repl.history.max!!
-            max_items @ history repl.history.buffer@@ [].size!
+            history_data { "version" }@@ "Unknown version, {}, of the history file." string.format .cr
+        else
+            history_data { "max_items" }@@ variable! max_items
+            history_data { "items" }@@ variable! items
+            items [].size@@ variable! count
+            0 variable! index
+
+            history repl.history.clear!!
+
+            history repl.history.max@@  max_items @  <>
+            if
+                max_items @ history repl.history.max!!
+                max_items @ history repl.history.buffer@@ [].size!
+            then
+
+            begin
+                index @  count @  <
+            while
+                items [ count @ -- index @ - ]@@  history repl.history.append!!
+                index ++!
+            repeat
         then
 
-        begin
-            index @  count @  <
-        while
-            items [ count @ -- index @ - ]@@  history repl.history.append!!
-            index ++!
-        repeat
+        fd @ file.close
     then
-
-    fd @ file.close
 ;
 
 
