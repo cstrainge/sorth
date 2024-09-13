@@ -953,8 +953,8 @@
         snippet_index @  values [].size@@  <
         if
             output_string @
-
-            values [ snippet_index @ ]@@  specifiers [ snippet_index @ ]@@  string.format_value  +
+            values [ snippet_index @ ]@@  specifiers [ snippet_index @ ]@@  string.format_value
+            +
 
             output_string !
         then

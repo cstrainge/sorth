@@ -846,7 +846,7 @@ repl.history.new variable! repl.history.state
 
     ( Print the welcome banner. )
     sorth.version
-    user.os "macOS" = if "⌥+return" else "alt+enter" then
+    user.os "macOS" = if "⌥ + return" else "alt + enter" then
     "*
        Strange Forth REPL.
        Version: {}
