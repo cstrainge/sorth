@@ -1524,6 +1524,16 @@ namespace sorth
     }
 
 
+    void word_array_insert(InterpreterPtr& interpreter)
+    {
+        auto array = as_array(interpreter, interpreter->pop());
+        auto index = as_numeric<int64_t>(interpreter, interpreter->pop());
+        auto value = interpreter->pop();
+
+        array->insert(index, value);
+    }
+
+
     void word_array_resize(InterpreterPtr& interpreter)
     {
         auto array = as_array(interpreter, interpreter->pop());
@@ -2440,6 +2450,10 @@ namespace sorth
         ADD_NATIVE_WORD(interpreter, "[]@", word_array_read_index,
                         "Read a value from the array.",
                         "index array -- value");
+
+        ADD_NATIVE_WORD(interpreter, "[].insert", word_array_insert,
+                        "Grow an array by inserting a value at the given location.",
+                        "value index array -- ");
 
         ADD_NATIVE_WORD(interpreter, "[].size!", word_array_resize,
                         "Grow or shrink the array to the new size.",

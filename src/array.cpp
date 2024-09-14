@@ -66,6 +66,11 @@ namespace sorth
         items.resize((size_t)new_size);
     }
 
+    void Array::insert(int64_t index, const Value& value)
+    {
+        items.insert(std::next(items.begin(), index), value);
+    }
+
     void Array::push_front(const Value& value)
     {
         items.insert(items.begin(), value);
