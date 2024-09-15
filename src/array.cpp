@@ -71,6 +71,11 @@ namespace sorth
         items.insert(std::next(items.begin(), index), value);
     }
 
+    void Array::remove(int64_t index)
+    {
+        items.erase(std::next(items.begin(), index));
+    }
+
     void Array::push_front(const Value& value)
     {
         items.insert(items.begin(), value);

@@ -18,7 +18,9 @@ namespace sorth
             int64_t size() const;
             Value& operator [](int64_t index);
             void resize(int64_t new_size);
+
             void insert(int64_t index, const Value& value);
+            void remove(int64_t index);
 
         public:
             void push_front(const Value& value);

@@ -1530,7 +1530,20 @@ namespace sorth
         auto index = as_numeric<int64_t>(interpreter, interpreter->pop());
         auto value = interpreter->pop();
 
+        throw_if_out_of_bounds(interpreter, index, array->size(), "Array");
+
         array->insert(index, value);
+    }
+
+
+    void word_array_delete(InterpreterPtr& interpreter)
+    {
+        auto array = as_array(interpreter, interpreter->pop());
+        auto index = as_numeric<int64_t>(interpreter, interpreter->pop());
+
+        throw_if_out_of_bounds(interpreter, index, array->size(), "Array");
+
+        array->remove(index);
     }
 
 
@@ -2454,6 +2467,10 @@ namespace sorth
         ADD_NATIVE_WORD(interpreter, "[].insert", word_array_insert,
                         "Grow an array by inserting a value at the given location.",
                         "value index array -- ");
+
+        ADD_NATIVE_WORD(interpreter, "[].delete", word_array_delete,
+                        "Shrink an array by removing the value at the given location.",
+                        "index array -- ");
 
         ADD_NATIVE_WORD(interpreter, "[].size!", word_array_resize,
                         "Grow or shrink the array to the new size.",
