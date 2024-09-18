@@ -169,7 +169,8 @@ user.home user.path_sep + ".sorth_history.json" + constant repl.history.path
 
         history_data { "version" }@@  1  <>
         if
-            history_data { "version" }@@ "Unknown version, {}, of the history file." string.format .cr
+            history_data { "version" }@@
+            "Unknown version, {}, of the history file." string.format .cr
         else
             history_data { "max_items" }@@ variable! max_items
             history_data { "items" }@@ variable! items
@@ -236,11 +237,8 @@ user.home user.path_sep + ".sorth_history.json" + constant repl.history.path
     width -> 0 ,              ( How wide is the editor currently. )
     height -> 0 ,             ( If in multi-line, what is the editor's visible height? )
 
-    cursor.x -> 0 ,
-    cursor.y -> 0 ,
-
-    visible_lines -> 1 ,
-    first_line -> 0 ,
+    cursor.x -> 0 ,           ( The cursor's current x position. )
+    cursor.y -> 0 ,           ( The cursor's current y position. )
 
     x -> 0 ,                  ( Editor's upper left x corner position. )
     y -> 0 ,                  ( Editor's upper left y corner position. )
@@ -259,6 +257,16 @@ user.home user.path_sep + ".sorth_history.json" + constant repl.history.path
 
 : repl.state.cursor.x--!!  hidden
     dup repl.state.cursor.x@@ --  swap repl.state.cursor.x!!
+;
+
+
+: repl.state.cursor.y++!!  hidden
+    dup repl.state.cursor.y@@ ++  swap repl.state.cursor.y!!
+;
+
+
+: repl.state.cursor.y--!!  hidden
+    dup repl.state.cursor.y@@ --  swap repl.state.cursor.y!!
 ;
 
 
@@ -362,64 +370,276 @@ user.home user.path_sep + ".sorth_history.json" + constant repl.history.path
 ;
 
 
-: repl.multi_line.repaint_line hidden
+( Move the cursor to the beginning of the edit buffer. )
+: repl.multi_line.adjust_cursor.move_to_beginning  hidden  ( state_var -- )
+    @ variable! state
+
+    state repl.state.cursor.x@@ variable! x
+    state repl.state.cursor.y@@ variable! y
+
+    x @  0>
+    if
+        x @ term.cursor_left!
+    then
+
+    y @  0>
+    if
+        y @ term.cursor_up!
+    then
+
+    0 state repl.state.cursor.x!!
+    0 state repl.state.cursor.y!!
+;
+
+
+( Move the cursor to an arbitrary position within the edit buffer. )
+: repl.multi_line.adjust_cursor.move_to  hidden  ( x y state_var -- )
+    @ variable! state
+
+      variable! new_y
+      variable! new_x
+
+    state repl.state.cursor.x@@ variable! x
+    state repl.state.cursor.y@@ variable! y
+
+    new_x @  x @  -  variable! x_diff
+    new_y @  y @  -  variable! y_diff
+
+    x_diff @  0<
+    if
+        0 x_diff @ - term.cursor_left!
+    else
+        x_diff @  0>
+        if
+            x_diff @ term.cursor_right!
+        then
+    then
+
+    y_diff @  0<
+    if
+        0 y_diff @ - term.cursor_up!
+    else
+        y_diff @  0>
+        if
+            y_diff @ term.cursor_down!
+        then
+    then
+
+    new_x @  state repl.state.cursor.x!!
+    new_y @  state repl.state.cursor.y!!
+;
+
+
+( Move the cursor to the end of the edit buffer. )
+: repl.multi_line.adjust_cursor.move_to_end  hidden  ( state_var -- )
+    @ variable! state
+
+    state repl.state.cursor.y@@ variable! y
+    state repl.state.lines@@ [].size@ variable! count
+
+    count @  y @  - variable! diff
+
+    diff @  0>
+    if
+        diff @  term.cursor_down!
+    then
+
+    state repl.state.lines@@ [ count @ -- ]@ string.size@  dup  term.cursor_right!
+
+               state repl.state.cursor.x!!
+    count @ -- state repl.state.cursor.y!!
+;
+
+
+( Adjust the cursor right one position.  Making sure to wrap to the next line if we try to move )
+( beyond the end of the line. )
+: repl.multi_line.adjust_cursor.right  hidden  ( state_var -- )
+    @ variable! state
+
+    state repl.state.cursor.x@@ variable! x
+    state repl.state.cursor.y@@ variable! y
+
+    x ++!
+
+    x @  state repl.state.lines@@ [ y @ ]@ string.size@  >
+    if
+        y @  state repl.state.lines@@ [].size@ --  <
+        if
+            y ++!
+            0  x !
+        else
+            state repl.state.lines@@ [ y @ ]@ string.size@  x !
+        then
+    then
+
+    x @  y @  state repl.multi_line.adjust_cursor.move_to
+;
+
+
+( Adjust the cursor left one position.  If this would move past the beginning of the line wrap to )
+( the end of the previous line. )
+: repl.multi_line.adjust_cursor.left  hidden  ( state_var -- )
+    @ variable! state
+
+    state repl.state.cursor.x@@ variable! x
+    state repl.state.cursor.y@@ variable! y
+
+    x --!
+
+    x @  0<
+    if
+        y @  0  >
+        if
+            y --!
+            state repl.state.lines@@ [ y @ ]@ string.size@  x !
+        else
+            0  x !
+        then
+    then
+
+    x @  y @  state repl.multi_line.adjust_cursor.move_to
+;
+
+
+: repl.multi_line.adjust_cursor.up  hidden  ( state_var -- )
+    @ variable! state
+
+    state repl.state.cursor.x@@ variable! x
+    state repl.state.cursor.y@@ variable! y
+    0 variable! line_size
+
+    y --!
+
+    y @  0>=
+    if
+        state repl.state.lines@@ [ y @ ]@ string.size@  line_size !
+
+        x @  line_size @  >
+        if
+            line_size @  x !
+        then
+
+        x @  y @  state repl.multi_line.adjust_cursor.move_to
+    then
+;
+
+
+: repl.multi_line.adjust_cursor.down  hidden  ( state_var -- )
+    @ variable! state
+
+    state repl.state.cursor.x@@ variable! x
+    state repl.state.cursor.y@@ variable! y
+    0 variable! line_size
+
+    y ++!
+
+    y @  state repl.state.lines@@ [].size@  <
+    if
+        state repl.state.lines@@ [ y @ ]@ string.size@  line_size !
+
+        x @  line_size @  >
+        if
+            line_size @  x !
+        then
+
+        x @  y @  state repl.multi_line.adjust_cursor.move_to
+    then
+;
+
+
+( Move the cursor to the beginning of the current line. )
+: repl.multi_line.adjust_cursor.start_of_line  hidden  ( state_var -- )
+    @ variable! state
+
+    state repl.state.cursor.y@@ variable! y
+
+    0  y @  state repl.multi_line.adjust_cursor.move_to
+;
+
+
+( Move the cursor to the end of the current line. )
+: repl.multi_line.adjust_cursor.end_of_line  hidden  ( state_var -- )
+    @ variable! state
+
+    state repl.state.cursor.y@@ variable! y
+    state repl.state.lines@@ [ y @ ]@ string.size@ variable! line_size
+
+    line_size @  y @  state repl.multi_line.adjust_cursor.move_to
+;
+
+
+( Repaint the line at the given index.  If the cursor is currently on that line, make sure to )
+( maintain it's position. )
+: repl.multi_line.repaint_line  hidden  ( index state_var -- )
     @ variable! state
       variable! line
+
+    term.clear_line
+    "\r" term.!
+
+    line @  state repl.state.lines@@ [].size@  <
+    if
+        line @  0  =
+        if
+            "repl.prompt" execute
+        else
+            state repl.state.x@@ --  term.cursor_right!
+        then
+
+        line @ ++ "{3} | " string.format term.!
+
+        term.cursor_save
+
+        state repl.state.lines@@ [ line @ ]@  term.!
+
+        term.cursor_restore
+
+        state repl.state.cursor.y@@  line @  =
+        state repl.state.cursor.x@@  0>
+        &&
+        if
+            state repl.state.cursor.x@@  term.cursor_right!
+        then
+    then
 ;
 
 
-: repl.multi_line.repaint_current_line  hidden
+( Repaint the line the cursor is positioned on. )
+: repl.multi_line.repaint_current_line  hidden  ( state_var -- )
     @ variable! state
 
-    state repl.state.cursor.x@@  state repl.multi_line.repaint_line
+    state repl.state.cursor.y@@  state repl.multi_line.repaint_line
 ;
 
 
-: repl.multi_line.close_out  hidden
-;
-
-
-: repl.multi_line.compute_line  hidden
+( Repaint all lines in the current edit buffer.  As well preserve the current current cursor )
+( position. )
+: repl.multi_line.repaint_all_lines  hidden  ( state_var -- )
     @ variable! state
 
-    ( Compute the cursor line to the actual visible line. )
-    state repl.state.cursor.y@@
+    state repl.state.cursor.x@@ variable! x
+    state repl.state.cursor.y@@ variable! y
+
+    state repl.state.lines@@ [].size@ variable! count
+    0 variable! index
+
+    state repl.multi_line.adjust_cursor.move_to_beginning
+
+    begin
+        index @  count @  <
+    while
+        state repl.multi_line.repaint_current_line
+        state repl.multi_line.adjust_cursor.down
+
+        index ++!
+    repeat
+
+    x @  y @  state repl.multi_line.adjust_cursor.move_to
 ;
 
 
-: repl.multi_line.consolidate_string  hidden
-    @ variable! state
-;
-
-
-: repl.multi_line.adjust_cursor.x  hidden  ( move_x state_var -- )
-    @ variable! state
-      variable! new_x
-;
-
-
-: repl.multi_line.adjust_cursor.y  hidden  ( move_y state_var -- )
-    @ variable! state
-      variable! new_y
-;
-
-
-: repl.multi_line.home  hidden
-    @ variable! state
-;
-
-
-: repl.multi_line.end  hidden
-    @ variable! state
-;
-
-
-: repl.multi_line.delete  hidden
-    @ variable! state
-;
-
-
-: repl.multi-line.insert  hidden
+( Insert a new character into the buffer at the current cursor location. )
+: repl.multi_line.insert  hidden  ( new_char state_var -- )
     @ variable! state
       variable! char
 
@@ -438,8 +658,91 @@ user.home user.path_sep + ".sorth_history.json" + constant repl.history.path
 ;
 
 
-: repl.multi_line.newline  hidden
+: repl.multi_line.delete  hidden  ( state_var -- )
     @ variable! state
+
+    state repl.state.cursor.x@@ variable! x
+    state repl.state.cursor.y@@ variable! y
+
+    state repl.state.lines@@ variable! lines
+
+
+    ( If we're at the end of the line, we're removing the previous one, if it it exists.  In that )
+    ( case we append the previous line onto this one. )
+    x @  lines [ y @ ]@@ string.size@  =
+    if
+        y @ ++  lines [].size@@  <
+        if
+            lines [ y @ ]@@  lines [ y @ ++ ]@@  +  lines [ y @ ]!!
+            y @ ++  lines @  [].delete
+
+            ( Repaint the buffer. )
+            state repl.multi_line.repaint_all_lines
+        then
+    else
+        lines [ y @ ]@@  string.size@  0>
+        if
+            ( Looks like we're just deleting from within the current line. )
+            1  x @  lines [ y @ ]@@  string.remove  lines [ y @ ]!!
+            state repl.multi_line.repaint_current_line
+        then
+    then
+;
+
+
+( Insert a new line into the edit buffer at the current cursor position. )
+: repl.multi_line.newline  hidden  ( state_var -- )
+    @ variable! state
+
+    state repl.state.lines@@ variable! lines  ( Grab the current edit buffer. )
+
+    ( Cache the cursor position. )
+    state repl.state.cursor.x@@ variable! x
+    state repl.state.cursor.y@@ variable! y
+
+    ( Create the new line. )
+    ""  y @ ++  lines @  [].insert
+
+    ( If the cursor isn't at the end of the line, move all remaining text into the new line. )
+    x @  lines [ y @ ]@@ string.size@  <
+    if
+        x @  string.npos  lines [ y @ ]@@  string.sub_string  lines [ y @ ++ ]!!
+        string.npos  x @  lines [ y @ ]@@  string.remove  lines [ y @ ]!!
+    then
+
+    ( Move to the end of the buffer and make sure we make room for the new line. )
+    state repl.multi_line.adjust_cursor.move_to_end
+    "\r\n" term.!
+
+    0  y @ ++  state repl.multi_line.adjust_cursor.move_to
+
+    ( Refresh the editor display. )
+    state repl.multi_line.repaint_all_lines
+;
+
+
+( Take the text from the editor buffer and convert it to a consolidated string for execution in )
+( the repl. )
+: repl.multi_line.consolidate_string  hidden  ( state_var -- edited_text )
+    @ variable! state
+
+    state repl.state.lines@@ variable! lines
+
+    0 variable! index
+    "" variable! output
+
+    begin
+        index @  lines @ [].size@  <
+    while
+        output @  lines [ index @ ]@@  +
+        index @  lines [].size@@ --  <  if "\n" + then
+
+        output !
+
+        index ++!
+    repeat
+
+    output @
 ;
 
 
@@ -455,39 +758,36 @@ user.home user.path_sep + ".sorth_history.json" + constant repl.history.path
     repl.get_next_command
     case
         repl.command.up of
-                -1 state repl.multi_line.adjust_cursor.y
+                state repl.multi_line.adjust_cursor.up
             endof
 
         repl.command.down of
-                1 state repl.multi_line.adjust_cursor.y
+                state repl.multi_line.adjust_cursor.down
             endof
 
         repl.command.left of
-                -1 state repl.multi_line.adjust_cursor.x
+                state repl.multi_line.adjust_cursor.left
             endof
 
         repl.command.right of
-                1 state repl.multi_line.adjust_cursor.x
+                state repl.multi_line.adjust_cursor.right
             endof
 
         repl.command.backspace of
-                -1 state repl.multi_line.adjust_cursor.x
-
-                state repl.multi-line.delete
-                state repl.multi_line.repaint_current_line
+                state repl.multi_line.adjust_cursor.left
+                state repl.multi_line.delete
             endof
 
         repl.command.delete of
                 state repl.multi_line.delete
-                state repl.multi_line.repaint_current_line
             endof
 
         repl.command.home of
-                state repl.multi_line.home
+                state repl.multi_line.adjust_cursor.start_of_line
             endof
 
         repl.command.end of
-                state repl.multi_line.end
+                state repl.multi_line.adjust_cursor.end_of_line
             endof
 
         repl.command.ret of
@@ -495,16 +795,20 @@ user.home user.path_sep + ".sorth_history.json" + constant repl.history.path
             endof
 
         repl.command.quit of
-                state repl.multi_line.close_out
+                state repl.multi_line.adjust_cursor.move_to_end
+                "\r\n" term.!
 
                 "exit_failure quit"
                 true is_done_editing? !
             endof
 
         repl.command.mode_switch of
-                state repl.multi_line.close_out
-
                 state repl.multi_line.consolidate_string
+                dup history repl.history.append!!
+
+                state repl.multi_line.adjust_cursor.move_to_end
+                "\r\n" term.!
+
                 true is_done_editing? !
             endof
 
@@ -513,7 +817,9 @@ user.home user.path_sep + ".sorth_history.json" + constant repl.history.path
 
                 next_key @  term.is_printable?
                 if
-                    next_key @ state repl.multi-line.insert
+                    next_key @ state repl.multi_line.insert
+
+                    state repl.state.cursor.x++!!
                     state repl.multi_line.repaint_current_line
                 then
             endof
