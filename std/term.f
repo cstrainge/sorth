@@ -110,15 +110,29 @@ term.csi "0;0m" + constant term.crst  ( Sequence to reset the colours to default
 
 
 : term.cursor_left! description: "Move the cursor left a given number of spaces."
-                    signature: " -- "
+                    signature: "count -- "
     term.csi swap + "D" + term.!
     term.flush
 ;
 
 
 : term.cursor_right! description: "Move the cursor right a given number of spaces."
-                     signature: " -- "
+                     signature: "count -- "
     term.csi swap + "C" + term.!
+    term.flush
+;
+
+
+: term.cursor_up! description: "Move the cursor up a given number of lines."
+                  signature: "count -- "
+    term.csi swap + "A" + term.!
+    term.flush
+;
+
+
+: term.cursor_down! description: "Move the cursor down a given number of lines."
+                    signature: "count -- "
+    term.csi swap + "B" + term.!
     term.flush
 ;
 
