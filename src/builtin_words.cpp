@@ -1322,10 +1322,28 @@ namespace sorth
     void word_string_remove(InterpreterPtr& interpreter)
     {
         auto string = as_string(interpreter, interpreter->pop());
-        auto position = (size_t)as_numeric<int64_t>(interpreter, interpreter->pop());
+        auto start = (size_t)as_numeric<int64_t>(interpreter, interpreter->pop());
         auto count = (size_t)as_numeric<int64_t>(interpreter, interpreter->pop());
 
-        string.erase(position, count);
+        if (   (start < 0)
+            || (start > string.size()))
+        {
+            std::stringstream message;
+
+            message << "string.remove start index, " << start << ", outside of the string.";
+            throw_error(message.str());
+        }
+
+        if (   (count != std::string::npos)
+            && ((start + count) > string.size()))
+        {
+            std::stringstream message;
+
+            message << "string.remove end index, " << start + count << ", outside of the string.";
+            throw_error(message.str());
+        }
+
+        string.erase(start, count);
 
         interpreter->push(string);
     }
@@ -1337,6 +1355,46 @@ namespace sorth
         auto search_str = as_string(interpreter, interpreter->pop());
 
         interpreter->push((int64_t)string.find(search_str, 0));
+    }
+
+
+    void word_string_sub_string(InterpreterPtr& interpreter)
+    {
+        auto string = as_string(interpreter, interpreter->pop());
+        auto end = (size_t)as_numeric<int64_t>(interpreter, interpreter->pop());
+        auto start = (size_t)as_numeric<int64_t>(interpreter, interpreter->pop());
+
+        if (   (end != std::string::npos)
+            && (end < start))
+        {
+            std::stringstream message;
+
+            message << "string.substring end index, " << end
+                    << ", before start index, " << start << ".";
+            throw_error(message.str());
+        }
+
+        if (   (start < 0)
+            || (start > string.size()))
+        {
+            std::stringstream message;
+
+            message << "string.substring start index, " << start << ", outside of the string.";
+            throw_error(message.str());
+        }
+
+        if (   (end != std::string::npos)
+            && (end > string.size()))
+        {
+            std::stringstream message;
+
+            message << "Substring end index, " << end << ", outside of the string.";
+            throw_error(message.str());
+        }
+
+        auto sub_string = string.substr(start, end);
+
+        interpreter->push(sub_string);
     }
 
 
@@ -1529,8 +1587,6 @@ namespace sorth
         auto array = as_array(interpreter, interpreter->pop());
         auto index = as_numeric<int64_t>(interpreter, interpreter->pop());
         auto value = interpreter->pop();
-
-        throw_if_out_of_bounds(interpreter, index, array->size(), "Array");
 
         array->insert(index, value);
     }
@@ -2403,6 +2459,10 @@ namespace sorth
         ADD_NATIVE_WORD(interpreter, "string.find", word_string_find,
                         "Find the first instance of a string within another.",
                         "search_string string -- index");
+
+        ADD_NATIVE_WORD(interpreter, "string.sub_string", word_string_sub_string,
+                        "Return the string segment between a given start and end point.",
+                        "start end string -- sub_string");
 
         ADD_NATIVE_WORD(interpreter, "string.[]@", word_string_index_read,
                         "Read a character from the given string.",
