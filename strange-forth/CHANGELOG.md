@@ -2,6 +2,34 @@
 
 Latest updates to the published version of this package.
 
+### 0.1.16
+
+#### Many updates to the language:
+
+* Added binary literals.
+* Added terminal words.
+* Added the word string.format
+* Added the word %.
+* Struct words can no be hidden.
+* Automatically define more convenience words for accessing struct fields like struct.field!! and struct.field@@
+* Added multi-line strings.
+
+* Rewrote the repl.
+    * Added an experimental multi-line mode.
+    * History saving and restoring is more robust.  It's also .sorth_history.json now.
+* Made the printing of arrays and hash tables nicer.
+* Made the stack dump nicer.
+* Made bytecode output cleaner.
+
+* Started work on an extension system.  (Currently only working in Windows.)
+    * Including a C based API for extension from other languages.
+
+* Fixed bugs with json generation.
+* Fixed bugs with exception handling.
+* Minor fixes and cleanups.
+* Made the syntax highlighting more robust.
+* Minor build cleanups and optimizations.
+
 ### 0.1.10
 
 Fixed multi-line comments syntax highlighting.
