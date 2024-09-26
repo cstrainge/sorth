@@ -217,20 +217,20 @@ ls.standard_words ds.add_std_symbols
     if
         found_word !
 
-        found_word tk.token.contents@  ds.find_symbol
+        found_word tk.token.contents@@  ds.find_symbol
         if
             symbol !
 
-            "### " found_word tk.token.contents@ + "\\n\\n" +
+            "### " found_word tk.token.contents@@ + "\\n\\n" +
 
-            symbol ds.document.symbol.description@  ""  <>
+            symbol ds.document.symbol.description@@  ""  <>
             if
-                "__Description:__ " + symbol ds.document.symbol.description@ + "\\n\\n" +
+                "__Description:__ " + symbol ds.document.symbol.description@@ + "\\n\\n" +
             then
 
-            symbol ds.document.symbol.signature@  ""  <>
+            symbol ds.document.symbol.signature@@  ""  <>
             if
-                "__Signature:__\\n" + symbol ds.document.symbol.signature@ + "\\n" +
+                "__Signature:__\\n" + symbol ds.document.symbol.signature@@ + "\\n" +
             then
 
             description !
@@ -242,13 +242,13 @@ ls.standard_words ds.add_std_symbols
                 } ,
                 "range" -> {
                     "start" -> {
-                        "line" -> found_word tk.token.location.line@ ,
-                        "character" -> found_word tk.token.location.character@
+                        "line" -> found_word tk.token.location.line@@ ,
+                        "character" -> found_word tk.token.location.character@@
                     } ,
                     "end" -> {
-                        "line" -> found_word tk.token.location.line@ ,
-                        "character" -> found_word tk.token.location.character@
-                                       found_word tk.token.contents@  string.size@  +
+                        "line" -> found_word tk.token.location.line@@ ,
+                        "character" -> found_word tk.token.location.character@@
+                                       found_word tk.token.contents@@  string.size@  +
                     }
                 }
             }

@@ -11,24 +11,11 @@
 ;
 
 
-
-
-: tk.location.uri!        tk.location.uri        swap @ #! ;
-: tk.location.line!       tk.location.line       swap @ #! ;
-: tk.location.character!  tk.location.character  swap @ #! ;
-
-: tk.location.uri@        tk.location.uri        swap @ #@ ;
-: tk.location.line@       tk.location.line       swap @ #@ ;
-: tk.location.character@  tk.location.character  swap @ #@ ;
-
-
-
-
 ( Overbidden constructor that takes a uri and initializes the line and character to default. )
 : tk.location.new  ( uri -- tk.location )
     tk.location.new variable! location
 
-    location tk.location.uri!
+    location tk.location.uri!!
 
     location @
 ;
@@ -43,11 +30,11 @@
     "\n" =
     if
         ( We're incrementing lines, so reset colum and increment the line. )
-        0 location tk.location.character!
-        location tk.location.line@ ++ location tk.location.line!
+        0 location tk.location.character!!
+        location tk.location.line@@ ++ location tk.location.line!!
     else
         ( This isn't a new line, so we're just incrementing the character. )
-        location tk.location.character@ ++ location tk.location.character!
+        location tk.location.character@@ ++ location tk.location.character!!
     then
 ;
 
@@ -71,22 +58,11 @@
 ;
 
 
-: tk.token.location!    tk.token.location    swap @ #! ;
-: tk.token.line_count!  tk.token.line_count  swap @ #! ;
-: tk.token.type!        tk.token.type        swap @ #! ;
-: tk.token.contents!    tk.token.contents    swap @ #! ;
-
-: tk.token.location@    tk.token.location    swap @ #@ ;
-: tk.token.line_count@  tk.token.line_count  swap @ #@ ;
-: tk.token.type@        tk.token.type        swap @ #@ ;
-: tk.token.contents@    tk.token.contents    swap @ #@ ;
-
-
 
 
 ( Is the token variable holding a word token? )
 : tk.token.is_word?  ( token_variable -- bool )
-    tk.token.type@ tk.token_type:word =
+    tk.token.type@@ tk.token_type:word =
 ;
 
 
@@ -94,7 +70,7 @@
 
 ( Is the token variable holding a word comment? )
 : tk.token.is_comment?  ( token_variable -- bool )
-    tk.token.type@ tk.token_type:comment =
+    tk.token.type@@ tk.token_type:comment =
 ;
 
 
@@ -102,7 +78,7 @@
 
 ( Is the token variable holding a string token? )
 : tk.token.is_string?  ( token_variable -- bool )
-    tk.token.type@ tk.token_type:string =
+    tk.token.type@@ tk.token_type:string =
 ;
 
 
@@ -110,7 +86,7 @@
 
 ( Is the token variable holding a number token? )
 : tk.token.is_number?  ( token_variable -- bool )
-    tk.token.type@ tk.token_type:number =
+    tk.token.type@@ tk.token_type:number =
 ;
 
 
@@ -118,7 +94,7 @@
 
 ( Is the token variable holding a end of stream token? )
 : tk.token.is_eos?  ( token_variable -- bool )
-    tk.token.type@ tk.token_type:eos =
+    tk.token.type@@ tk.token_type:eos =
 ;
 
 
@@ -151,24 +127,13 @@
 
 
 
-: tk.buffer.location!  tk.buffer.location  swap @ #! ;
-: tk.buffer.index!     tk.buffer.index     swap @ #! ;
-: tk.buffer.source!    tk.buffer.source    swap @ #! ;
-
-: tk.buffer.location@  tk.buffer.location  swap @ #@ ;
-: tk.buffer.index@     tk.buffer.index     swap @ #@ ;
-: tk.buffer.source@    tk.buffer.source    swap @ #@ ;
-
-
-
-
 ( Create a new source code buffer from the file's uri and contents. )
 : tk.buffer.new  ( uri source_code -- tk.buffer )
     tk.buffer.new variable! source_buffer
 
-                    source_buffer tk.buffer.source!
-    tk.location.new source_buffer tk.buffer.location!
-    0               source_buffer tk.buffer.index!
+                    source_buffer tk.buffer.source!!
+    tk.location.new source_buffer tk.buffer.location!!
+    0               source_buffer tk.buffer.index!!
 
     source_buffer @
 ;
@@ -179,8 +144,8 @@
 : tk.buffer.is_eos?  ( tk.buffer_var -- is_eos? )
     @ variable! source_buffer
 
-    source_buffer tk.buffer.index@
-    source_buffer tk.buffer.source@ string.size@
+    source_buffer tk.buffer.index@@
+    source_buffer tk.buffer.source@@ string.size@
 
     >=
 ;
@@ -196,8 +161,8 @@
     if
         " "
     else
-        source_buffer tk.buffer.index@
-        source_buffer tk.buffer.source@
+        source_buffer tk.buffer.index@@
+        source_buffer tk.buffer.source@@
 
         string.[]@
     then
@@ -215,9 +180,9 @@
         " "
     else
         source_buffer tk.buffer.peek
-        source_buffer dup tk.buffer.index@ ++ swap tk.buffer.index!
+        source_buffer dup tk.buffer.index@@ ++ swap tk.buffer.index!
 
-        dup source_buffer tk.buffer.location@ tk.location.inc
+        dup source_buffer tk.buffer.location@@ tk.location.inc
     then
 ;
 
@@ -320,7 +285,7 @@
 
     1 variable! n_lines
 
-    start_location tk.location.line@ last_line @ <>
+    start_location tk.location.line@@ last_line @ <>
     if
         last_line @ start_location tk.location.line@ - n_lines !
     then
@@ -461,7 +426,7 @@
     source_buffer tk.buffer.skip_whitespace
 
     ( Get our starting location from the buffer. )
-    source_buffer tk.buffer.location@ value.copy variable! start_location
+    source_buffer tk.buffer.location@@ value.copy variable! start_location
     1 variable! n_lines
     variable token_type
 
@@ -529,11 +494,11 @@
 
         next_token tk.token.is_comment?
         if
-            base_token tk.token.contents@ [ base_token tk.token.contents@ [].size@ -- ]@ base_end !
-            next_token tk.token.contents@ [ 0 ]@ next_start !
+            base_token tk.token.contents@@ [ base_token tk.token.contents@@ [].size@ -- ]@ base_end !
+            next_token tk.token.contents@@ [ 0 ]@ next_start !
 
-            next_start tk.token.location.line@
-            base_end tk.token.location.line@
+            next_start tk.token.location.line@@
+            base_end tk.token.location.line@@
             -
 
             1 <=
@@ -567,15 +532,15 @@
     while
         tokens [ index @ ]@@ next_token !
 
-        base_token tk.token.location.line@ next_token tk.token.location.line@
+        base_token tk.token.location.line@@ next_token tk.token.location.line@@
         <>
         if
-            base_token tk.token.line_count@ next_token tk.token.line_count@ +
-            base_token tk.token.line_count!
+            base_token tk.token.line_count@@ next_token tk.token.line_count@@ +
+            base_token tk.token.line_count!!
         then
 
-        base_token tk.token.contents@ next_token tk.token.contents@ [].+
-        base_token tk.token.contents!
+        base_token tk.token.contents@@ next_token tk.token.contents@@ [].+
+        base_token tk.token.contents!!
 
         index ++!
     repeat

@@ -35,19 +35,6 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 ;
 
 
-: ds.document.symbol.is_immediate!  ds.document.symbol.is_immediate  swap @ #! ;
-: ds.document.symbol.description!   ds.document.symbol.description   swap @ #! ;
-: ds.document.symbol.signature!     ds.document.symbol.signature     swap @ #! ;
-: ds.document.symbol.location!      ds.document.symbol.location      swap @ #! ;
-: ds.document.symbol.type!          ds.document.symbol.type          swap @ #! ;
-
-: ds.document.symbol.is_immediate@  ds.document.symbol.is_immediate  swap @ #@ ;
-: ds.document.symbol.description@   ds.document.symbol.description   swap @ #@ ;
-: ds.document.symbol.signature@     ds.document.symbol.signature     swap @ #@ ;
-: ds.document.symbol.location@      ds.document.symbol.location      swap @ #@ ;
-: ds.document.symbol.type@          ds.document.symbol.type          swap @ #@ ;
-
-
 
 
 ( Definition of an editable document and all of it's supporting information.  It is this document )
@@ -61,19 +48,6 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 ;
 
 
-: ds.document.uri!         ds.document.uri         swap @ #! ;
-: ds.document.version!     ds.document.version     swap @ #! ;
-: ds.document.token_list!  ds.document.token_list  swap @ #! ;
-: ds.document.symbols!     ds.document.symbols     swap @ #! ;
-: ds.document.contents!    ds.document.contents    swap @ #! ;
-
-: ds.document.uri@         ds.document.uri         swap @ #@ ;
-: ds.document.version@     ds.document.version     swap @ #@ ;
-: ds.document.token_list@  ds.document.token_list  swap @ #@ ;
-: ds.document.symbols@     ds.document.symbols     swap @ #@ ;
-: ds.document.contents@    ds.document.contents    swap @ #@ ;
-
-
 
 
 ( Construct a new instance of the structure ds.document.  This version takes the document's uri, )
@@ -81,11 +55,11 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 : ds.document.new  ( uri version contents -- ds.document )
     ds.document.new variable! document
 
-    document ds.document.contents!
-    document ds.document.version!
-    document ds.document.uri!
+    document ds.document.contents!!
+    document ds.document.version!!
+    document ds.document.uri!!
 
-    {}.new document ds.document.symbols!
+    {}.new document ds.document.symbols!!
 
     document @
 ;
@@ -108,7 +82,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
         index @  size @  <
     while
         tokens [ index @ ]@@  token !
-        token tk.token.contents@  token_text !
+        token tk.token.contents@@  token_text !
 
         token_text @  "("  <>
         token_text @  ")"  <>
@@ -149,11 +123,11 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 
         previous_token tk.token.is_comment?
         if
-            previous_token tk.token.contents@  [ previous_token tk.token.contents@ [].size@ -- ]@
+            previous_token tk.token.contents@@  [ previous_token tk.token.contents@@ [].size@ -- ]@
             end_token !
 
-            end_token tk.token.location.line@  base_token tk.token.location.line@     =
-            end_token tk.token.location.line@  base_token tk.token.location.line@ --  =
+            end_token tk.token.location.line@@  base_token tk.token.location.line@@     =
+            end_token tk.token.location.line@@  base_token tk.token.location.line@@ --  =
             ||
             if
                 previous_token @
@@ -191,8 +165,8 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 
         next_token tk.token.is_comment?
         if
-            next_token tk.token.location.line@  base_token tk.token.location.line@     =
-            next_token tk.token.location.line@  base_token tk.token.location.line@ ++  =
+            next_token tk.token.location.line@@  base_token tk.token.location.line@@     =
+            next_token tk.token.location.line@@  base_token tk.token.location.line@@ ++  =
             ||
             if
                 next_token @
@@ -232,9 +206,9 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 
         next_token tk.token.is_word?
         if
-            next_token tk.token.contents@  end_word @  <>
+            next_token tk.token.contents@@  end_word @  <>
             if
-                next_token tk.token.contents@  keyword @  =
+                next_token tk.token.contents@@  keyword @  =
                 if
                     true found_token? !
                     break
@@ -443,7 +417,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
     while
         tokens [ index @ ]@@  token !
 
-        token tk.token.contents@
+        token tk.token.contents@@
         case
             "(" of endof
             ")" of endof
@@ -483,8 +457,8 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
     start_index @ "description:" ";" tokens @ ds.document.scan_for_keyword_string
     if
         description !
-        description tk.token.contents@  ds.document.remove_string_quotes
-                                        ds.document.filter_markdown       description !
+        description tk.token.contents@@  ds.document.remove_string_quotes
+                                         ds.document.filter_markdown       description !
     else
         start_index @ tokens @ ds.document.scan_for_previous_comment
         if
@@ -509,9 +483,9 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
     if
         signature !
 
-        signature tk.token.contents@  ds.document.remove_string_quotes
-                                      ds.document.tokenize_string
-                                      ds.document.signature_to_markdown  signature !
+        signature tk.token.contents@@  ds.document.remove_string_quotes
+                                       ds.document.tokenize_string
+                                       ds.document.signature_to_markdown  signature !
     else
         start_index ++!
         start_index @ tokens @ ds.document.scan_for_next_comment
@@ -573,7 +547,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
                 location -> name tk.token.location@ ,
                 type -> ds.document.symbol_type:word
             }
-            document ds.document.symbols@ { name tk.token.contents@ }!
+            document ds.document.symbols@@ { name tk.token.contents@@ }!
         then
     then
 ;
@@ -587,7 +561,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
     variable! fields
     variable! name_token
 
-    name_token tk.token.contents@  variable! name_text
+    name_token tk.token.contents@@  variable! name_text
 
     fields [].size@@  variable! size
     variable index
@@ -602,7 +576,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
             location -> name_token tk.token.location@ ,
             type -> ds.document.symbol_type:struct
         }
-        document ds.document.symbols@ { fields [ index @ ]@@ }!
+        document ds.document.symbols@@ { fields [ index @ ]@@ }!
 
         #.new ds.document.symbol {
             is_immediate -> false ,
@@ -613,7 +587,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
             location -> name_token tk.token.location@ ,
             type -> ds.document.symbol_type:struct
         }
-        document ds.document.symbols@ { name_text @ "." + fields [ index @ ]@@ + }!
+        document ds.document.symbols@@ { name_text @ "." + fields [ index @ ]@@ + }!
 
         index ++!
     repeat
@@ -651,7 +625,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 
         next_token tk.token.is_word?
         if
-            next_token tk.token.contents@ ";"  =
+            next_token tk.token.contents@@ ";"  =
             if
                 break
             then
@@ -694,22 +668,22 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 
     #.new ds.document.symbol {
         is_immediate -> false ,
-        description -> "Create a new instance of the structure, " name_token tk.token.contents@ + ,
-        signature -> " -- " name_token tk.token.contents@ +  ds.document.tokenize_string
-                                                             ds.document.signature_to_markdown ,
-        location -> name_token tk.token.location@ ,
+        description -> "Create a new instance of the structure, " name_token tk.token.contents@@ + ,
+        signature -> " -- " name_token tk.token.contents@@ +  ds.document.tokenize_string
+                                                              ds.document.signature_to_markdown ,
+        location -> name_token tk.token.location@@ ,
         type -> ds.document.symbol_type:struct
     }
-    document ds.document.symbols@ { name_token tk.token.contents@ ".new" + }!
+    document ds.document.symbols@@ { name_token tk.token.contents@@ ".new" + }!
 
     #.new ds.document.symbol {
         is_immediate -> false ,
         description -> description @ ,
         signature -> "" ,
-        location -> name_token tk.token.location@ ,
+        location -> name_token tk.token.location@@ ,
         type -> ds.document.symbol_type:struct
     }
-    document ds.document.symbols@ { name_token tk.token.contents@ }!
+    document ds.document.symbols@@ { name_token tk.token.contents@@ }!
 
     name_token @  fields @  field_descriptions @  ds.document.add_struct_field_symbols
 ;
@@ -732,7 +706,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
                                    ds.document.filter_markdown
                                    description !
     else
-        "Push index for variable, " name_token tk.token.contents@ + "." +  description !
+        "Push index for variable, " name_token tk.token.contents@@ + "." +  description !
     then
 
     #.new ds.document.symbol {
@@ -740,10 +714,10 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
         description -> description @ ,
         signature -> " -- variable_index" ds.document.tokenize_string
                                           ds.document.signature_to_markdown ,
-        location -> name_token tk.token.location@ ,
+        location -> name_token tk.token.location@@ ,
         type -> ds.document.symbol_type:variable
     }
-    document ds.document.symbols@ { name_token tk.token.contents@ }!
+    document ds.document.symbols@@ { name_token tk.token.contents@@ }!
 ;
 
 
@@ -764,7 +738,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
                                    ds.document.filter_markdown
                                    description !
     else
-        "Push constant value, " name_token tk.token.contents@ + "." +  description !
+        "Push constant value, " name_token tk.token.contents@@ + "." +  description !
     then
 
     #.new ds.document.symbol {
@@ -772,10 +746,10 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
         description -> description @ ,
         signature -> " -- value" ds.document.tokenize_string
                                  ds.document.signature_to_markdown ,
-        location -> name_token tk.token.location@ ,
+        location -> name_token tk.token.location@@ ,
         type -> ds.document.symbol_type:constant
     }
-    document ds.document.symbols@ { name_token tk.token.contents@ }!
+    document ds.document.symbols@@ { name_token tk.token.contents@@ }!
 ;
 
 
@@ -785,7 +759,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 : ds.document.generate_tokens  ( document_variable -- )
     @ variable! document
 
-    document ds.document.uri@  document ds.document.contents@  tk.tokenize
+    document ds.document.uri@@  document ds.document.contents@@  tk.tokenize
     document ds.document.token_list!
 ;
 
@@ -798,7 +772,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 : ds.document.generate_symbols  ( document_variable -- )
     @ variable! document
 
-    document ds.document.token_list@ variable! tokens
+    document ds.document.token_list@@ variable! tokens
     tokens [].size@@ variable! size
 
     variable index
@@ -813,7 +787,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 
         next_token tk.token.is_word?
         if
-            next_token tk.token.contents@
+            next_token tk.token.contents@@
             case
                 ":"         of  index @ tokens @ document ds.document.symbolize_new_word      endof
                 "#"         of  index @ tokens @ document ds.document.symbolize_new_struct    endof
@@ -837,11 +811,11 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
         variable! document
         variable! uri
 
-        ds.symbol_table @              is_value_hash_table?
-        document ds.document.symbols@  is_value_hash_table?
+        ds.symbol_table @               is_value_hash_table?
+        document ds.document.symbols@@  is_value_hash_table?
         &&
         if
-            ds.symbol_table @  document ds.document.symbols@  {}.+ drop
+            ds.symbol_table @  document ds.document.symbols@@  {}.+ drop
         then
     ;
 
@@ -904,7 +878,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 : ds.insert_document  ( uri version contents -- )
     ds.document.new variable! new_document
 
-    new_document @ ds.document_store { new_document ds.document.uri@ }!!
+    new_document @ ds.document_store { new_document ds.document.uri@@ }!!
 
     new_document ds.document.generate_tokens
     new_document ds.document.generate_symbols
@@ -954,8 +928,8 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
     variable! uri
     variable! location
 
-    location tk.location.line@ variable! line
-    location tk.location.character@ variable! character
+    location tk.location.line@@ variable! line
+    location tk.location.character@@ variable! character
 
     variable document
     variable tokens
@@ -969,7 +943,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
     uri @  ds.find_document
     if
         document !
-        document ds.document.token_list@  tokens !
+        document ds.document.token_list@@  tokens !
         tokens [].size@@  size !
 
         begin
@@ -979,11 +953,11 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 
             token tk.token.is_word?
             if
-                line @  token tk.token.location.line@  =
+                line @  token tk.token.location.line@@  =
                 if
-                    character @  token tk.token.location.character@  >=
-                    character @  token tk.token.location.character@
-                                 token tk.token.contents@ string.size@  +  <
+                    character @  token tk.token.location.character@@  >=
+                    character @  token tk.token.location.character@@
+                                 token tk.token.contents@@ string.size@  +  <
                     &&
                     if
                         true found_word? !
@@ -992,7 +966,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
                 then
             then
 
-            line @  token tk.token.location.line@  <
+            line @  token tk.token.location.line@@  <
             if
                 break
             then

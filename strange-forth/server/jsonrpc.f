@@ -91,13 +91,6 @@
 ;
 
 
-: jsonrpc.header.content_type!!      jsonrpc.header.content_type   swap @ #! ;
-: jsonrpc.header.content_length!!    jsonrpc.header.content_length swap @ #! ;
-
-: jsonrpc.header.content_type@@      jsonrpc.header.content_type   swap @ #@ ;
-: jsonrpc.header.content_length@@    jsonrpc.header.content_length swap @ #@ ;
-
-
 
 
 ( Override the default constructor and setup reasonable default values. )
