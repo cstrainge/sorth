@@ -501,6 +501,7 @@ user.home user.path_sep + ".sorth_history.json" + constant repl.history.path
 ;
 
 
+( Move the cursor up one line. )
 : repl.multi_line.adjust_cursor.up  hidden  ( state_var -- )
     @ variable! state
 
@@ -524,6 +525,7 @@ user.home user.path_sep + ".sorth_history.json" + constant repl.history.path
 ;
 
 
+( Bump the cursor down one line. )
 : repl.multi_line.adjust_cursor.down  hidden  ( state_var -- )
     @ variable! state
 
@@ -658,6 +660,7 @@ user.home user.path_sep + ".sorth_history.json" + constant repl.history.path
 ;
 
 
+( Delete a character from the buffer at the current cursor position. )
 : repl.multi_line.delete  hidden  ( state_var -- )
     @ variable! state
 
@@ -665,7 +668,6 @@ user.home user.path_sep + ".sorth_history.json" + constant repl.history.path
     state repl.state.cursor.y@@ variable! y
 
     state repl.state.lines@@ variable! lines
-
 
     ( If we're at the end of the line, we're removing the previous one, if it it exists.  In that )
     ( case we append the previous line onto this one. )
