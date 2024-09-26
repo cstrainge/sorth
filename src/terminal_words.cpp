@@ -236,34 +236,6 @@ namespace sorth
                                        GetLastError());
 
                 interpreter->push(std::string(1, buffer));
-
-                /*
-                INPUT_RECORD console_input = { 0 };
-                DWORD num_read = 0;
-                KEY_EVENT_RECORD key_record;
-
-                std_in_handle = GetStdHandle(STD_INPUT_HANDLE);
-
-                do
-                {
-                    auto result = ReadConsoleInputA(std_in_handle, &console_input, 1, &num_read);
-
-                    if (!result)
-                    {
-                        throw_windows_error(*interpreter,
-                                            "Could not read keypress:",
-                                            GetLastError());
-                    }
-
-                    if (console_input.EventType == KEY_EVENT)
-                    {
-                        key_record = console_input.Event.KeyEvent;
-                    }
-                }
-                while (   (console_input.EventType != KEY_EVENT)
-                       && (key_record.bKeyDown));
-
-                interpreter->push(std::string(1, key_record.uChar.AsciiChar)); */
             }
 
 
