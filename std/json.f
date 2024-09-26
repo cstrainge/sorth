@@ -62,9 +62,9 @@
 
 ( Convert a given value to a json formatted string. )
 : json.to_json_value hidden  ( value -- string )
-    dup is_value_string?
+    dup is_value_structure?
     if
-        "\"" swap json.filter_json_string + "\"" +
+        #.to_json
     else
         dup is_value_hash_table?
         if
@@ -74,15 +74,15 @@
             if
                 json.to_json_array
             else
-                dup is_value_number?
-                dup is_value_boolean?
-                ||
+                dup is_value_string?
                 if
-                    to_string
+                    "\"" swap json.filter_json_string + "\"" +
                 else
-                    dup is_value_structure?
+                    dup is_value_number?
+                    dup is_value_boolean?
+                    ||
                     if
-                        #.to_json
+                        to_string
                     else
                         drop
                         "Unsupported json value type." throw
