@@ -2510,7 +2510,7 @@ namespace sorth
 
         ADD_NATIVE_WORD(interpreter, "[].new", word_array_new,
                         "Create a new array with the given default size.",
-                        " -- array");
+                        "size -- array");
 
         ADD_NATIVE_WORD(interpreter, "[].size@", word_array_size,
                         "Read the size of the array object.",
