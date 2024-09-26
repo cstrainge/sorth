@@ -48,6 +48,10 @@ namespace sorth::internal
                         {
                             value = (int64_t)std::stoll(token.text, nullptr, 16);
                         }
+                        else if ((token.text[0] == '0') && (token.text[1] == 'b'))
+                        {
+                            value = (int64_t)std::stoll(token.text.substr(2), nullptr, 2);
+                        }
                         else
                         {
                             value = (int64_t)std::stoll(token.text);
