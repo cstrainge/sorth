@@ -7,7 +7,7 @@
     "url": "https://github.com/cstrainge/sorth/tree/main"
   },
   "publisher": "cstrainge",
-  "version": "0.1.10",
+  "version": "0.1.16",
   "icon": "./assets/strange-forth-logo.png",
   "keywords": [
     "Forth",
