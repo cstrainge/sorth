@@ -4,7 +4,7 @@ This language extension supports a variant of Forth, Strange Forth.
 
 ## Features
 
-This is still early days for the language and the extension.  Currently `sorth`, or Strange Forth only runs on MacOS and Linux.  Both on x86-64 and Arm64.
+This is still early days for the language and the extension.  Currently `sorth`, or Strange Forth  runs on macOS, Linux and Windows.  Both on x86-64 and Arm64.
 
 See [the Strange Forth repository](https://github.com/cstrainge/sorth/tree/main) for details on the language itself and to acquire the interpreter for local development.
 
