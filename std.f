@@ -1386,21 +1386,6 @@ then
 
 
 
-( Alternate ways to exit the interpreter. )
-: q  description: "Exit the interpreter."
-     signature: "[exit_code] -- "
-    quit
-;
-
-
-: exit description: "Exit the interpreter."
-       signature: "[exit_code] -- "
-    quit
-;
-
-
-
-
 ( Make sure that advanced terminal and user functionality is available.  If it is, enable the )
 ( 'fancy' repl capable of keeping history.  Otherwise enable the simpler repl. )
 defined? term.raw_mode

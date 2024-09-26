@@ -530,23 +530,6 @@ namespace sorth
     }
 
 
-    void word_quit(InterpreterPtr& interpreter)
-    {
-        if (!interpreter->is_stack_empty())
-        {
-            auto value = interpreter->pop();
-
-            if (is_numeric(value))
-            {
-                auto exit_code = as_numeric<int64_t>(interpreter, value);
-                interpreter->set_exit_code((int)exit_code);
-            }
-        }
-
-        interpreter->halt();
-    }
-
-
     void word_reset(InterpreterPtr& interpreter)
     {
         // Once the reset occurs any handler registered has probably ceased to exist.  So,
@@ -559,51 +542,6 @@ namespace sorth
         interpreter->clear_stack();
 
         interpreter->mark_context();
-    }
-
-
-    void word_at_exit(InterpreterPtr& interpreter)
-    {
-        at_exit_interpreter = interpreter;
-        at_exit_value = interpreter->pop();
-
-        atexit([]()
-            {
-                try
-                {
-                    if (at_exit_interpreter)
-                    {
-                        // Make sure that the halt flag is cleared so the interpreter will run our
-                        // code.
-                        at_exit_interpreter->clear_halt_flag();
-
-                        // Now attempt to execute the at_exit word handler.
-                        if (is_string(at_exit_value))
-                        {
-                            auto word_name = as_string(at_exit_interpreter, at_exit_value);
-                            at_exit_interpreter->execute_word(word_name);
-                        }
-                        else
-                        {
-                            auto word_index = as_numeric<int64_t>(at_exit_interpreter,
-                                                                  at_exit_value);
-                            auto& word_info = at_exit_interpreter->get_handler_info(word_index);
-
-                            word_info.function(at_exit_interpreter);
-                        }
-                    }
-                }
-                catch (const std::runtime_error& error)
-                {
-                    std::cerr << "Exit handler exception: " << error.what() << std::endl;
-                }
-                catch (...)
-                {
-                    std::cerr << "Exit handler: Unexpected exception occurred." << std::endl;
-                }
-
-                at_exit_interpreter = nullptr;
-            });
     }
 
 
@@ -2212,17 +2150,9 @@ namespace sorth
     void register_builtin_words(InterpreterPtr& interpreter)
     {
         // Manage the interpreter state.
-        ADD_NATIVE_WORD(interpreter, "quit", word_quit,
-                        "Exit the interpreter.",
-                        "[exit_code] -- ");
-
         ADD_NATIVE_WORD(interpreter, "reset", word_reset,
                         "Reset the interpreter to it's default state.",
                         " -- ");
-
-        ADD_NATIVE_WORD(interpreter, "at_exit", word_at_exit,
-                        "Run the given word when the interpreter exits.",
-                        "word -- ");
 
         ADD_NATIVE_WORD(interpreter, "include", word_include,
                         "Include and execute another source file.",

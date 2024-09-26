@@ -1146,11 +1146,30 @@ repl.history.new variable! repl.history.state
 ;
 
 
+( Ways to exit the repl. )
+false variable! repl.is_quitting?
+
+
+: quit description: "Exit the interpreter."
+       signature: " -- "
+    true repl.is_quitting? !
+;
+
+
+: q  description: "Exit the interpreter."
+     signature: " -- "
+    quit
+;
+
+
+: exit description: "Exit the interpreter."
+       signature: " -- "
+    quit
+;
+
+
 : repl  description: "Sorth's Read Evaluate and print loop.  This word does not return."
         signature: " -- "
-
-    ( Make sure we clean up after ourselves when exiting. )
-    at_exit repl.on_exit
 
     ( Print the welcome banner. )
     sorth.version
@@ -1179,7 +1198,7 @@ repl.history.new variable! repl.history.state
     ( Loop forever.  If the user enters a quit command the execution of this script will end at )
     ( that point. )
     begin
-        true
+        repl.is_quitting? @
     while
         try
             ( Read and attempt to execute the user command. )

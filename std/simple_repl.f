@@ -5,14 +5,33 @@
 ;
 
 
-( This gets called automatically when the repl exits. )
-: repl.exit_handler hidden "ok" .cr ;
+( Ways to exit the repl. )
+false variable! repl.is_quitting?
+
+
+: quit description: "Exit the interpreter."
+       signature: " -- "
+    true repl.is_quitting? !
+;
+
+
+: q  description: "Exit the interpreter."
+     signature: " -- "
+    quit
+;
+
+
+: exit description: "Exit the interpreter."
+       signature: " -- "
+    quit
+;
 
 
 ( Implementation of the language's REPL. )
 : repl description: "Sorth's REPL: read, evaluate, and print loop."
        signature: " -- "
 
+    ( Print the welcome banner. )
     sorth.version
     "*
        Strange Forth REPL.
@@ -23,14 +42,10 @@
        Enter show_word <word_name> to list detailed information about a word.
 
     *"
-    string.format .
-
-    at_exit repl.exit_handler
+    string.format .cr
 
     begin
-        ( Loop forever, because when the user enters the quit command the interpreter will exit )
-        ( gracefully on it's own. )
-        true
+        repl.is_quitting? @
     while
         try
             ( Always make sure we get the newest version of the prompt.  That way the user can )
