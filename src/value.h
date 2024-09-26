@@ -52,6 +52,10 @@ namespace sorth
     bool operator ==(const sorth::Value& rhs, const sorth::Value& lhs);
 
 
+    // Keep track of indenting for pretty printing certain value types like arrays and hashmaps.
+    extern thread_local uint64_t value_print_indent;
+
+
 }
 
 

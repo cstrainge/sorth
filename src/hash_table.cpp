@@ -12,32 +12,49 @@ namespace sorth
 
     std::ostream& operator <<(std::ostream& stream, const HashTablePtr& table)
     {
-        static thread_local int indent = 0;
-
-        auto write_indent = [&]()
-            {
-                for (int i = 0; i < indent; ++i)
-                {
-                    stream << "    ";
-                }
-            };
-
-        ++indent;
-
         stream << "{" << std::endl;
+
+        value_print_indent += 4;
+
+        int index = 0;
 
         for (const auto& item : table->get_items())
         {
-            write_indent();
+            stream << std::string(value_print_indent, ' ');
 
-            stream << item.first << " -> " << item.second << std::endl;
+            if (std::holds_alternative<std::string>(item.first))
+            {
+                stream << stringify(item.first);
+            }
+            else
+            {
+                stream << item.first;
+            }
+
+            stream << " -> ";
+
+            if (std::holds_alternative<std::string>(item.second))
+            {
+                stream << stringify(item.second);
+            }
+            else
+            {
+                stream << item.second;
+            }
+
+            if (index < table->get_items().size() - 1)
+            {
+                stream << " ,";
+            }
+
+            stream << std::endl;
+
+            ++index;
         }
 
-        --indent;
+        value_print_indent -= 4;
 
-        write_indent();
-
-        stream << "}";
+        stream << std::string(value_print_indent, ' ') << "}";
 
 
         return stream;

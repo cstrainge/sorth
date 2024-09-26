@@ -8,19 +8,25 @@ namespace sorth
 
     std::ostream& operator <<(std::ostream& stream, const DataObjectPtr& data)
     {
-        static thread_local uint64_t indent = 4;
-
         if (data)
         {
             stream << "# " << data->definition->name << "\n";
 
+            value_print_indent += 4;
+
             for (size_t i = 0; i < data->fields.size(); ++i)
             {
-                stream << std::string(indent, ' ') << data->definition->fieldNames[i] << " -> ";
+                stream << std::string(value_print_indent, ' ')
+                       << data->definition->fieldNames[i] << " -> ";
 
-                indent += 4;
-                stream << data->fields[i];
-                indent -= 4;
+                if (std::holds_alternative<std::string>(data->fields[i]))
+                {
+                    stream << stringify(data->fields[i]);
+                }
+                else
+                {
+                    stream << data->fields[i];
+                }
 
                 if (i < data->fields.size() - 1)
                 {
@@ -28,14 +34,9 @@ namespace sorth
                 }
             }
 
-            if (indent > 4)
-            {
-                stream << "\n" << std::string(indent - 4, ' ') << ";";
-            }
-            else
-            {
-                stream << "\n;" << std::endl;
-            }
+            value_print_indent -= 4;
+
+            stream << "\n" << std::string(value_print_indent, ' ') << ";";
         }
         else
         {

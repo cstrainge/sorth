@@ -10,6 +10,9 @@ namespace sorth
     using namespace internal;
 
 
+    thread_local uint64_t value_print_indent = 0;
+
+
     // Let's make sure we can convert values to text for displaying to the user among various other
     // uses like writing to a text file.
     template <typename variant>
