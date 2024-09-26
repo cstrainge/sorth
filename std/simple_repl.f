@@ -45,7 +45,7 @@ false variable! repl.is_quitting?
     string.format .cr
 
     begin
-        repl.is_quitting? @
+        repl.is_quitting? @ '
     while
         try
             ( Always make sure we get the newest version of the prompt.  That way the user can )

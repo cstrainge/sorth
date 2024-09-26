@@ -1198,7 +1198,7 @@ false variable! repl.is_quitting?
     ( Loop forever.  If the user enters a quit command the execution of this script will end at )
     ( that point. )
     begin
-        repl.is_quitting? @
+        repl.is_quitting? @ '
     while
         try
             ( Read and attempt to execute the user command. )
