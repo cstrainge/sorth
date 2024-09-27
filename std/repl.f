@@ -1150,25 +1150,25 @@ repl.history.new variable! repl.history.state
 false variable! repl.is_quitting?
 
 
-: quit description: "Exit the interpreter."
+: quit description: "Exit the repl."
        signature: " -- "
     true repl.is_quitting? !
 ;
 
 
-: q  description: "Exit the interpreter."
+: q  description: "Exit the repl."
      signature: " -- "
     quit
 ;
 
 
-: exit description: "Exit the interpreter."
+: exit description: "Exit the repl."
        signature: " -- "
     quit
 ;
 
 
-: repl  description: "Sorth's Read Evaluate and print loop.  This word does not return."
+: repl  description: "Sorth's Read Evaluate and print loop."
         signature: " -- "
 
     ( Print the welcome banner. )

@@ -9,19 +9,19 @@
 false variable! repl.is_quitting?
 
 
-: quit description: "Exit the interpreter."
+: quit description: "Exit the repl."
        signature: " -- "
     true repl.is_quitting? !
 ;
 
 
-: q  description: "Exit the interpreter."
+: q  description: "Exit the repl."
      signature: " -- "
     quit
 ;
 
 
-: exit description: "Exit the interpreter."
+: exit description: "Exit the repl."
        signature: " -- "
     quit
 ;
