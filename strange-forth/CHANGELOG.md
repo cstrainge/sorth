@@ -2,6 +2,10 @@
 
 Latest updates to the published version of this package.
 
+### 0.1.17
+
+Updated language server for the changes and fixes introduced in v0.1.16.
+
 ### 0.1.16
 
 #### Many updates to the language:
