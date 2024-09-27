@@ -147,6 +147,8 @@ jsonrpc.reserved_error_range_end constant lsp.server_error_end
             then
         then
     catch
+        variable! error dup
+
         "Message handling exception.\n" swap + lsp.log_message
 
         id @  ""  <>
@@ -155,7 +157,7 @@ jsonrpc.reserved_error_range_end constant lsp.server_error_end
 
             {
                 "code" -> lsp.internal_error ,
-                "message" -> "Internal error, exception occurred."
+                "message" -> error @
             }
 
             lsp.failed_response

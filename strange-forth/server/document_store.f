@@ -544,7 +544,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
                 is_immediate -> is_immediate @ ,
                 description -> description @ ,
                 signature -> signature @ ,
-                location -> name tk.token.location@ ,
+                location -> name tk.token.location@@ ,
                 type -> ds.document.symbol_type:word
             }
             document ds.document.symbols@@ { name tk.token.contents@@ }!
@@ -573,7 +573,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
             is_immediate -> false ,
             description -> descriptions [ index @ ]@@ ,
             signature -> "" ,
-            location -> name_token tk.token.location@ ,
+            location -> name_token tk.token.location@@ ,
             type -> ds.document.symbol_type:struct
         }
         document ds.document.symbols@@ { fields [ index @ ]@@ }!
@@ -584,7 +584,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
                            " -- " + descriptions [ index @ ]@@ + ,
             signature -> " -- field_index" ds.document.tokenize_string
                                            ds.document.signature_to_markdown ,
-            location -> name_token tk.token.location@ ,
+            location -> name_token tk.token.location@@ ,
             type -> ds.document.symbol_type:struct
         }
         document ds.document.symbols@@ { name_text @ "." + fields [ index @ ]@@ + }!
@@ -635,7 +635,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 
             found ++!
 
-            next_token tk.token.contents@  fields [ found @ -- ]!!
+            next_token tk.token.contents@@  fields [ found @ -- ]!!
             index @  tokens @  ds.document.scan_for_next_comment
             if
                 tk.token.contents swap #@  ds.document.stringify_comment
@@ -760,7 +760,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
     @ variable! document
 
     document ds.document.uri@@  document ds.document.contents@@  tk.tokenize
-    document ds.document.token_list!
+    document ds.document.token_list!!
 ;
 
 
@@ -778,7 +778,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
     variable index
     variable next_token
 
-    {}.new document ds.document.symbols!
+    {}.new document ds.document.symbols!!
 
     begin
         index @  size @  <
@@ -902,11 +902,11 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
     if
         document !
 
-        uri @       document ds.document.uri!
-        version @   document ds.document.version!
+        uri @       document ds.document.uri!!
+        version @   document ds.document.version!!
 
         ( TODO: Change this to enable partial updates. )
-        contents @  document ds.document.contents!
+        contents @  document ds.document.contents!!
 
         document    ds.document.generate_tokens
         document    ds.document.generate_symbols
@@ -944,6 +944,7 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
     if
         document !
         document ds.document.token_list@@  tokens !
+
         tokens [].size@@  size !
 
         begin

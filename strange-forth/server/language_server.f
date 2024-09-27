@@ -216,7 +216,6 @@ ls.standard_words ds.add_std_symbols
     uri @ ds.scan_for_word
     if
         found_word !
-
         found_word tk.token.contents@@  ds.find_symbol
         if
             symbol !

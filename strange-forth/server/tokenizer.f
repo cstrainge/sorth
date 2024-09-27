@@ -100,7 +100,7 @@
 
 
 
-: tk.token.location.line@  ( token_index -- token_line )
+: tk.token.location.line@@  ( token_index -- token_line )
     @ variable! token
 
     tk.location.line tk.token.location token @ #@ #@
@@ -108,7 +108,7 @@
 
 
 
-: tk.token.location.character@  ( token_index -- token_character )
+: tk.token.location.character@@  ( token_index -- token_character )
     @ variable! token
 
     tk.location.character tk.token.location token @ #@ #@
@@ -180,7 +180,7 @@
         " "
     else
         source_buffer tk.buffer.peek
-        source_buffer dup tk.buffer.index@@ ++ swap tk.buffer.index!
+        source_buffer dup tk.buffer.index@@ ++ swap tk.buffer.index!!
 
         dup source_buffer tk.buffer.location@@ tk.location.inc
     then
@@ -259,7 +259,7 @@
 
     begin
         source_buffer tk.buffer.skip_whitespace
-        source_buffer tk.buffer.location@ value.copy current_location !
+        source_buffer tk.buffer.location@@ value.copy current_location !
         source_buffer tk.buffer.read_token_text current_text !
 
         current_text "" <>
@@ -287,7 +287,7 @@
 
     start_location tk.location.line@@ last_line @ <>
     if
-        last_line @ start_location tk.location.line@ - n_lines !
+        last_line @ start_location tk.location.line@@ - n_lines !
     then
 
     n_lines @
@@ -607,7 +607,7 @@
     while
         source_buffer tk.buffer.read_token token !
 
-        token tk.token.type@ tk.token_type:eos <>
+        token tk.token.type@@ tk.token_type:eos <>
         if
             token_list [].size++!!
             token @ token_list [ token_list [].size@@ -- ]!!
