@@ -1757,6 +1757,14 @@ namespace sorth
     }
 
 
+    void word_hash_table_size(InterpreterPtr& interpreter)
+    {
+        auto hash = as_hash_table(interpreter, interpreter->pop());
+
+        interpreter->push(hash->size());
+    }
+
+
     void word_hash_table_iterate(InterpreterPtr& interpreter)
     {
         auto table = as_hash_table(interpreter, interpreter->pop());
@@ -2551,6 +2559,10 @@ namespace sorth
                         "Take two hashes and deep copy the contents from the second into the "
                         "first.",
                         "dest source -- dest");
+
+        ADD_NATIVE_WORD(interpreter, "{}.size@", word_hash_table_size,
+                        "Get the size of the hash table.",
+                        "table -- size");
 
         ADD_NATIVE_WORD(interpreter, "{}.iterate", word_hash_table_iterate,
                         "Iterate through a hash table and call a word for each item.",
