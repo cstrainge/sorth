@@ -3,7 +3,7 @@
 FILE_NAME=sorth_lsp_log.txt
 
 
-echo "Launching server" > $FILE_NAME
+echo "Launching server"
 
 shift
 
@@ -13,7 +13,7 @@ ARCH=$2
 shift
 shift
 
-echo "Server launching with: ${PLATFORM}--${ARCH}" &>> $FILE_NAME
+echo "Server launching with: ${PLATFORM}--${ARCH}"
 
 
-exec ./bin/${ARCH}/${PLATFORM}/sorth server/language_server.f $@ &>> $FILE_NAME
+exec ./bin/${ARCH}/${PLATFORM}/sorth server/language_server.f $@
