@@ -33,6 +33,11 @@ namespace sorth
     };
 
 
+    // Create a new data object for the given definition.
+    DataObjectPtr make_data_object(InterpreterPtr& interpreter,
+                                   const DataObjectDefinitionPtr& definition_ptr);
+
+
     // When we print out a data structure we include the definition so that we can include field
     // names along with the name of the type itself.
     std::ostream& operator <<(std::ostream& stream, const DataObjectPtr& data);

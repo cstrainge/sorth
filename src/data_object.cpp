@@ -66,4 +66,21 @@ namespace sorth
     }
 
 
+    DataObjectPtr make_data_object(InterpreterPtr& interpreter,
+                                   const DataObjectDefinitionPtr& definition)
+    {
+        auto new_data = std::make_shared<DataObject>();
+
+        new_data->definition = definition;
+        new_data->fields.resize(definition->fieldNames.size());
+
+        for (int index = 0; index < definition->defaults.size(); ++index)
+        {
+            new_data->fields[index] = deep_copy_value(interpreter, definition->defaults[index]);
+        }
+
+        return new_data;
+    }
+
+
 }
