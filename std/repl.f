@@ -949,7 +949,7 @@ user.home user.path_sep + ".sorth_history.json" + constant repl.history.path
 
         index ++!
     repeat
-.s
+
     new @
 ;
 
