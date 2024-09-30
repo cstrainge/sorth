@@ -204,4 +204,101 @@ namespace sorth
     }
 
 
+    Value deep_copy_value(InterpreterPtr& interpreter, Value& value)
+    {
+        if (   std::holds_alternative<int64_t>(value)
+            || std::holds_alternative<double>(value)
+            || std::holds_alternative<bool>(value)
+            || std::holds_alternative<std::string>(value)
+            || std::holds_alternative<internal::Token>(value)
+            || std::holds_alternative<internal::Location>(value)
+            || std::holds_alternative<internal::ByteCode>(value))
+        {
+            return value;
+        }
+
+        if (std::holds_alternative<DataObjectPtr>(value))
+        {
+            return deep_copy_data_object(interpreter, value);
+        }
+
+        if (std::holds_alternative<ArrayPtr>(value))
+        {
+            return deep_copy_array(interpreter, value);
+        }
+
+        if (std::holds_alternative<ByteBufferPtr>(value))
+        {
+            return deep_copy_byte_buffer(interpreter, value);
+        }
+
+        if (std::holds_alternative<HashTablePtr>(value))
+        {
+            return deep_copy_hash_table(interpreter, value);
+        }
+
+        throw_error(*interpreter, "Deep copy of unexpected type.");
+    }
+
+
+
+    Value deep_copy_data_object(InterpreterPtr& interpreter, Value& value)
+    {
+        auto original = std::get<DataObjectPtr>(value);
+        auto new_object = std::make_shared<DataObject>();
+
+        new_object->definition = original->definition;
+        new_object->fields.resize(original->fields.size());
+
+        for (size_t i = 0; i < original->fields.size(); ++i)
+        {
+            new_object->fields[i] = deep_copy_value(interpreter, original->fields[i]);
+        }
+
+        return new_object;
+    }
+
+
+    Value deep_copy_array(InterpreterPtr& interpreter, Value& value)
+    {
+        auto original = std::get<ArrayPtr>(value);
+        auto new_object = std::make_shared<Array>(original->size());
+
+        for (size_t i = 0; i < (size_t)original->size(); ++i)
+        {
+            (*new_object)[i] = deep_copy_value(interpreter, (*original)[i]);
+        }
+
+        return new_object;
+    }
+
+
+    Value deep_copy_byte_buffer(InterpreterPtr& interpreter, Value& value)
+    {
+        auto original = std::get<ByteBufferPtr>(value);
+        auto new_object = std::make_shared<ByteBuffer>(original->size());
+
+        memcpy(new_object->data_ptr(), original->data_ptr(), original->size());
+
+        return new_object;
+    }
+
+
+    Value deep_copy_hash_table(InterpreterPtr& interpreter, Value& value)
+    {
+        auto original = std::get<HashTablePtr>(value);
+        auto new_object = std::make_shared<HashTable>();
+
+        for (auto entry : original->get_items())
+        {
+            auto key = entry.first;
+            auto value = entry.second;
+            new_object->insert(deep_copy_value(interpreter, key),
+                               deep_copy_value(interpreter, value));
+        }
+
+        return new_object;
+    }
+
+
 }
