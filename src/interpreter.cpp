@@ -86,8 +86,12 @@ namespace sorth
                 virtual bool is_stack_empty() const override;
                 virtual void clear_stack() override;
 
+                virtual int64_t depth() const override;
                 virtual void push(const Value& value) override;
                 virtual Value pop() override;
+
+                virtual Value pick(int64_t index) override;
+                virtual void push_to(int64_t index) override;
 
             public:
                 virtual VariableList& get_variables() override;
@@ -646,6 +650,12 @@ namespace sorth
         }
 
 
+        int64_t InterpreterImpl::depth() const
+        {
+            return stack.size();
+        }
+
+
         void InterpreterImpl::push(const Value& value)
         {
             stack.push_front(value);
@@ -663,6 +673,27 @@ namespace sorth
             stack.pop_front();
 
             return next;
+        }
+
+
+        Value InterpreterImpl::pick(int64_t index)
+        {
+            auto iterator = stack.begin();
+
+            std::advance(iterator, index);
+
+            auto value = *iterator;
+
+            stack.erase(iterator);
+
+            return value;
+        }
+
+
+        void InterpreterImpl::push_to(int64_t index)
+        {
+            auto value = pop();
+            stack.insert(std::next(stack.begin(), index), value);
         }
 
 
@@ -707,6 +738,7 @@ namespace sorth
                     .is_hidden = is_hidden,
                     .description = shared_description,
                     .signature = shared_signature,
+                    .location = location,
                     .handler_index = word_handlers.insert({
                             .name = word,
                             .function = handler,

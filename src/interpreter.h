@@ -58,9 +58,12 @@ namespace sorth
             virtual bool is_stack_empty() const = 0;
             virtual void clear_stack() = 0;
 
+            virtual int64_t depth() const = 0;
             virtual void push(const Value& value) = 0;
             virtual Value pop() = 0;
 
+            virtual Value pick(int64_t index) = 0;
+            virtual void push_to(int64_t index) = 0;
 
         public:
             virtual VariableList& get_variables() = 0;

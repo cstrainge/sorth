@@ -239,10 +239,6 @@ namespace sorth
 
 
 
-        Value deep_copy_value(InterpreterPtr& interpreter, Value& value);
-
-
-
         void create_data_definition_words(const Location& location,
                                           InterpreterPtr& interpreter,
                                           DataObjectDefinitionPtr& definition_ptr,
@@ -252,19 +248,9 @@ namespace sorth
             const bool is_scripted = false;
 
             interpreter->add_word(definition_ptr->name + ".new",
-                [definition_ptr](auto interpreter)
+                [=](auto interpreter)
                 {
-                    DataObjectPtr new_object = std::make_shared<DataObject>();
-
-                    new_object->definition = definition_ptr;
-                    new_object->fields.resize(definition_ptr->fieldNames.size());
-
-                    for (size_t i = 0; i < definition_ptr->defaults.size(); ++i)
-                    {
-                        new_object->fields[i] = deep_copy_value(interpreter,
-                                                                definition_ptr->defaults[i]);
-                    }
-
+                    auto new_object = make_data_object(interpreter, definition_ptr);
                     interpreter->push(new_object);
                 },
                 location,
@@ -389,141 +375,66 @@ namespace sorth
         }
 
 
-        DataObjectDefinitionPtr make_word_info_definition()
+        DataObjectDefinitionPtr make_location_info_definition()
         {
-            DataObjectDefinitionPtr definition_ptr = std::make_shared<DataObjectDefinition>();
+            auto location_definition = std::make_shared<DataObjectDefinition>();
 
-            definition_ptr->name = "word_info";
-            definition_ptr->fieldNames.push_back("is_immediate");
-            definition_ptr->fieldNames.push_back("is_scripted");
-            definition_ptr->fieldNames.push_back("description");
-            definition_ptr->fieldNames.push_back("signature");
-            definition_ptr->fieldNames.push_back("handler_index");
+            location_definition->name = "sorth.location";
+            location_definition->fieldNames.push_back("path");
+            location_definition->fieldNames.push_back("line");
+            location_definition->fieldNames.push_back("column");
 
-            return definition_ptr;
+            return location_definition;
         }
 
 
+        DataObjectDefinitionPtr make_word_info_definition()
+        {
+            auto word_definition = std::make_shared<DataObjectDefinition>();
+
+            word_definition->name = "sorth.word";
+            word_definition->fieldNames.push_back("name");
+            word_definition->fieldNames.push_back("is_immediate");
+            word_definition->fieldNames.push_back("is_scripted");
+            word_definition->fieldNames.push_back("description");
+            word_definition->fieldNames.push_back("signature");
+            word_definition->fieldNames.push_back("handler_index");
+            word_definition->fieldNames.push_back("location");
+
+            return word_definition;
+        }
+
+
+        DataObjectDefinitionPtr location_definition = make_location_info_definition();
         DataObjectDefinitionPtr word_info_definition = make_word_info_definition();
 
 
         void register_word_info_struct(const Location& location, InterpreterPtr& interpreter)
         {
+            create_data_definition_words(location, interpreter, location_definition);
             create_data_definition_words(location, interpreter, word_info_definition);
         }
 
 
-        DataObjectPtr make_word_info_instance(const Word& word)
+        DataObjectPtr make_word_info_instance(InterpreterPtr& interpreter,
+                                              std::string& name,
+                                              Word& word)
         {
-            DataObjectPtr new_object = std::make_shared<DataObject>();
+            auto new_location = make_data_object(interpreter, location_definition);
+            new_location->fields[0] = word.location.get_path()->string();
+            new_location->fields[1] = (int64_t)word.location.get_line();
+            new_location->fields[2] = (int64_t)word.location.get_column();
 
-            new_object->definition = word_info_definition;
-            new_object->fields.resize(word_info_definition->fieldNames.size());
+            auto new_word = make_data_object(interpreter, word_info_definition);
+            new_word->fields[0] = name;
+            new_word->fields[1] = word.is_immediate;
+            new_word->fields[2] = word.is_scripted;
+            new_word->fields[3] = word.description ? *word.description : "";
+            new_word->fields[4] = word.signature ? *word.signature : "";
+            new_word->fields[5] = (int64_t)word.handler_index;
+            new_word->fields[6] = new_location;
 
-            new_object->fields[0] = word.is_immediate;
-            new_object->fields[1] = word.is_scripted;
-            new_object->fields[2] = word.description ? *word.description : "";
-            new_object->fields[3] = word.signature ? *word.signature : "";
-            new_object->fields[4] = (int64_t)word.handler_index;
-
-            return new_object;
-        }
-
-
-        Value deep_copy_data_object(InterpreterPtr& interpreter, Value& value)
-        {
-            auto original = std::get<DataObjectPtr>(value);
-            auto new_object = std::make_shared<DataObject>();
-
-            new_object->definition = original->definition;
-            new_object->fields.resize(original->fields.size());
-
-            for (size_t i = 0; i < original->fields.size(); ++i)
-            {
-                new_object->fields[i] = deep_copy_value(interpreter, original->fields[i]);
-            }
-
-            return new_object;
-        }
-
-
-        Value deep_copy_array(InterpreterPtr& interpreter, Value& value)
-        {
-            auto original = std::get<ArrayPtr>(value);
-            auto new_object = std::make_shared<Array>(original->size());
-
-            for (size_t i = 0; i < (size_t)original->size(); ++i)
-            {
-                (*new_object)[i] = deep_copy_value(interpreter, (*original)[i]);
-            }
-
-            return new_object;
-        }
-
-
-        Value deep_copy_byte_buffer(InterpreterPtr& interpreter, Value& value)
-        {
-            auto original = std::get<ByteBufferPtr>(value);
-            auto new_object = std::make_shared<ByteBuffer>(original->size());
-
-            memcpy(new_object->data_ptr(), original->data_ptr(), original->size());
-
-            return new_object;
-        }
-
-
-        Value deep_copy_hash_table(InterpreterPtr& interpreter, Value& value)
-        {
-            auto original = std::get<HashTablePtr>(value);
-            auto new_object = std::make_shared<HashTable>();
-
-            for (auto entry : original->get_items())
-            {
-                auto key = entry.first;
-                auto value = entry.second;
-
-                new_object->insert(deep_copy_value(interpreter, key),
-                                   deep_copy_value(interpreter, value));
-            }
-
-            return new_object;
-        }
-
-
-        Value deep_copy_value(InterpreterPtr& interpreter, Value& value)
-        {
-            if (   std::holds_alternative<int64_t>(value)
-                || std::holds_alternative<double>(value)
-                || std::holds_alternative<bool>(value)
-                || std::holds_alternative<std::string>(value)
-                || std::holds_alternative<internal::Token>(value)
-                || std::holds_alternative<internal::Location>(value)
-                || std::holds_alternative<internal::ByteCode>(value))
-            {
-                return value;
-            }
-
-            if (std::holds_alternative<DataObjectPtr>(value))
-            {
-                return deep_copy_data_object(interpreter, value);
-            }
-
-            if (std::holds_alternative<ArrayPtr>(value))
-            {
-                return deep_copy_array(interpreter, value);
-            }
-
-            if (std::holds_alternative<ByteBufferPtr>(value))
-            {
-                return deep_copy_byte_buffer(interpreter, value);
-            }
-
-            if (std::holds_alternative<HashTablePtr>(value))
-            {
-                return deep_copy_hash_table(interpreter, value);
-            }
-
-            throw_error(*interpreter, "Deep copy of unexpected type.");
+            return new_word;
         }
 
 
@@ -969,7 +880,7 @@ namespace sorth
         for (auto word : dictionary)
         {
             auto key = word.first;
-            auto value = make_word_info_instance(word.second);
+            auto value = make_word_info_instance(interpreter, key, word.second);
 
             new_table->insert(key, value);
         }
@@ -1987,6 +1898,27 @@ namespace sorth
     }
 
 
+    void word_depth(InterpreterPtr& interpreter)
+    {
+        interpreter->push(interpreter->depth());
+    }
+
+
+    void word_pick(InterpreterPtr& interpreter)
+    {
+        auto index = as_numeric<int64_t>(interpreter, interpreter->pop());
+
+        interpreter->push(interpreter->pick(index));
+    }
+
+
+    void word_push_to(InterpreterPtr& interpreter)
+    {
+        auto index = as_numeric<int64_t>(interpreter, interpreter->pop());
+        interpreter->push_to(index);
+    }
+
+
     void word_unique_str(InterpreterPtr& interpreter)
     {
         static int32_t index = 0;
@@ -2285,9 +2217,6 @@ namespace sorth
         ADD_NATIVE_WORD(interpreter, "word", word_word,
                         "Get the next word in the token stream.",
                         " -- next_word");
-
-        PathPtr path = std::make_shared<std::filesystem::path>(__FILE__);
-        register_word_info_struct(Location(path, __LINE__, 1), interpreter);
 
         ADD_NATIVE_WORD(interpreter, "words.get{}", word_get_word_table,
                         "Get a copy of the word table as it exists at time of calling.",
@@ -2678,6 +2607,18 @@ namespace sorth
                         "Rotate the top 3 values on the stack.",
                         "a b c -- c a b");
 
+        ADD_NATIVE_WORD(interpreter, "depth", word_depth,
+                "Get the current depth of the stack.",
+                " -- depth");
+
+        ADD_NATIVE_WORD(interpreter, "pick", word_pick,
+                "Pick the value n locations down in the stack and push it on the top.",
+                "n -- value");
+
+        ADD_NATIVE_WORD(interpreter, "push-to", word_push_to,
+                "Pop the top value and push it back into the stack a position from the top.",
+                "n -- <updated-stack>>");
+
 
         // Some built in constants.
         ADD_NATIVE_WORD(interpreter, "unique_str", word_unique_str,
@@ -2737,6 +2678,8 @@ namespace sorth
                         "Show detailed information about a word.",
                         "word -- ");
 
+        PathPtr path = std::make_shared<std::filesystem::path>(__FILE__);
+        register_word_info_struct(Location(path, __LINE__, 1), interpreter);
     }
 
 

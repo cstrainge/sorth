@@ -828,8 +828,8 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
 
 
 
-( Convert the collection of word_info structs into our ds.document.symbol and create a base set of )
-( symbols as defined by the standard library. )
+( Convert the collection of sorth.word structs into our ds.document.symbol and create a base set )
+( of symbols as defined by the standard library. )
 : ds.add_std_symbols  ( system_word_table -- )
     variable! system_words
 
@@ -838,9 +838,9 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
         variable! name
 
         #.new ds.document.symbol {
-            is_immediate -> word_info.is_immediate info @ #@ ,
-            description -> word_info.description info @ #@ ,
-            signature ->  word_info.signature info @ #@  ds.document.tokenize_string
+            is_immediate -> sorth.word.is_immediate info @ #@ ,
+            description -> sorth.word.description info @ #@ ,
+            signature ->  sorth.word.signature info @ #@  ds.document.tokenize_string
                                                          ds.document.signature_to_markdown ,
             type -> ds.document.symbol_type:word
         }

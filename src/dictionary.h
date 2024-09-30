@@ -37,6 +37,8 @@ namespace sorth::internal
         StringPtr description;    // Quick one line description of this word.
         StringPtr signature;      // How does this word interact with the stack?
 
+        Location location;        // Location this word was defined.
+
         size_t handler_index;     // Index of the handler to execute.
     };
 
