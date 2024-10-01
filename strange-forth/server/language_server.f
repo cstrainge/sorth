@@ -220,7 +220,7 @@ ls.standard_words ds.add_std_symbols
         if
             symbol !
 
-            "### " found_word tk.token.contents@@ + "\\n\\n" +
+            "### `" found_word tk.token.contents@@ + "`\\n\\n" +
 
             symbol ds.document.symbol.description@@  ""  <>
             if
