@@ -157,26 +157,32 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
     base_index @ ++  variable! next_index
 
     tokens [ index @ ]@@  variable! base_token
+    false variable! found_token
     variable next_token
 
-    next_index @  size @  <
-    if
+    begin
+        next_index @  size @  <
+    while
         tokens [ next_index @ ]@@  next_token !
+
+        next_token tk.token.location.line@@  base_token tk.token.location.line@@  >
+        if
+            break
+        then
 
         next_token tk.token.is_comment?
         if
-            next_token tk.token.location.line@@  base_token tk.token.location.line@@     =
-            next_token tk.token.location.line@@  base_token tk.token.location.line@@ ++  =
-            ||
-            if
-                next_token @
-                true
-            else
-                false
-            then
-        else
-            false
+            true found_token !
+            break
         then
+
+        next_index ++!
+    repeat
+
+    found_token @
+    if
+        next_token @
+        true
     else
         false
     then
@@ -588,6 +594,50 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
             type -> ds.document.symbol_type:struct
         }
         document ds.document.symbols@@ { name_text @ "." + fields [ index @ ]@@ + }!
+
+        #.new ds.document.symbol {
+            is_immediate -> false ,
+            description -> "Read from structure field " fields [ index @ ]@@  +
+                           " -- " + descriptions [ index @ ]@@ + ,
+            signature -> "structure -- value" ds.document.tokenize_string
+                                              ds.document.signature_to_markdown ,
+            location -> name_token tk.token.location@@ ,
+            type -> ds.document.symbol_type:struct
+        }
+        document ds.document.symbols@@ { name_text @ "." + fields [ index @ ]@@ + "@" + }!
+
+        #.new ds.document.symbol {
+            is_immediate -> false ,
+            description -> "Write to structure field " fields [ index @ ]@@  +
+                           " -- " + descriptions [ index @ ]@@ + ,
+            signature -> "new_value structure -- " ds.document.tokenize_string
+                                                   ds.document.signature_to_markdown ,
+            location -> name_token tk.token.location@@ ,
+            type -> ds.document.symbol_type:struct
+        }
+        document ds.document.symbols@@ { name_text @ "." + fields [ index @ ]@@ + "!" + }!
+
+        #.new ds.document.symbol {
+            is_immediate -> false ,
+            description -> "Read from structure field " fields [ index @ ]@@  +
+                           " -- " + descriptions [ index @ ]@@ + ,
+            signature -> "structure_var -- value" ds.document.tokenize_string
+                                                  ds.document.signature_to_markdown ,
+            location -> name_token tk.token.location@@ ,
+            type -> ds.document.symbol_type:struct
+        }
+        document ds.document.symbols@@ { name_text @ "." + fields [ index @ ]@@ + "@@" + }!
+
+        #.new ds.document.symbol {
+            is_immediate -> false ,
+            description -> "Write to structure field " fields [ index @ ]@@  +
+                           " -- " + descriptions [ index @ ]@@ + ,
+            signature -> "new_value structure_var -- " ds.document.tokenize_string
+                                                       ds.document.signature_to_markdown ,
+            location -> name_token tk.token.location@@ ,
+            type -> ds.document.symbol_type:struct
+        }
+        document ds.document.symbols@@ { name_text @ "." + fields [ index @ ]@@ + "!!" + }!
 
         index ++!
     repeat
