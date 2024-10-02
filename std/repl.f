@@ -1205,7 +1205,8 @@ false variable! repl.is_quitting?
             ( An error occurred so report the error to the user. )
             cr .cr
         endcatch
-
-        false term.raw_mode
     repeat
+
+    false term.raw_mode
+    repl.history.state repl.history.save
 ;
