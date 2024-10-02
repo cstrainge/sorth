@@ -258,10 +258,10 @@ namespace sorth
 
         void word_module(InterpreterPtr& interpreter)
         {
-            auto& current_token = interpreter->constructor()->current_token;
+            auto& current_token = interpreter->constructor().current_token;
             ++current_token;
 
-            auto& token = interpreter->constructor()->input_tokens[current_token];
+            auto& token = interpreter->constructor().input_tokens[current_token];
             auto module_name = token.text;
 
             HandlerRegistrationRef_t registration = nullptr;

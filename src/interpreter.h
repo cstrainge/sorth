@@ -28,7 +28,7 @@ namespace sorth
             virtual int get_exit_code() const = 0;
             virtual void set_exit_code(int exit_code) = 0;
 
-            virtual internal::OptionalConstructor& constructor() = 0;
+            virtual internal::CodeConstructor& constructor() = 0;
 
         public:
             virtual internal::Location get_current_location() const = 0;

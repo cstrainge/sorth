@@ -39,7 +39,7 @@ namespace sorth::internal
 
 
 
-    using OptionalConstructor = std::optional<CodeConstructor>;
+    using ConstructorStack = std::stack<CodeConstructor>;
 
 
 }

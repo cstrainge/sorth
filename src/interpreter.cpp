@@ -38,7 +38,7 @@ namespace sorth
 
                 VariableList variables;
 
-                OptionalConstructor code_constructor;
+                ConstructorStack code_constructors;
 
             public:
                 InterpreterImpl();
@@ -57,7 +57,7 @@ namespace sorth
                 virtual int get_exit_code() const override;
                 virtual void set_exit_code(int new_exit_code) override;
 
-                virtual OptionalConstructor& constructor() override;
+                virtual CodeConstructor& constructor() override;
 
             public:
                 virtual Location get_current_location() const override;
@@ -100,12 +100,12 @@ namespace sorth
             public:
                 virtual void add_word(const std::string& word,
                                       WordFunction handler,
-                                      const internal::Location& location,
-                                      bool is_immediate,
-                                      bool is_hidden,
-                                      bool is_scripted,
-                                      const std::string& description,
-                                      const std::string& signature) override;
+                                      const Location& location,
+                                      bool is_immediate = false,
+                                      bool is_hidden = false,
+                                      bool is_scripted = false,
+                                      const std::string& description = "",
+                                      const std::string& signature = "") override;
 
                 virtual void add_word(const std::string& word, WordFunction handler,
                                       const std::filesystem::path& path, size_t line, size_t column,
@@ -136,7 +136,7 @@ namespace sorth
           is_showing_bytecode(false),
           is_showing_run_code(false)
         {
-            code_constructor = CodeConstructor {};
+            // code_constructor = CodeConstructor {};
         }
 
 
@@ -163,12 +163,14 @@ namespace sorth
 
         void InterpreterImpl::process_source(SourceBuffer& buffer)
         {
-            code_constructor->interpreter = shared_from_this();
-            code_constructor->stack.push({});
-            code_constructor->input_tokens = tokenize(buffer);
-            code_constructor->compile_token_list();
+            code_constructors.push({});
 
-            auto code = code_constructor->stack.top().code;
+            code_constructors.top().interpreter = shared_from_this();
+            code_constructors.top().stack.push({});
+            code_constructors.top().input_tokens = tokenize(buffer);
+            code_constructors.top().compile_token_list();
+
+            auto code = code_constructors.top().stack.top().code;
 
             auto name = buffer.current_location().get_path()->filename().string();
 
@@ -180,7 +182,7 @@ namespace sorth
 
             execute_code(name, code);
 
-            code_constructor->stack.pop();
+            code_constructors.pop();
         }
 
 
@@ -230,10 +232,12 @@ namespace sorth
         }
 
 
-        OptionalConstructor& InterpreterImpl::constructor()
+        CodeConstructor& InterpreterImpl::constructor()
         {
-            throw_error_if(!code_constructor, *this, "Code constructor is unavailable.");
-            return code_constructor;
+            throw_error_if(code_constructors.size() == 0,
+                           *this,
+                           "Code constructor is unavailable.");
+            return code_constructors.top();
         }
 
 

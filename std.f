@@ -44,6 +44,22 @@
 
 
 
+: [&&] immediate  description: "Evaluate && at compile time."
+                  signature: "a b -- result"
+    &&
+;
+
+
+
+
+: [||] immediate  description: "Evaluate || at compile time."
+                  signature: "a b -- result"
+    ||
+;
+
+
+
+
 : if immediate
     unique_str variable! else_label
     unique_str variable! end_label
@@ -1353,55 +1369,60 @@
 
 
 
-( Allow user code to register an at exit handler. )
-: at_exit immediate description: "Request that a given word be executed when the script exits."
-                    signature: "at_exit <word>"
-    word op.push_constant_value
-    ` at_exit op.execute
-;
-
-
-
-
 ( Check for extra terminal functionality.  If it's there include some extra useful words. )
-defined? term.raw_mode
-if
-    "std/term.f" include
-then
+[defined?] term.raw_mode
+[if]
+    [include] std/term.f
+[then]
 
 
 
 
 ( If we have the user environment available, include some more useful words. )
-defined? user.env@
-if
+: [is-windows?] immediate description: "Evaluate at compile time, is the OS Windows?"
+                          signature: " -- bool"
     user.os  "Windows"  =
-    if
-        "std/win_user.f" include
-    else
-        "std/user.f" include
-    then
-then
+;
+
+: [is-macos?] immediate description: "Evaluate at compile time, is the OS macOS?"
+                        signature: " -- bool"
+    user.os  "macOS"  =
+;
+
+: [is-linux?] immediate description: "Evaluate at compile time, is the OS Linux?"
+                        signature: " -- bool"
+    user.os  "Linux"  =
+;
+
+[defined?] user.env@
+[if]
+    [is-windows?]
+    [if]
+        [include] std/win_user.f
+    [else]
+        [include] std/user.f
+    [then]
+[then]
 
 
 
 
 ( Make sure that advanced terminal and user functionality is available.  If it is, enable the )
 ( 'fancy' repl capable of keeping history.  Otherwise enable the simpler repl. )
-defined? term.raw_mode
-defined? user.env@
-&&
-if
-    "std/repl.f" include
-else
-    "std/simple_repl.f" include
-then
+[defined?] term.raw_mode
+[defined?] user.env@
+[&&]
+[if]
+    [include] std/repl.f
+[else]
+    [include] std/simple_repl.f
+[then]
 
 
 
 
 ( Include our json utility functions. )
-"std/json.f" include
+[include] std/json.f
 
 
 
