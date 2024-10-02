@@ -790,7 +790,7 @@
     variable! value
 
     " " variable! fill
-    value @ is_value_number? if ">" else "<" then variable! alignment
+    value @ value.is-number? if ">" else "<" then variable! alignment
     ""  variable! width
 
     variable char

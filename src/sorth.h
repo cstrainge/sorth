@@ -43,6 +43,7 @@
 #endif
 
 
+#include <stddef.h>
 #include <iostream>
 #include <filesystem>
 #include <list>

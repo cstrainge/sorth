@@ -861,8 +861,8 @@ variable ds.base_symbols            ( A copy of the symbols found in the standar
         variable! document
         variable! uri
 
-        ds.symbol_table @               is_value_hash_table?
-        document ds.document.symbols@@  is_value_hash_table?
+        ds.symbol_table @               value.is-hash-table?
+        document ds.document.symbols@@  value.is-hash-table?
         &&
         if
             ds.symbol_table @  document ds.document.symbols@@  {}.+ drop

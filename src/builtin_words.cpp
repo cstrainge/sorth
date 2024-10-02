@@ -412,8 +412,8 @@ namespace sorth
 
         void register_word_info_struct(const Location& location, InterpreterPtr& interpreter)
         {
-            create_data_definition_words(location, interpreter, location_definition);
-            create_data_definition_words(location, interpreter, word_info_definition);
+            create_data_definition_words(location, interpreter, location_definition, true);
+            create_data_definition_words(location, interpreter, word_info_definition, true);
         }
 
 
@@ -1172,7 +1172,7 @@ namespace sorth
     }
 
 
-    void word_is_value_number(InterpreterPtr& interpreter)
+    void word_value_is_number(InterpreterPtr& interpreter)
     {
         auto value = interpreter->pop();
 
@@ -1181,7 +1181,7 @@ namespace sorth
     }
 
 
-    void word_is_value_boolean(InterpreterPtr& interpreter)
+    void word_value_is_boolean(InterpreterPtr& interpreter)
     {
         auto value = interpreter->pop();
 
@@ -1189,7 +1189,7 @@ namespace sorth
     }
 
 
-    void word_is_value_string(InterpreterPtr& interpreter)
+    void word_value_is_string(InterpreterPtr& interpreter)
     {
         auto value = interpreter->pop();
 
@@ -1197,7 +1197,7 @@ namespace sorth
     }
 
 
-    void word_is_value_structure(InterpreterPtr& interpreter)
+    void word_value_is_structure(InterpreterPtr& interpreter)
     {
         auto value = interpreter->pop();
 
@@ -1205,7 +1205,7 @@ namespace sorth
     }
 
 
-    void word_is_value_array(InterpreterPtr& interpreter)
+    void word_value_is_array(InterpreterPtr& interpreter)
     {
         auto value = interpreter->pop();
 
@@ -1213,7 +1213,7 @@ namespace sorth
     }
 
 
-    void word_is_value_buffer(InterpreterPtr& interpreter)
+    void word_value_is_buffer(InterpreterPtr& interpreter)
     {
         auto value = interpreter->pop();
 
@@ -1221,7 +1221,7 @@ namespace sorth
     }
 
 
-    void word_is_value_hash_table(InterpreterPtr& interpreter)
+    void word_value_is_hash_table(InterpreterPtr& interpreter)
     {
         auto value = interpreter->pop();
 
@@ -2372,31 +2372,31 @@ namespace sorth
 
 
         // Check value types.
-        ADD_NATIVE_WORD(interpreter, "is_value_number?", word_is_value_number,
+        ADD_NATIVE_WORD(interpreter, "value.is-number?", word_value_is_number,
             "Is the value a number?",
             "value -- bool");
 
-        ADD_NATIVE_WORD(interpreter, "is_value_boolean?", word_is_value_boolean,
+        ADD_NATIVE_WORD(interpreter, "value.is-boolean?", word_value_is_boolean,
             "Is the value a boolean?",
             "value -- bool");
 
-        ADD_NATIVE_WORD(interpreter, "is_value_string?", word_is_value_string,
+        ADD_NATIVE_WORD(interpreter, "value.is-string?", word_value_is_string,
             "Is the value a string?",
             "value -- bool");
 
-        ADD_NATIVE_WORD(interpreter, "is_value_structure?", word_is_value_structure,
+        ADD_NATIVE_WORD(interpreter, "value.is-structure?", word_value_is_structure,
             "Is the value a structure?",
             "value -- bool");
 
-        ADD_NATIVE_WORD(interpreter, "is_value_array?", word_is_value_array,
+        ADD_NATIVE_WORD(interpreter, "value.is-array?", word_value_is_array,
             "Is the value an array?",
             "value -- bool");
 
-        ADD_NATIVE_WORD(interpreter, "is_value_buffer?", word_is_value_buffer,
+        ADD_NATIVE_WORD(interpreter, "value.is-buffer?", word_value_is_buffer,
             "Is the value a byte buffer?",
             "value -- bool");
 
-        ADD_NATIVE_WORD(interpreter, "is_value_hash_table?", word_is_value_hash_table,
+        ADD_NATIVE_WORD(interpreter, "value.is-hash-table?", word_value_is_hash_table,
             "Is the value a hash table?",
             "value -- bool");
 

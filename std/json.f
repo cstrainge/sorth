@@ -62,24 +62,24 @@
 
 ( Convert a given value to a json formatted string. )
 : json.to_json_value hidden  ( value -- string )
-    dup is_value_structure?
+    dup value.is-structure?
     if
         #.to_json
     else
-        dup is_value_hash_table?
+        dup value.is-hash-table?
         if
             {}.to_json
         else
-            dup is_value_array?
+            dup value.is-array?
             if
                 json.to_json_array
             else
-                dup is_value_string?
+                dup value.is-string?
                 if
                     "\"" swap json.filter_json_string + "\"" +
                 else
-                    dup is_value_number?
-                    dup is_value_boolean?
+                    dup value.is-number?
+                    dup value.is-boolean?
                     ||
                     if
                         to_string
