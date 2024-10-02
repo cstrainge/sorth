@@ -96,7 +96,7 @@
 
 
 
-: #.to_json  description: "Convert a structure object to a JSON string"
+: #.to_json  description: "Convert a structure object to a JSON string."
              signature: "structure -- json_string"
     variable! structure
     "{ " variable! new_json
