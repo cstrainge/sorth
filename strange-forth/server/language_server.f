@@ -39,10 +39,10 @@ socket_path socket.connect variable! server_fd
 
 
 ( Include the rest of the language server. )
-"jsonrpc.f" include
-"lsp.f" include
-"tokenizer.f" include
-"document_store.f" include
+[include] jsonrpc.f
+[include] lsp.f
+[include] tokenizer.f
+[include] document_store.f
 
 
 
