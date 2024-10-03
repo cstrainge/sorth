@@ -48,6 +48,7 @@ namespace sorth
         value_print_if<Token>(stream, value);
         value_print_if<Location>(stream, value);
         value_print_if<ByteCode>(stream, value);
+        value_print_if<std::thread::id>(stream, value);
 
         return stream;
     }
@@ -144,6 +145,13 @@ namespace sorth
             return result;
         }
 
+        if (std::holds_alternative<std::thread::id>(key))
+        {
+            auto value = std::get<std::thread::id>(key);
+
+            return hash_value(value);
+        }
+
         return 0;
     }
 
@@ -200,6 +208,11 @@ namespace sorth
             return std::get<ByteCode>(rhs) == std::get<ByteCode>(lhs);
         }
 
+        if (std::holds_alternative<std::thread::id>(rhs))
+        {
+            return std::get<std::thread::id>(lhs) == std::get<std::thread::id>(rhs);
+        }
+
         return false;
     }
 
@@ -235,6 +248,11 @@ namespace sorth
         if (std::holds_alternative<HashTablePtr>(value))
         {
             return deep_copy_hash_table(interpreter, value);
+        }
+
+        if (std::holds_alternative<std::thread::id>(value))
+        {
+            return std::get<std::thread::id>(value);
         }
 
         throw_error(*interpreter, "Deep copy of unexpected type.");

@@ -6,6 +6,17 @@ namespace sorth
 {
 
 
+    struct SubThreadInfo
+    {
+        internal::Word word;
+        std::shared_ptr<std::thread> word_thread;
+        bool thead_deleted;
+
+        BlockingValueStack inputs;
+        BlockingValueStack outputs;
+    };
+
+
     class Interpreter
     {
         public:
@@ -45,6 +56,10 @@ namespace sorth
             virtual internal::WordHandlerInfo& get_handler_info(size_t index) = 0;
             virtual std::vector<std::string> get_inverse_lookup_list() = 0;
 
+            virtual std::list<SubThreadInfo> sub_threads() = 0;
+
+            virtual std::thread::id execute_word_threaded(const internal::Word& word) = 0;
+
             virtual void execute_word(const std::string& word) = 0;
             virtual void execute_word(const internal::Word& word) = 0;
             virtual void execute_word(const internal::Location& location,
@@ -61,6 +76,14 @@ namespace sorth
             virtual int64_t depth() const = 0;
             virtual void push(const Value& value) = 0;
             virtual Value pop() = 0;
+
+            virtual int64_t thread_input_depth(std::thread::id id) = 0;
+            virtual void thread_push_input(std::thread::id& id, Value& value) = 0;
+            virtual Value thread_pop_input(std::thread::id& id) = 0;
+
+            virtual int64_t thread_output_depth(std::thread::id id) = 0;
+            virtual void thread_push_output(std::thread::id& id, Value& value) = 0;
+            virtual Value thread_pop_output(std::thread::id& id) = 0;
 
             virtual Value pick(int64_t index) = 0;
             virtual void push_to(int64_t index) = 0;

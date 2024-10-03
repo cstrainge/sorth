@@ -38,7 +38,8 @@ namespace sorth
                                HashTablePtr,
                                internal::Token,
                                internal::Location,
-                               internal::ByteCode>;
+                               internal::ByteCode,
+                               std::thread::id>;
 
     using ValueStack = std::list<Value>;
     using ValueList = std::vector<Value>;

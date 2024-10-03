@@ -551,6 +551,85 @@ namespace sorth
     }
 
 
+    std::thread::id pop_as_thread_id(InterpreterPtr interpreter)
+    {
+        auto value = interpreter->pop();
+
+        if (!std::holds_alternative<std::thread::id>(value))
+        {
+            throw_error(*interpreter, "Value not a thread id.");
+        }
+
+        return std::get<std::thread::id>(value);
+    }
+
+
+    void word_thread_show(InterpreterPtr& interpreter)
+    {
+        auto list = interpreter->sub_threads();
+
+        for (auto& item : list)
+        {
+            auto info = interpreter->get_handler_info(item.word.handler_index);
+
+            std::cout << "Thread " << item.word_thread->get_id()
+                      << " word " << info.name << ", (" << item.word.handler_index << "),"
+                      << (item.thead_deleted ? " has completed." : " is running.")
+                      << std::endl;
+        }
+    }
+
+
+    void word_thread_new(InterpreterPtr& interpreter)
+    {
+        auto name = as_string(interpreter, interpreter->pop());
+        auto [ found, word ] = interpreter->find_word(name);
+
+        if (!found)
+        {
+            throw_error(*interpreter, "Could not start thread, word " + name + " not found.");
+        }
+
+        auto id = interpreter->execute_word_threaded(word);
+        interpreter->push(id);
+    }
+
+
+    void word_thread_push_to(InterpreterPtr& interpreter)
+    {
+        auto id = pop_as_thread_id(interpreter);
+        auto value = interpreter->pop();
+
+        interpreter->thread_push_input(id, value);
+    }
+
+
+    void word_thread_pop_from(InterpreterPtr& interpreter)
+    {
+        auto id = pop_as_thread_id(interpreter);
+        auto value = interpreter->thread_pop_output(id);
+
+        interpreter->push(value);
+    }
+
+
+    void word_thread_push(InterpreterPtr& interpreter)
+    {
+        auto value = interpreter->pop();
+        auto id = std::this_thread::get_id();
+
+        interpreter->thread_push_output(id, value);
+    }
+
+
+    void word_thread_pop(InterpreterPtr& interpreter)
+    {
+        auto id = std::this_thread::get_id();
+
+        interpreter->push(interpreter->thread_pop_input(id));
+    }
+
+
     void insert_user_instruction(InterpreterPtr& interpreter, const OperationCode& op)
     {
         auto& constructor = interpreter->constructor();
@@ -2193,6 +2272,30 @@ namespace sorth
         ADD_IMMEDIATE_WORD(interpreter, "[if]", word_if_im,
             "Evaluate an if at compile time.  Only the code on successful branch is compiled.",
             "[if] <code> [else] <code> [then]");
+
+        ADD_NATIVE_WORD(interpreter, ".t", word_thread_show,
+            "Print out the list of interpreter threads.",
+            " -- ");
+
+        ADD_NATIVE_WORD(interpreter, "thread.new", word_thread_new,
+            "Create a new thread and run the specified word and return the new thread id.",
+            "word-index -- thread-id");
+
+        ADD_NATIVE_WORD(interpreter, "thread.push-to", word_thread_push_to,
+            "Push the top value to another thread's input stack.",
+            "value thread-id -- ");
+
+        ADD_NATIVE_WORD(interpreter, "thread.pop-from", word_thread_pop_from,
+            "Pop a value off of the threads input queue, block if there's nothing available.",
+            "thread-id -- input-value");
+
+        ADD_NATIVE_WORD(interpreter, "thread.push", word_thread_push,
+            "Push the top value onto the thread's output queue.",
+            "output-value -- ");
+
+        ADD_NATIVE_WORD(interpreter, "thread.pop", word_thread_pop,
+            "Pop from another thread's output stack and push onto the local data stack.",
+            " -- value");
 
 
         // Words for creating new bytecode.

@@ -9,6 +9,9 @@ namespace sorth
     using namespace internal;
 
 
+    using ThreadMap = std::unordered_map<std::thread::id, SubThreadInfo>;
+
+
     namespace
     {
 
@@ -19,6 +22,9 @@ namespace sorth
         class InterpreterImpl : public Interpreter,
                                 public std::enable_shared_from_this<Interpreter>
         {
+            private:
+                std::shared_ptr<Interpreter> parent_interpreter;
+
             private:
                 PathList search_paths;
 
@@ -38,11 +44,14 @@ namespace sorth
 
                 VariableList variables;
 
+                ThreadMap thread_map;
+                std::mutex sub_thread_lock;
+
                 ConstructorStack code_constructors;
 
             public:
                 InterpreterImpl();
-                InterpreterImpl(const InterpreterImpl& interpreter);
+                InterpreterImpl(InterpreterImpl& interpreter);
                 virtual ~InterpreterImpl() override;
 
             public:
@@ -75,6 +84,15 @@ namespace sorth
                 virtual WordHandlerInfo& get_handler_info(size_t index) override;
                 virtual std::vector<std::string> get_inverse_lookup_list() override;
 
+            private:
+                void append_new_thread(const SubThreadInfo& info);
+                void remove_thread(const std::thread::id& id);
+
+            public:
+                virtual std::list<SubThreadInfo> sub_threads() override;
+
+                virtual std::thread::id execute_word_threaded(const internal::Word& word) override;
+
                 virtual void execute_word(const std::string& word) override;
                 virtual void execute_word(const internal::Word& word) override;
                 virtual void execute_word(const Location& location, const Word& word) override;
@@ -91,6 +109,18 @@ namespace sorth
                 virtual void push(const Value& value) override;
                 virtual Value pop() override;
 
+                virtual int64_t thread_input_depth(std::thread::id id) override;
+                virtual void thread_push_input(std::thread::id& id, Value& value) override;
+                virtual Value thread_pop_input(std::thread::id& id) override;
+
+                virtual int64_t thread_output_depth(std::thread::id id) override;
+                virtual void thread_push_output(std::thread::id& id, Value& value) override;
+                virtual Value thread_pop_output(std::thread::id& id) override;
+
+            private:
+                SubThreadInfo& get_thread_info(const std::thread::id& id);
+
+            public:
                 virtual Value pick(int64_t index) override;
                 virtual void push_to(int64_t index) override;
 
@@ -132,7 +162,8 @@ namespace sorth
 
 
         InterpreterImpl::InterpreterImpl()
-        : is_interpreter_quitting(false),
+        : parent_interpreter(),
+          is_interpreter_quitting(false),
           exit_code(EXIT_SUCCESS),
           is_showing_bytecode(false),
           is_showing_run_code(false)
@@ -140,13 +171,14 @@ namespace sorth
         }
 
 
-        InterpreterImpl::InterpreterImpl(const InterpreterImpl& interpreter)
-        : search_paths(interpreter.search_paths),
+        InterpreterImpl::InterpreterImpl(InterpreterImpl& interpreter)
+        : parent_interpreter(std::static_pointer_cast<Interpreter>(interpreter.shared_from_this())),
+          search_paths(interpreter.search_paths),
           is_interpreter_quitting(false),
           exit_code(0),
           is_showing_bytecode(false),
           is_showing_run_code(false),
-          stack(interpreter.stack),
+          stack(),
           current_location(interpreter.current_location),
           call_stack(),
           dictionary(interpreter.dictionary),
@@ -311,6 +343,120 @@ namespace sorth
         std::vector<std::string> InterpreterImpl::get_inverse_lookup_list()
         {
             return inverse_lookup_list(dictionary, word_handlers);
+        }
+
+
+        void InterpreterImpl::append_new_thread(const SubThreadInfo& info)
+        {
+            if (parent_interpreter)
+            {
+                auto actual = std::reinterpret_pointer_cast<InterpreterImpl>(parent_interpreter);
+                actual->append_new_thread(info);
+            }
+            else
+            {
+                std::lock_guard<std::mutex> guard(sub_thread_lock);
+                thread_map.insert(ThreadMap::value_type(info.word_thread->get_id(), info));
+            }
+        }
+
+
+        void InterpreterImpl::remove_thread(const std::thread::id& id)
+        {
+            if (parent_interpreter)
+            {
+                auto actual = std::reinterpret_pointer_cast<InterpreterImpl>(parent_interpreter);
+                actual->remove_thread(id);
+            }
+            else
+            {
+                std::lock_guard<std::mutex> guard(sub_thread_lock);
+
+                auto& info = get_thread_info(id);
+
+                if (info.outputs.depth() == 0)
+                {
+                    auto thread = thread_map[id];
+                    thread.word_thread->join();
+
+                    thread_map.erase(id);
+                }
+                else
+                {
+                    info.thead_deleted = true;
+                }
+            }
+        }
+
+
+        std::list<SubThreadInfo> InterpreterImpl::sub_threads()
+        {
+            if (parent_interpreter)
+            {
+                auto actual = std::reinterpret_pointer_cast<InterpreterImpl>(parent_interpreter);
+                return actual->sub_threads();
+            }
+
+            std::lock_guard<std::mutex> guard(sub_thread_lock);
+            std::list<SubThreadInfo> copy;
+
+            for (auto& item : thread_map)
+            {
+                copy.push_back(item.second);
+            }
+
+            return copy;
+        }
+
+
+        std::thread::id InterpreterImpl::execute_word_threaded(const internal::Word& word)
+        {
+            // If this interpreter has a parent, request it to spawn the thread so that they are
+            // all tracked in the same place.
+            if (parent_interpreter)
+            {
+                return parent_interpreter->execute_word_threaded(word);
+            }
+
+            // Capture the pointer to this interpreter then clone itself to run in the sub
+            // thread.
+            auto this_ptr = std::static_pointer_cast<Interpreter>(shared_from_this());
+            auto child_interpreter = clone_interpreter(this_ptr);
+
+            // Spawn the new thread.
+            auto word_thread = std::make_shared<std::thread>([=]()
+                {
+                    try
+                    {
+                        // Get a proper reference to the sub-thread interpreter.
+                        auto child =
+                              std::reinterpret_pointer_cast<InterpreterImpl>(child_interpreter);
+
+                        // Execute the requested word.
+                        child->execute_word(word);
+
+                        // Before we exit clear up the thread reference.
+                        if (child->parent_interpreter)
+                        {
+                            child->remove_thread(std::this_thread::get_id());
+                        }
+                    }
+                    catch (...)
+                    {
+                        // TODO: Catch the exception and possibly store that with the thread
+                        //       info.
+                    }
+                });
+
+            // Register the thread.
+            append_new_thread(
+                {
+                    .word = word,
+                    .word_thread = word_thread,
+                    .thead_deleted = false
+                });
+
+            return word_thread->get_id();
         }
 
 
@@ -694,6 +840,73 @@ namespace sorth
             stack.pop_front();
 
             return next;
+        }
+
+
+        int64_t InterpreterImpl::thread_input_depth(std::thread::id id)
+        {
+            return get_thread_info(id).inputs.depth();
+        }
+
+
+        void InterpreterImpl::thread_push_input(std::thread::id& id, Value& value)
+        {
+            get_thread_info(id).inputs.push(value);
+        }
+
+
+        Value InterpreterImpl::thread_pop_input(std::thread::id& id)
+        {
+            return get_thread_info(id).inputs.pop();
+        }
+
+
+        int64_t InterpreterImpl::thread_output_depth(std::thread::id id)
+        {
+            return get_thread_info(id).outputs.depth();
+        }
+
+
+        void InterpreterImpl::thread_push_output(std::thread::id& id, Value& value)
+        {
+            get_thread_info(id).outputs.push(value);
+        }
+
+
+        Value InterpreterImpl::thread_pop_output(std::thread::id& id)
+        {
+            auto info = get_thread_info(id);
+            auto value = info.outputs.pop();
+
+            // If the thread has exited and we've consumed the last of it's outputs free up the
+            // thread record now.
+            if (   (info.thead_deleted)
+                && (info.outputs.depth() == 0))
+            {
+                auto thread = thread_map[id];
+                thread.word_thread->join();
+
+                thread_map.erase(id);
+            }
+
+            return value;
+        }
+
+
+        SubThreadInfo& InterpreterImpl::get_thread_info(const std::thread::id& id)
+        {
+            if (parent_interpreter)
+            {
+                auto actual = std::reinterpret_pointer_cast<InterpreterImpl>(parent_interpreter);
+                return actual->get_thread_info(id);
+            }
+
+            if (!thread_map.contains(id))
+            {
+                throw_error("Thread id not found.");
+            }
+
+            return thread_map[id];
         }
 
 
