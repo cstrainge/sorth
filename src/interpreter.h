@@ -99,6 +99,7 @@ namespace sorth
 
 
     InterpreterPtr create_interpreter();
+    InterpreterPtr clone_interpreter(InterpreterPtr& interpreter);
 
 
     #define ADD_NATIVE_WORD(INTERPRETER, NAME, HANDLER, DESCRIPTION, SIGNATURE) \

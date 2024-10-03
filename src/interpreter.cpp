@@ -42,6 +42,7 @@ namespace sorth
 
             public:
                 InterpreterImpl();
+                InterpreterImpl(const InterpreterImpl& interpreter);
                 virtual ~InterpreterImpl() override;
 
             public:
@@ -136,7 +137,23 @@ namespace sorth
           is_showing_bytecode(false),
           is_showing_run_code(false)
         {
-            // code_constructor = CodeConstructor {};
+        }
+
+
+        InterpreterImpl::InterpreterImpl(const InterpreterImpl& interpreter)
+        : search_paths(interpreter.search_paths),
+          is_interpreter_quitting(false),
+          exit_code(0),
+          is_showing_bytecode(false),
+          is_showing_run_code(false),
+          stack(interpreter.stack),
+          current_location(interpreter.current_location),
+          call_stack(),
+          dictionary(interpreter.dictionary),
+          word_handlers(interpreter.word_handlers),
+          variables(interpreter.variables)
+        {
+            mark_context();
         }
 
 
@@ -881,6 +898,13 @@ namespace sorth
     InterpreterPtr create_interpreter()
     {
         return std::make_shared<InterpreterImpl>();
+    }
+
+
+    InterpreterPtr clone_interpreter(InterpreterPtr& interpreter)
+    {
+        InterpreterImpl* raw_ptr = reinterpret_cast<InterpreterImpl*>(&(*interpreter));
+        return std::make_shared<InterpreterImpl>(*raw_ptr);
     }
 
 

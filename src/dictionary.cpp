@@ -30,45 +30,51 @@ namespace sorth::internal
     {
         // First merge all the sub-dictionaries into one sorted dictionary.  Note that words will
         // appear only once.  Even if they are redefined at higher scopes.  Only the newest version
-        // will be displayed.  (Unless if the newer version is hidden and the older isn't.)
+        // will be displayed.
         std::map<std::string, Word> new_dictionary = dictionary.get_merged_dictionary();
 
-
-        // For formatting, find out the largest word width.
-        int max = 0;
+        int visible_count = 0;  // Keep track of the number of visible words.
+        int max = 0;            // For formatting, find out the largest word width.
 
         for (const auto& word : new_dictionary)
         {
-            if (max < word.first.size())
+            if (!word.second.is_hidden)
             {
-                max = (int)word.first.size();
+                ++visible_count;
+
+                if (max < word.first.size())
+                {
+                    max = (int)word.first.size();
+                }
             }
         }
 
         // Now, print out the consolidated dictionary.
-
-        stream << new_dictionary.size() << " words defined." << std::endl;
+        stream << visible_count << " words defined." << std::endl;
 
         for (const auto& word : new_dictionary)
         {
-            stream << std::left << std::setw(max) << word.first << "  "
-                   << std::right << std::setw(6) << word.second.handler_index;
-
-            if (word.second.is_immediate)
+            if (!word.second.is_hidden)
             {
-                stream << "  immediate";
-            }
-            else
-            {
-                stream << "           ";
-            }
+                stream << std::left << std::setw(max) << word.first << "  "
+                       << std::right << std::setw(6) << word.second.handler_index;
 
-            if (word.second.description)
-            {
-                stream << "  --  " << (*word.second.description);
-            }
+                if (word.second.is_immediate)
+                {
+                    stream << "  immediate";
+                }
+                else
+                {
+                    stream << "           ";
+                }
 
-            stream << std::endl;
+                if (word.second.description)
+                {
+                    stream << "  --  " << (*word.second.description);
+                }
+
+                stream << std::endl;
+            }
         }
 
         return stream;
@@ -79,6 +85,19 @@ namespace sorth::internal
     {
         // Start with an empty dictionary.
         mark_context();
+    }
+
+
+    Dictionary::Dictionary(const Dictionary& dictionary)
+    {
+        // start with the empty dictionary.
+        mark_context();
+
+        // Now merge all the sub dictionaries into this one.
+        for (auto iter = dictionary.stack.rbegin(); iter != dictionary.stack.rend(); ++iter)
+        {
+            stack.front().insert(iter->begin(), iter->end());
+        }
     }
 
 
@@ -139,10 +158,7 @@ namespace sorth::internal
         {
             for (const auto& word_iter : sub_dictionary)
             {
-                if (!word_iter.second.is_hidden)
-                {
-                    new_dictionary.insert(word_iter);
-                }
+                new_dictionary.insert(word_iter);
             }
         }
 

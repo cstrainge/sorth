@@ -32,6 +32,20 @@ namespace sorth::internal
                 mark_context();
             }
 
+            ContextualList(const ContextualList& list)
+            {
+                // Crate a empty list.
+                mark_context();
+
+                // Merge the contexts from the source list into a single context here.
+                for (auto iter = list.stack.rbegin(); iter != list.stack.rend(); ++iter)
+                {
+                    stack.front().items.insert(stack.front().items.end(),
+                                               iter->items.begin(),
+                                               iter->items.end());
+                }
+            }
+
         public:
             size_t size() const
             {

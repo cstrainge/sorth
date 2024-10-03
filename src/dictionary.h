@@ -53,6 +53,7 @@ namespace sorth::internal
 
         public:
             Dictionary();
+            Dictionary(const Dictionary& dictionary);
 
         public:
             void insert(const std::string& text, const Word& value);
