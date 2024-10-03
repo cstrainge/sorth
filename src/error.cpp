@@ -83,7 +83,7 @@ namespace sorth::internal
                                   code,
                                   MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                                   message_buffer,
-                                  size,
+                                  (DWORD)size,
                                   nullptr);
 
             std::stringstream stream;
