@@ -44,22 +44,6 @@
 
 
 
-: [&&] immediate  description: "Evaluate && at compile time."
-                  signature: "a b -- result"
-    &&
-;
-
-
-
-
-: [||] immediate  description: "Evaluate || at compile time."
-                  signature: "a b -- result"
-    ||
-;
-
-
-
-
 : if immediate
     unique_str variable! else_label
     unique_str variable! end_label
@@ -1376,6 +1360,96 @@
 : buffer.position@@ description: "Read the current buffer pointer from the variable."
                     signature: "buffer_variable -- position"
     @ buffer.position@
+;
+
+
+
+
+( Given an array and an operator go through the array and select out one of the values using that )
+( operator. )
+: one_of hidden  ( array operator -- chosen-value )
+    variable! operator
+    variable! values
+
+    values [].size@@ constant size
+
+    size  0<=
+    if
+        "No values in array." throw
+    then
+
+    values [ 0 ]@@ variable! chosen
+    1 variable! index
+
+    begin
+        index @  size  <
+    while
+        values [ index @ ]@@ dup  chosen @  operator @ execute
+        if
+            chosen !
+        else
+            drop
+        then
+
+        index ++!
+    repeat
+
+    smallest @
+;
+
+
+
+
+: min_of description: "Get the minimum of an array of values."
+         signature: "array -- smallest-value"
+
+    ` < one_of
+;
+
+
+
+
+: max_of description: "Get the maximum of an array of values."
+         signature: "array -- smallest-value"
+    ` > one_of
+;
+
+
+
+
+: min description: "Get the minimum of two values."
+      signature: "a b -- [a or b]"
+    variable! b
+    variable! a
+
+    [ a @ , b @ ]  ` <  one_of
+;
+
+
+
+
+: max description: "Get the maximum of two values."
+      signature: "a b -- [a or b]"
+    variable! b
+    variable! a
+
+    [ a @ , b @ ]  ` >  one_of
+;
+
+
+
+
+: [&&] immediate  description: "Evaluate && at compile time."
+                  signature: "a b -- result"
+    &&
+;
+
+
+
+
+: [||] immediate  description: "Evaluate || at compile time."
+                  signature: "a b -- result"
+    ||
 ;
 
 
