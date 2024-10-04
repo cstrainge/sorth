@@ -1402,7 +1402,6 @@
 
 : min_of description: "Get the minimum of an array of values."
          signature: "array -- smallest-value"
-
     ` < one_of
 ;
 
