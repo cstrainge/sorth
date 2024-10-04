@@ -436,10 +436,7 @@ namespace sorth
                         child->execute_word(word);
 
                         // Before we exit clear up the thread reference.
-                        if (child->parent_interpreter)
-                        {
-                            child->remove_thread(std::this_thread::get_id());
-                        }
+                        child->remove_thread(std::this_thread::get_id());
                     }
                     catch (...)
                     {
