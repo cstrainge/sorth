@@ -80,7 +80,7 @@
 #include "data_object.h"
 #include "hash_table.h"
 #include "code_constructor.h"
-#include "blocking_value_stack.h"
+#include "blocking_value_queue.h"
 #include "interpreter.h"
 #include "builtin_words.h"
 #include "terminal_words.h"

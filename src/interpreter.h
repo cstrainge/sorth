@@ -12,8 +12,8 @@ namespace sorth
         std::shared_ptr<std::thread> word_thread;
         bool thead_deleted;
 
-        BlockingValueStack inputs;
-        BlockingValueStack outputs;
+        BlockingValueQueue inputs;
+        BlockingValueQueue outputs;
     };
 
 

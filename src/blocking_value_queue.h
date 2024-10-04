@@ -6,7 +6,7 @@ namespace sorth
 {
 
 
-    class BlockingValueStack
+    class BlockingValueQueue
     {
         private:
             std::mutex item_lock;
@@ -15,9 +15,9 @@ namespace sorth
             std::list<Value> items;
 
         public:
-            BlockingValueStack();
-            BlockingValueStack(const BlockingValueStack& stack);
-            BlockingValueStack(BlockingValueStack&& stack);
+            BlockingValueQueue();
+            BlockingValueQueue(const BlockingValueQueue& stack);
+            BlockingValueQueue(BlockingValueQueue&& stack);
 
         public:
             int64_t depth();

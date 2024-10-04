@@ -6,7 +6,7 @@ namespace sorth
 {
 
 
-    BlockingValueStack::BlockingValueStack()
+    BlockingValueQueue::BlockingValueQueue()
     : item_lock(),
       condition(),
       items()
@@ -14,7 +14,7 @@ namespace sorth
     }
 
 
-    BlockingValueStack::BlockingValueStack(const BlockingValueStack& stack)
+    BlockingValueQueue::BlockingValueQueue(const BlockingValueQueue& stack)
     : item_lock(),
       condition(),
       items(stack.items)
@@ -22,7 +22,7 @@ namespace sorth
     }
 
 
-    BlockingValueStack::BlockingValueStack(BlockingValueStack&& stack)
+    BlockingValueQueue::BlockingValueQueue(BlockingValueQueue&& stack)
     : item_lock(),
       condition(),
       items(std::move(stack.items))
@@ -30,14 +30,14 @@ namespace sorth
     }
 
 
-    int64_t BlockingValueStack::depth()
+    int64_t BlockingValueQueue::depth()
     {
         std::lock_guard<std::mutex> lock(item_lock);
         return items.size();
     }
 
 
-    void BlockingValueStack::push(Value& value)
+    void BlockingValueQueue::push(Value& value)
     {
         std::lock_guard<std::mutex> lock(item_lock);
 
@@ -46,14 +46,14 @@ namespace sorth
     }
 
 
-    Value BlockingValueStack::pop()
+    Value BlockingValueQueue::pop()
     {
         std::unique_lock<std::mutex> lock(item_lock);
 
         condition.wait(lock, [this]() { return !items.empty(); });
 
-        auto value = items.front();
-        items.pop_front();
+        auto value = items.back();
+        items.pop_back();
 
         return value;
     }
