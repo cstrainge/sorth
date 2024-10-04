@@ -493,6 +493,11 @@
     variable! end_index
     variable! start_index
 
+    end_index string.npos =
+    if
+        string @ string.size@  end_index !
+    then
+
     start_index @ variable! index
 
     "" variable! sub_string

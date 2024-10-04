@@ -1374,46 +1374,6 @@ namespace sorth
     }
 
 
-    void word_string_sub_string(InterpreterPtr& interpreter)
-    {
-        auto string = as_string(interpreter, interpreter->pop());
-        auto end = (size_t)as_numeric<int64_t>(interpreter, interpreter->pop());
-        auto start = (size_t)as_numeric<int64_t>(interpreter, interpreter->pop());
-
-        if (   (end != std::string::npos)
-            && (end < start))
-        {
-            std::stringstream message;
-
-            message << "string.substring end index, " << end
-                    << ", before start index, " << start << ".";
-            throw_error(message.str());
-        }
-
-        if (   (start < 0)
-            || (start > string.size()))
-        {
-            std::stringstream message;
-
-            message << "string.substring start index, " << start << ", outside of the string.";
-            throw_error(message.str());
-        }
-
-        if (   (end != std::string::npos)
-            && (end > string.size()))
-        {
-            std::stringstream message;
-
-            message << "Substring end index, " << end << ", outside of the string.";
-            throw_error(message.str());
-        }
-
-        auto sub_string = string.substr(start, end);
-
-        interpreter->push(sub_string);
-    }
-
-
     void word_string_index_read(InterpreterPtr& interpreter)
     {
         auto string = as_string(interpreter, interpreter->pop());
@@ -2525,10 +2485,6 @@ namespace sorth
         ADD_NATIVE_WORD(interpreter, "string.find", word_string_find,
             "Find the first instance of a string within another.",
             "search_string string -- index");
-
-        ADD_NATIVE_WORD(interpreter, "string.sub_string", word_string_sub_string,
-            "Return the string segment between a given start and end point.",
-            "start end string -- sub_string");
 
         ADD_NATIVE_WORD(interpreter, "string.[]@", word_string_index_read,
             "Read a character from the given string.",

@@ -708,7 +708,7 @@ user.home user.path_sep + ".sorth_history.json" + constant repl.history.path
     ( If the cursor isn't at the end of the line, move all remaining text into the new line. )
     x @  lines [ y @ ]@@ string.size@  <
     if
-        x @  string.npos  lines [ y @ ]@@  string.sub_string  lines [ y @ ++ ]!!
+        x @  string.npos  lines [ y @ ]@@  string.substring  lines [ y @ ++ ]!!
         string.npos  x @  lines [ y @ ]@@  string.remove  lines [ y @ ]!!
     then
 
