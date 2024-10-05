@@ -477,9 +477,9 @@
     variable! end_index
     variable! start_index
 
-    end_index string.npos =
+    end_index @ string.npos =
     if
-        string @ string.size@  end_index !
+        string @ string.size@ -- end_index !
     then
 
     start_index @ variable! index
@@ -490,12 +490,17 @@
     end_index @    string @ string.size@  >=
     ||
     if
-        "Substring indices are out of bounds." throw
+        start_index @
+        end_index @
+        string @ string.size@
+        "Substring indices are out of , ({}, {} / {},) bounds."
+        string.format throw
     then
 
     start_index @  end_index @  >
     if
-        "Start and end index in reverse order." throw
+        start_index @  end_index @ "Start and end index, ({}, {},) in reverse order."
+        string.format throw
     then
 
     begin
@@ -1394,7 +1399,7 @@
         index ++!
     repeat
 
-    smallest @
+    chosen @
 ;
 
 
