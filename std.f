@@ -308,6 +308,33 @@
 
 
 
+( Simple increment and decrements. )
+: ++  description: "Increment a value on the stack."
+      ( value -- incremented )
+    1 +
+;
+
+
+: ++!  description: "Increment the given variable."
+       ( variable -- )
+    dup @ ++ swap !
+;
+
+
+: --  description: "Decrement a value on the stack."
+      ( value -- decremented )
+    1 -
+;
+
+
+: --!  description: "Decrement the given variable."
+       ( variable -- )
+    dup @ -- swap !
+;
+
+
+
+
 : do immediate description: "Define a do loop syntax."
                signature: "start end  do <loop-body> loop"
     ( Keep track of the start and end labels for the loop. )
@@ -323,7 +350,7 @@
 
 
     ( Get the end value off the top of the stack and store in a constant it for comparison. )
-    end_value @ dup  op.def_constant
+    end_value @  op.def_constant
 
 
     ( Define the loop index starting at the next value on the stack. )
@@ -365,35 +392,9 @@
     code.merge_stack_block
 ;
 
+
 : loop description: "The end of a do loop."
     sentinel_word
-;
-
-
-
-
-( Simple increment and decrements. )
-: ++  description: "Increment a value on the stack."
-      ( value -- incremented )
-    1 +
-;
-
-
-: ++!  description: "Increment the given variable."
-       ( variable -- )
-    dup @ ++ swap !
-;
-
-
-: --  description: "Decrement a value on the stack."
-      ( value -- decremented )
-    1 -
-;
-
-
-: --!  description: "Decrement the given variable."
-       ( variable -- )
-    dup @ -- swap !
 ;
 
 
