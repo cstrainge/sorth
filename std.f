@@ -308,6 +308,70 @@
 
 
 
+: do immediate description: "Define a do loop syntax."
+               signature: "start end  do <loop-body> loop"
+    ( Keep track of the start and end labels for the loop. )
+    unique_str variable! top_label
+    unique_str variable! end_label
+
+    ( Create a new sub-block of instructions for this loop. )
+    code.new_block
+
+    ( Create variables to track the end boundary and loop index. )
+    unique_str variable! end_value
+    unique_str variable! index
+
+
+    ( Get the end value off the top of the stack and store in a constant it for comparison. )
+    end_value @ dup  op.def_constant
+
+
+    ( Define the loop index starting at the next value on the stack. )
+    index @ dup  op.def_variable
+                 op.execute
+    op.write_variable
+
+    ( Mark the beginning of the loop. )
+    end_label @ op.mark_loop_exit
+    top_label @ op.jump_target
+
+    ( Generate the loop comparison. )
+    index @ op.execute
+    op.read_variable
+
+    end_value @ op.execute
+
+    ` < op.execute
+    end_label @ op.jump_if_zero
+
+
+    ( Compile the loop body. )
+    "loop" 1 code.compile_until_words
+    drop
+
+
+    ( Compile the increment and loop repeat. )
+    index @ op.execute
+    ` ++! op.execute
+    top_label @ op.jump
+
+    ( Mark the end of the loop. )
+    end_label @ op.jump_target
+    op.unmark_loop_exit
+
+
+    ( Clean up and merge the new code. )
+    code.resolve_jumps
+    code.merge_stack_block
+;
+
+: loop description: "The end of a do loop."
+    sentinel_word
+;
+
+
+
+
 ( Simple increment and decrements. )
 : ++  description: "Increment a value on the stack."
       ( value -- incremented )
