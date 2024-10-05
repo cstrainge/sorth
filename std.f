@@ -336,7 +336,7 @@
 
 
 : do immediate description: "Define a do loop syntax."
-               signature: "start end  do <loop-body> loop"
+               signature: "start end do <loop-body> loop"
     ( Keep track of the start and end labels for the loop. )
     unique_str variable! top_label
     unique_str variable! end_label
