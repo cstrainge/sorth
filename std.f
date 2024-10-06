@@ -443,13 +443,6 @@
 ;
 
 
-: show_word immediate description: "Show detailed information about a word."
-            signature: "show_word <word_name>"
-    word op.push_constant_value
-    ` show_word op.execute
-;
-
-
 
 : thread.new immediate description: "Create a new thread and run the specified word and return the new thread id."
              signature: "thread.new <word_name>"
@@ -1615,6 +1608,57 @@
 [else]
     [include] std/simple_repl.f
 [then]
+
+
+
+
+[undefined?] show_word
+[if]
+    : show_word
+        variable! name
+
+        words.get{} { name @ }@
+
+               dup sorth.word.handler_index@
+          swap dup sorth.word.name@
+          swap dup sorth.word.location@
+                   dup sorth.location.path@
+              swap dup sorth.location.line@
+                  swap sorth.location.column@
+        3 pick dup sorth.word.description@
+          swap dup sorth.word.signature@
+        swap 7 push-to
+        "*Word:        {} -> {}
+          Defined:     {}:{}:{}
+
+          Description: {}
+          Signature:   {}*"
+        string.format .cr
+
+        dup sorth.word.is_immediate@
+        if
+            "\n             The word is immediate." .
+        then
+
+        sorth.word.is_scripted@
+        if
+            "\n             The word is written in Forth." .
+        else
+            "\n             The word is a native word." .
+        then
+
+        cr
+    ;
+[then]
+
+
+
+
+: show_word immediate description: "Show detailed information about a word."
+            signature: "show_word <word_name>"
+    word op.push_constant_value
+    ` show_word op.execute
+;
 
 
 
