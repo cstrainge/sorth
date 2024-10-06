@@ -4,30 +4,6 @@
 
 
 
-
-( Convert an array to a json compatible string. )
-: json.to_json_array hidden  ( array -- formatted_string )
-    variable! array_value
-    0 variable! index
-    "[ " variable! array_str
-
-    begin
-        array_str @ array_value [ index @ ]@@ json.to_json_value + array_str !
-
-        index @ array_value [].size@@ -- <
-        if
-            array_str @ ", " + array_str !
-        then
-
-        index ++!
-        index @ array_value [].size@@ >=
-    until
-
-    array_str @ " ]" +
-;
-
-
-
 ( Filter out characters can't be in a json string. )
 : json.filter_json_string hidden  ( string -- filtered_string )
     variable! original
@@ -44,9 +20,11 @@
 
         next_char @
         case
-            "\n" of "\\n" next_char ! endof
-            "\t" of "\\t" next_char ! endof
+            "\n" of "\\n"  next_char ! endof
+            "\r" of "\\r"  next_char ! endof
+            "\t" of "\\t"  next_char ! endof
             "\"" of "\\\"" next_char ! endof
+            "\\" of "\\\\" next_char ! endof
         endcase
 
         new @  next_char @  +  new !
@@ -56,7 +34,6 @@
 
     new @
 ;
-
 
 
 
@@ -95,6 +72,28 @@
 
 
 
+( Convert an array to a json compatible string. )
+: json.to_json_array hidden  ( array -- formatted_string )
+    variable! array_value
+    0 variable! index
+    "[ " variable! array_str
+
+    begin
+        array_str @ array_value [ index @ ]@@ json.to_json_value + array_str !
+
+        index @ array_value [].size@@ -- <
+        if
+            array_str @ ", " + array_str !
+        then
+
+        index ++!
+        index @ array_value [].size@@ >=
+    until
+
+    array_str @ " ]" +
+;
+
+
 
 : #.to_json  description: "Convert a structure object to a JSON string."
              signature: "structure -- json_string"
@@ -118,7 +117,6 @@
 
     new_json @ " }" +
 ;
-
 
 
 
@@ -147,12 +145,12 @@
 
 
 
-
 ( Keep track of the line/column we are on in the input json. )
 # json.location hidden
     line -> 1 ,
     column -> 1
 ;
+
 
 
 ( Take a character and properly increment the line/column as needed. )
@@ -172,7 +170,6 @@
 
 
 
-
 ( String structure used for parsing json.  We use it to keep track of where we are in the string )
 ( during parsing.  For in a logical line/colum way and directly as in the index into the string )
 ( variable. )
@@ -181,6 +178,7 @@
     index -> 0 ,
     source
 ;
+
 
 
 ( Create a new initialized instance of the parsing structure. )
@@ -194,13 +192,11 @@
 
 
 
-
 ( Increment the current location and string positions. )
 : json.string.inc hidden ( character json_string_var_index -- )
     over json.string.location@@ json.location.inc
     dup json.string.index@@ ++ swap json.string.index!!
 ;
-
 
 
 
@@ -214,7 +210,6 @@
 
 
 
-
 ( Check to see if the pointer is at the end of the string or not. )
 : json.string.eos@ hidden ( json.string_var -- is_eos )
     dup json.string.index@@
@@ -222,7 +217,6 @@
 
     >=
 ;
-
 
 
 
@@ -240,7 +234,6 @@
 
 
 
-
 ( Report an error in the json string. )
 : json.error hidden  ( message json.string --  )
     @ variable! json_source
@@ -251,7 +244,6 @@
     "[" location json.location.line@@ + ", " + location json.location.column@@ + "]: " +
     message @ + throw
 ;
-
 
 
 
@@ -272,7 +264,6 @@
 
 
 
-
 ( Expect the next character in the string is the one given.  Throw an error if not. )
 : json.expect_char hidden ( char json.string -- )
     @ variable! json_source
@@ -286,7 +277,6 @@
         json_source json.error
     then
 ;
-
 
 
 
@@ -305,7 +295,6 @@
         index @ size @ >=
     until
 ;
-
 
 
 
@@ -328,9 +317,11 @@
         if
             json_source json.string.next@ dup
             case
-                "n" of drop "\n" next_char ! endof
-                "r" of drop "\r" next_char ! endof
-                "t" of drop "\t" next_char ! endof
+                "n"  of drop "\n" next_char ! endof
+                "r"  of drop "\r" next_char ! endof
+                "t"  of drop "\t" next_char ! endof
+                "\"" of drop "\"" next_char ! endof
+                "\\" of drop "\\" next_char ! endof
 
                 next_char !
             endcase
@@ -344,6 +335,38 @@
     new_string @
 ;
 
+
+
+( Is the given character considered numeric? )
+: json.is_numeric? hidden  ( character -- is_numeric? )
+    variable! next_char
+
+    next_char @ "0" >=
+    next_char @ "9" <= &&
+
+    next_char @ "." =
+    next_char @ "-" =  ||
+
+    ||
+;
+
+
+
+( Read a numeric value from the json string. )
+: json.read_number hidden  ( json.string -- number )
+    @ variable! json_source
+    "" variable! new_number_text
+
+    begin
+        json_source json.string.eos@ '
+        json_source json.string.peek@ json.is_numeric?
+        &&
+    while
+        new_number_text @ json_source json.string.next@ + new_number_text !
+    repeat
+
+    new_number_text @ string.to_number
+;
 
 
 
@@ -385,42 +408,6 @@
 
 
 
-
-( Is the given character considered numeric? )
-: json.is_numeric? hidden  ( character -- is_numeric? )
-    variable! next_char
-
-    next_char @ "0" >=
-    next_char @ "9" <= &&
-
-    next_char @ "." =
-    next_char @ "-" =  ||
-
-    ||
-;
-
-
-
-
-( Read a numeric value from the json string. )
-: json.read_number hidden  ( json.string -- number )
-    @ variable! json_source
-    "" variable! new_number_text
-
-    begin
-        json_source json.string.eos@ '
-        json_source json.string.peek@ json.is_numeric?
-        &&
-    while
-        new_number_text @ json_source json.string.next@ + new_number_text !
-    repeat
-
-    new_number_text @ string.to_number
-;
-
-
-
-
 ( Read a literal value from the json input. )
 : json.read_value hidden  ( json.string -- value )
     @ variable! json_source
@@ -451,7 +438,6 @@
 
     new_value @
 ;
-
 
 
 
@@ -493,7 +479,6 @@
 
     new_hash @
 ;
-
 
 
 
