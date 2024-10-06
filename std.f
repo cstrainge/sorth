@@ -310,25 +310,25 @@
 
 ( Simple increment and decrements. )
 : ++  description: "Increment a value on the stack."
-      ( value -- incremented )
+      signature: "value -- incremented"
     1 +
 ;
 
 
 : ++!  description: "Increment the given variable."
-       ( variable -- )
+       signature: "variable -- "
     dup @ ++ swap !
 ;
 
 
 : --  description: "Decrement a value on the stack."
-      ( value -- decremented )
+      signature: "value -- decremented"
     1 -
 ;
 
 
 : --!  description: "Decrement the given variable."
-       ( variable -- )
+       signature: "variable -- "
     dup @ -- swap !
 ;
 
@@ -622,12 +622,11 @@
 ;
 
 
-: [].size++!  description: "Grow an array by one item, leaving the resized array on the stack."
-              signature: "array -- resized_array"
+: [].size++!  description: "Grow an array by one item."
+              signature: "array -- "
     variable! the_array
 
     the_array [].size@@ ++ the_array [].size!!
-    the_array @
 ;
 
 
@@ -791,6 +790,26 @@
 
 
 
+
+[defined?] clr.to-string
+[if]
+    : to_string description: "Convert a value to a string."
+                signature: "value -- string"
+
+        ( Check if this is a clr object, if it is use the CLR's built-in string formatting. )
+        dup value.is-clr-object?
+        if
+            clr.to-string
+        else
+            ( Looks like a native value, use Forth's string formatting. )
+            to_string
+        then
+    ;
+[then]
+
+
+
+
 ( Given a format string and a position after the beginning bracket { extract the substring found )
 ( within those brackets, {}  If there no specifier there an empty string, "", is returned instead. )
 ( in both cases an updated index is also returned that points to after the closing bracket, }. )
@@ -851,13 +870,14 @@
 
 ( Parse the specifier found in the format string and return it's values broken out.  If the string )
 ( is empty or a component is missing then the default is returned in it's stead. )
-: string.format.parse_specifier  hidden  ( value specifier -- fill alignment width )
+: string.format.parse_specifier  hidden  ( value specifier -- fill alignment width is_hex )
     variable! specifier
     variable! value
 
     " " variable! fill
     value @ value.is-number? if ">" else "<" then variable! alignment
     ""  variable! width
+    false variable! is_hex
 
     variable char
     0 variable! index
@@ -903,6 +923,13 @@
         else
             0 width !
         then
+
+        index @ specifier @ string.format.get_char char !
+
+        char @  "x"  =
+        char @  "X"  =
+        ||
+        is_hex !
     else
         0 width !
     then
@@ -910,6 +937,7 @@
     fill @
     alignment @
     width @
+    is_hex @
 ;
 
 
@@ -942,14 +970,27 @@
     variable fill
     variable alignment
     variable width
+    variable is_hex
 
     0 variable! fill_width
 
-    value @ to_string variable! str_value
+    variable str_value
 
     specifier @  ""  <>
     if
-        value @ specifier @ string.format.parse_specifier width ! alignment ! fill !
+        value @ specifier @ string.format.parse_specifier is_hex ! width ! alignment ! fill !
+
+        is_hex @
+        if
+            value @ value.is-number?
+            if
+                value @ hex str_value !
+            else
+                "Can't convert value to a hex string." throw
+            then
+        else
+            value @ to_string str_value !
+        then
 
         str_value string.size@@  width  <
         if
@@ -979,6 +1020,8 @@
                     endof
             endcase
         then
+    else
+        value @ to_string str_value !
     then
 
     str_value @

@@ -74,6 +74,6 @@ cr
 
 value @ 2 * value !
 
-value @  message @  "{9} : {<19}"  string.format  .cr
-value @  message @  "{^9} : {^19}" string.format  .cr
-value @  message @  "{<9} : {>19}" string.format  .cr
+value @  message @  "{9x} : {<19}"  string.format  .cr
+value @  message @  "{^9x} : {^19}" string.format  .cr
+value @  message @  "{<9x} : {>19}" string.format  .cr
