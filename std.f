@@ -631,6 +631,14 @@
 ;
 
 
+: [].size--!!  description: "Shrink an array variable by one item."
+               signature: "array_variable -- "
+    @ variable! the_array
+
+    the_array [].size@@ -- the_array [].size!!
+;
+
+
 : [].push_front!! description: "Push a new value to the top of an array variable."
                   signature: "value array_variable -- "
     @ [].push_front!
@@ -799,6 +807,47 @@
         then
     ;
 [then]
+
+
+
+
+: string.split description: ""
+               signature: "split_char string -- string_array"
+    variable! string
+    constant splitter
+
+    string @ string.size@ constant string_size
+
+    [ "" ] variable! output
+    0 variable! output_index
+
+    0 variable! index
+    variable next
+
+    begin
+        index @  string_size  <
+    while
+        index @ string string.[]@@ next !
+
+        splitter  next @  =
+        if
+            output [].size++!!
+            output_index ++!
+            "" output [ output_index @ ]!!
+        else
+            output [ output_index @ ]@@ next @ +  output [ output_index @ ]!!
+        then
+
+        index ++!
+    repeat
+
+    output [ output_index @ ]@@  string.size@  0=
+    if
+        output [].size--!!
+    then
+
+    output @
+;
 
 
 
