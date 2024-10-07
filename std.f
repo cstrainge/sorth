@@ -400,6 +400,27 @@
 
 
 
+( Stack words. )
+: nip description: "Nip the second from the top item from the stack."
+      signature: "a b c -- a c"
+    swap
+    drop
+;
+
+
+
+: clear description: "Clear out the stack."
+        signature: " -- "
+    begin
+        depth  0  <>
+    while
+        drop
+    repeat
+;
+
+
+
+
 ( Make sure we have the regular printing words. )
 : .  description: "Print a value with a space."
      signature: "value -- "
