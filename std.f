@@ -811,7 +811,7 @@
 
 
 
-: string.split description: ""
+: string.split description: "Given a split character, split a string into an array of strings."
                signature: "split_char string -- string_array"
     variable! string
     constant splitter
