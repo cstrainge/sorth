@@ -954,6 +954,46 @@ user.home user.path_sep + ".sorth_history.json" + constant repl.history.path
 ;
 
 
+( Switch editor state to multi-line.  If the editor is on a history item that includes newlines )
+( unflatten the text and populate the editor with properly formatted text. )
+: repl.editor.switch_to_multi_line hidden  ( history_var state_var -- )
+    @ variable! state
+    @ variable! history
+
+    true state repl.state.is_multi_line?!!
+
+    variable count
+    0 variable! index
+
+    state repl.state.cursor.x@@ term.cursor_left!
+    0 state repl.state.cursor.x!!
+
+    1 state repl.state.history_index@@ <>
+    if
+
+        "\n" state repl.state.history_index@@ history repl.history.relative@@  string.split
+
+        state repl.state.lines!!
+
+        state repl.state.lines@@ [].size@  0>
+        if
+            state repl.state.lines@@ [].size@ count !
+
+            begin
+                index @  count @  --  <
+            while
+                "\n" term.!
+                index ++!
+            repeat
+
+            count @ term.cursor_up!
+        then
+    then
+
+    state repl.multi_line.repaint_all_lines
+;
+
+
 ( Implementation of the single line edit mode. )
 : repl.single_line.edit  hidden  ( history_var state_var -- [source_text] edit_finished )
     @ variable! state
@@ -1071,8 +1111,7 @@ user.home user.path_sep + ".sorth_history.json" + constant repl.history.path
             endof
 
         repl.command.mode_switch of
-                true state repl.state.is_multi_line?!!
-                state repl.multi_line.repaint_current_line
+                history state repl.editor.switch_to_multi_line
             endof
 
         repl.command.key_press of
