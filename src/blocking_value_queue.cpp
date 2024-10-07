@@ -14,19 +14,52 @@ namespace sorth
     }
 
 
-    BlockingValueQueue::BlockingValueQueue(const BlockingValueQueue& stack)
+    BlockingValueQueue::BlockingValueQueue(const BlockingValueQueue& queue)
     : item_lock(),
       condition(),
-      items(stack.items)
+      items()
     {
+        std::lock_guard<std::mutex> lock(const_cast<BlockingValueQueue&>(queue).item_lock);
+
+        items = queue.items;
     }
 
 
-    BlockingValueQueue::BlockingValueQueue(BlockingValueQueue&& stack)
+    BlockingValueQueue::BlockingValueQueue(BlockingValueQueue&& queue)
     : item_lock(),
       condition(),
-      items(std::move(stack.items))
+      items()
     {
+        std::lock_guard<std::mutex> lock(queue.item_lock);
+
+        items = std::move(queue.items);
+    }
+
+
+    BlockingValueQueue& BlockingValueQueue::operator =(const BlockingValueQueue& queue)
+    {
+        if (&queue != this)
+        {
+            std::lock_guard<std::mutex> lock(const_cast<BlockingValueQueue&>(queue).item_lock);
+            std::lock_guard<std::mutex> lock2(item_lock);
+
+            items = queue.items;
+        }
+
+        return *this;
+    }
+
+    BlockingValueQueue& BlockingValueQueue::operator =(BlockingValueQueue&& queue)
+    {
+        if (&queue != this)
+        {
+            std::lock_guard<std::mutex> lock(queue.item_lock);
+            std::lock_guard<std::mutex> lock2(item_lock);
+
+            items = std::move(queue.items);
+        }
+
+        return *this;
     }
 
 
@@ -42,7 +75,7 @@ namespace sorth
         std::lock_guard<std::mutex> lock(item_lock);
 
         items.push_front(value);
-        condition.notify_all();
+        condition.notify_one();
     }
 
 

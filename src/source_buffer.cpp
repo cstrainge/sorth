@@ -32,9 +32,6 @@ namespace sorth::internal
         auto end = std::istreambuf_iterator<char>();
 
         source = std::string(begin, end);
-
-        // TODO: Look for a #! on the first line and remove it before the rest of the
-        //       interpreter sees it.
     }
 
 

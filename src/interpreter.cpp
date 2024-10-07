@@ -370,19 +370,25 @@ namespace sorth
             }
             else
             {
-                std::lock_guard<std::mutex> guard(sub_thread_lock);
-
                 auto& info = get_thread_info(id);
 
                 if (info.outputs.depth() == 0)
                 {
+                    std::lock_guard<std::mutex> guard(sub_thread_lock);
+
                     auto thread = thread_map[id];
+
                     thread.word_thread->join();
 
-                    thread_map.erase(id);
+                    if (thread_map.contains(id))
+                    {
+                        thread_map.erase(id);
+                    }
                 }
                 else
                 {
+                    std::lock_guard<std::mutex> guard(sub_thread_lock);
+
                     info.thead_deleted = true;
                 }
             }
@@ -872,7 +878,7 @@ namespace sorth
 
         Value InterpreterImpl::thread_pop_output(std::thread::id& id)
         {
-            auto info = get_thread_info(id);
+            auto& info = get_thread_info(id);
             auto value = info.outputs.pop();
 
             // If the thread has exited and we've consumed the last of it's outputs free up the
@@ -880,9 +886,11 @@ namespace sorth
             if (   (info.thead_deleted)
                 && (info.outputs.depth() == 0))
             {
-                auto thread = thread_map[id];
-                thread.word_thread->join();
+                std::lock_guard<std::mutex> guard(sub_thread_lock);
 
+                auto& thread = thread_map[id];
+
+                thread.word_thread->join();
                 thread_map.erase(id);
             }
 
@@ -897,6 +905,8 @@ namespace sorth
                 auto actual = std::reinterpret_pointer_cast<InterpreterImpl>(parent_interpreter);
                 return actual->get_thread_info(id);
             }
+
+            std::lock_guard<std::mutex> guard(sub_thread_lock);
 
             if (!thread_map.contains(id))
             {

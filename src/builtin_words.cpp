@@ -573,7 +573,10 @@ namespace sorth
             auto info = interpreter->get_handler_info(item.word.handler_index);
 
             std::cout << "Thread " << item.word_thread->get_id()
-                      << " word " << info.name << ", (" << item.word.handler_index << "),"
+                      << " word " << info.name << ", (" << item.word.handler_index << "), "
+
+                      << "I/O queues (" << item.inputs.depth() << "/"
+                                        << item.outputs.depth() << ")"
                       << (item.thead_deleted ? " has completed." : " is running.")
                       << std::endl;
         }

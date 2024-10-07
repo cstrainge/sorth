@@ -12,12 +12,16 @@ namespace sorth
             std::mutex item_lock;
             std::condition_variable condition;
 
-            std::list<Value> items;
+            std::deque<Value> items;
 
         public:
             BlockingValueQueue();
-            BlockingValueQueue(const BlockingValueQueue& stack);
-            BlockingValueQueue(BlockingValueQueue&& stack);
+            BlockingValueQueue(const BlockingValueQueue& queue);
+            BlockingValueQueue(BlockingValueQueue&& queue);
+
+        public:
+            BlockingValueQueue& operator=(const BlockingValueQueue& queue);
+            BlockingValueQueue& operator=(BlockingValueQueue&& queue);
 
         public:
             int64_t depth();
