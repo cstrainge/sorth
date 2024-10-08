@@ -970,7 +970,6 @@ user.home user.path_sep + ".sorth_history.json" + constant repl.history.path
 
     1 state repl.state.history_index@@ <>
     if
-
         "\n" state repl.state.history_index@@ history repl.history.relative@@  string.split
 
         state repl.state.lines!!
