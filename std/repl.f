@@ -905,6 +905,18 @@ user.home user.path_sep + ".sorth_history.json" + constant repl.history.path
                     is_in_string? @
                     if
                         new @  "\n"  +  new !
+                    else
+                        ( Make sure to preserve a space if the next text is at the beginning of )
+                        ( beginning of the next line. )
+                        index @ ++  size @  <
+                        if
+                            index @ ++  original @ string.[]@  " " <>
+                            index @ ++  original @ string.[]@  "\n" <>
+                            &&
+                            if
+                               new @  " "  +  new !
+                            then
+                        then
                     then
                 endof
 
