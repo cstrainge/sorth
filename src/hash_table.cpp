@@ -75,7 +75,7 @@ namespace sorth
         {
             auto found_iter = r_lhs.items.find(iter.first);
 
-            if (found_iter == r_rhs.items.end())
+            if (found_iter == r_lhs.items.end())
             {
                 return false;
             }

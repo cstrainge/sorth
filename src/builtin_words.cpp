@@ -1521,6 +1521,51 @@ namespace sorth
     }
 
 
+    void word_structure_field_exists(InterpreterPtr& interpreter)
+    {
+        auto var = interpreter->pop();
+
+        throw_error_if(!std::holds_alternative<DataObjectPtr>(var),
+                       *interpreter, "Expected data object.");
+
+        auto object = std::get<DataObjectPtr>(var);
+        auto field_name = as_string(interpreter, interpreter->pop());
+
+        bool found = false;
+
+        for (const auto& name : object->definition->fieldNames)
+        {
+            if (name == field_name)
+            {
+                found = true;
+                break;
+            }
+        }
+
+        interpreter->push(found);
+    }
+
+
+    void word_structure_compare(InterpreterPtr& interpreter)
+    {
+        auto var = interpreter->pop();
+
+        throw_error_if(!std::holds_alternative<DataObjectPtr>(var),
+                       *interpreter, "Expected data object.");
+
+        auto a = std::get<DataObjectPtr>(var);
+
+        var = interpreter->pop();
+
+        throw_error_if(!std::holds_alternative<DataObjectPtr>(var),
+                       *interpreter, "Expected data object.");
+
+        auto b = std::get<DataObjectPtr>(var);
+
+        interpreter->push(a == b);
+    }
+
+
     void word_array_new(InterpreterPtr& interpreter)
     {
         auto count = as_numeric<int64_t>(interpreter, interpreter->pop());
@@ -1607,6 +1652,16 @@ namespace sorth
         }
 
         interpreter->push(array_dest);
+    }
+
+
+
+    void word_array_compare(InterpreterPtr& interpreter)
+    {
+        auto array_a = as_array(interpreter, interpreter->pop());
+        auto array_b = as_array(interpreter, interpreter->pop());
+
+        interpreter->push(array_a == array_b);
     }
 
 
@@ -1795,6 +1850,15 @@ namespace sorth
         }
 
         interpreter->push(hash_dest);
+    }
+
+
+    void word_hash_compare(InterpreterPtr& interpreter)
+    {
+        auto hash_a = as_hash_table(interpreter, interpreter->pop());
+        auto hash_b = as_hash_table(interpreter, interpreter->pop());
+
+        interpreter->push(hash_a == hash_b);
     }
 
 
@@ -2530,9 +2594,16 @@ namespace sorth
             "Call an iterator for each member of a structure.",
             "word_or_index -- ");
 
+        ADD_NATIVE_WORD(interpreter, "#.field-exists?", word_structure_field_exists,
+            "Check if the named structure field exits.",
+            "field_name structure -- boolean");
+
+        ADD_NATIVE_WORD(interpreter, "#.=", word_structure_compare,
+            "Check if two structures are the same.",
+            "a b -- boolean");
+
 
         // Array words.
-
         ADD_NATIVE_WORD(interpreter, "[].new", word_array_new,
             "Create a new array with the given default size.",
             "size -- array");
@@ -2564,6 +2635,10 @@ namespace sorth
         ADD_NATIVE_WORD(interpreter, "[].+", word_array_plus,
             "Take two arrays and deep copy the contents from the second into the "
             "first.",
+            "dest source -- dest");
+
+        ADD_NATIVE_WORD(interpreter, "[].=", word_array_compare,
+            "Take two arrays and compare the contents to each other.",
             "dest source -- dest");
 
         ADD_NATIVE_WORD(interpreter, "[].push_front!", word_push_front,
@@ -2645,6 +2720,10 @@ namespace sorth
         ADD_NATIVE_WORD(interpreter, "{}.+", word_hash_plus,
             "Take two hashes and deep copy the contents from the second into the first.",
             "dest source -- dest");
+
+        ADD_NATIVE_WORD(interpreter, "{}.=", word_hash_compare,
+            "Take two hashes and compare their contents.",
+            "a b -- was-match");
 
         ADD_NATIVE_WORD(interpreter, "{}.size@", word_hash_table_size,
             "Get the size of the hash table.",

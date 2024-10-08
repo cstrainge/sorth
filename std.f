@@ -336,7 +336,7 @@
 
 
 : do immediate description: "Define a do loop syntax."
-               signature: "start end do <loop-body> loop"
+               signature: "start_value end_value do <loop-body> loop"
     ( Keep track of the start and end labels for the loop. )
     unique_str variable! top_label
     unique_str variable! end_label
@@ -469,6 +469,105 @@
              signature: "thread.new <word_name>"
     word op.push_constant_value
     ` thread.new op.execute
+;
+
+
+
+: value.both-are-hash-tables? description: "Are two values hash tables?"
+                              signature: "a b -- are-hash-tables?"
+         value.is-hash-table?
+    swap value.is-hash-table?
+    &&
+;
+
+
+
+: value.both-are-arrays? description: "Are two values arrays?"
+                         signature: "a b -- are-arrays?"
+         value.is-array?
+    swap value.is-array?
+    &&
+;
+
+
+
+: value.both-are-structures? description: "Are two values structures?"
+                             signature: "a b -- are-structures?"
+         value.is-structure?
+    swap value.is-structure?
+    &&
+;
+
+
+
+: value.both-are-strings? description: "Are two values strings?"
+                          signature: "a b -- are-strings?"
+         value.is-string?
+    swap value.is-string?
+    &&
+;
+
+
+
+: value.both-are-numbers? description: "Are two values numbers?"
+                          signature: "a b -- are-numbers?"
+         value.is-number?
+    swap value.is-number?
+    &&
+;
+
+
+
+: value.both-are-booleans? description: "Are two values booleans?"
+                           signature: "a b -- are-boolean?"
+         value.is-boolean?
+    swap value.is-boolean?
+    &&
+;
+
+
+
+: = description: "Compare two values."
+    signature: "a b -- are_equal?"
+    variable! b
+    variable! a
+
+    a @ b @  value.both-are-structures?
+    if
+        a @ b @  #.=
+    else
+        a @ b @  value.both-are-hash-tables?
+        if
+            a @ b @  {}.=
+        else
+            a @ b @  value.both-are-arrays?
+            if
+                a @ b @  [].=
+            else
+                a @ b @  =
+            then
+        then
+    then
+;
+
+
+
+: + description: "Add two values together."
+    signature: "a b -- result"
+    variable! b
+    variable! a
+
+    a @ b @  value.both-are-hash-tables?
+    if
+        a @ b @  {}.+
+    else
+        a @ b @  value.both-are-arrays?
+        if
+            a @ b @  [].+
+        else
+            a @ b @  +
+        then
+    then
 ;
 
 
