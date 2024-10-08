@@ -2083,7 +2083,7 @@ namespace sorth
     }
 
 
-    void word_depth(InterpreterPtr& interpreter)
+    void word_stack_depth(InterpreterPtr& interpreter)
     {
         interpreter->push(interpreter->depth());
     }
@@ -2830,7 +2830,7 @@ namespace sorth
             "Rotate the top 3 values on the stack.",
             "a b c -- c a b");
 
-        ADD_NATIVE_WORD(interpreter, "depth", word_depth,
+        ADD_NATIVE_WORD(interpreter, "stack.depth", word_stack_depth,
             "Get the current depth of the stack.",
             " -- depth");
 

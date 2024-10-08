@@ -412,7 +412,7 @@
 : clear description: "Clear out the stack."
         signature: " -- "
     begin
-        depth  0  <>
+        stack.depth  0  <>
     while
         drop
     repeat
