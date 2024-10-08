@@ -45,7 +45,8 @@
             ],
             "defines": [
                 "VERSION=\"CURRENT_VERSION\"",
-                "MESSAGE=\"Compiler Version\""
+                "MESSAGE=\"Compiler Version\"",
+                "size_t=int64_t"
             ],
             "compilerPath": "/usr/bin/clang",
             "cStandard": "c17",
