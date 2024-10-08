@@ -552,20 +552,32 @@
 
 
 
+: <> description: "Compare two values."
+     signature: "a b -- are-not-equal?"
+    = '
+;
+
+
+
 : + description: "Add two values together."
     signature: "a b -- result"
     variable! b
     variable! a
 
-    a @ b @  value.both-are-hash-tables?
+    a @ b @  value.both-are-structures?
     if
-        a @ b @  {}.+
+        a @ b @  #.=
     else
-        a @ b @  value.both-are-arrays?
+        a @ b @  value.both-are-hash-tables?
         if
-            a @ b @  [].+
+            a @ b @  {}.+
         else
-            a @ b @  +
+            a @ b @  value.both-are-arrays?
+            if
+                a @ b @  [].+
+            else
+                a @ b @  +
+            then
         then
     then
 ;

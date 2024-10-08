@@ -1999,15 +1999,6 @@ namespace sorth
     }
 
 
-    void word_not_equal(InterpreterPtr& interpreter)
-    {
-        string_or_numeric_op(interpreter,
-                             [&](auto a, auto b) { interpreter->push((bool)(a != b)); },
-                             [&](auto a, auto b) { interpreter->push((bool)(a != b)); },
-                             [&](auto a, auto b) { interpreter->push((bool)(a != b)); });
-    }
-
-
     void word_greater_equal(InterpreterPtr& interpreter)
     {
         string_or_numeric_op(interpreter,
@@ -2799,10 +2790,6 @@ namespace sorth
         // Equality words.
         ADD_NATIVE_WORD(interpreter, "=", word_equal,
             "Are 2 values equal?",
-            "a b -- bool");
-
-        ADD_NATIVE_WORD(interpreter, "<>", word_not_equal,
-            "Are 2 values not equal?",
             "a b -- bool");
 
         ADD_NATIVE_WORD(interpreter, ">=", word_greater_equal,
