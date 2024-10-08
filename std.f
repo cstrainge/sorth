@@ -565,20 +565,15 @@
     variable! b
     variable! a
 
-    a @ b @  value.both-are-structures?
+    a @ b @  value.both-are-hash-tables?
     if
-        a @ b @  #.=
+        a @ b @  {}.+
     else
-        a @ b @  value.both-are-hash-tables?
+        a @ b @  value.both-are-arrays?
         if
-            a @ b @  {}.+
+            a @ b @  [].+
         else
-            a @ b @  value.both-are-arrays?
-            if
-                a @ b @  [].+
-            else
-                a @ b @  +
-            then
+            a @ b @  +
         then
     then
 ;
