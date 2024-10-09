@@ -38,7 +38,7 @@
 
 
 : sentinel_word hidden
-    "This word should not be run directly outside of it's syntax." throw
+    "The word " swap + " should not be run directly outside of it's syntax." + throw
 ;
 
 
@@ -99,11 +99,11 @@
 ;
 
 : else immediate description: "Define an else clause for an if statement."
-    sentinel_word
+    "else" sentinel_word
 ;
 
 : then immediate description: "End of an if/else/then block."
-    sentinel_word
+    "then" sentinel_word
 ;
 
 
@@ -154,15 +154,15 @@
 ;
 
 : until description: "The end of a loop/until block."
-    sentinel_word
+    "until" sentinel_word
 ;
 
 : while description: "Part of a begin/while/repeat block."
-    sentinel_word
+    "while" sentinel_word
 ;
 
 : repeat description: "The end of a begin/while/repeat block."
-    sentinel_word
+    "repeate" sentinel_word
 ;
 
 
@@ -175,7 +175,7 @@
 ;
 
 : ) immediate description: "The end of a comment block."
-    sentinel_word
+    ")" sentinel_word
 ;
 
 
@@ -295,15 +295,15 @@
 ;
 
 : of immediate description: "Defines a test clause of a case block."
-    sentinel_word
+    "of" sentinel_word
 ;
 
 : endof immediate description: "Ends a clause of a case block."
-    sentinel_word
+    "endof" sentinel_word
 ;
 
 : endcase immediate description: "End of a case block."
-    sentinel_word
+    "endcase" sentinel_word
 ;
 
 
@@ -394,7 +394,7 @@
 
 
 : loop description: "The end of a do loop."
-    sentinel_word
+    "loop" sentinel_word
 ;
 
 
@@ -898,23 +898,23 @@
 ;
 
 : , immediate description: "Separator in the [ index , ... ] and { key -> value , ... } syntaxes."
-    sentinel_word
+    "," sentinel_word
 ;
 
 : ]! immediate description: "End of the [ index ] syntax.  Indicates an array write."
-    sentinel_word
+    "]!" sentinel_word
 ;
 
 : ]!! immediate description: "End of the [ index ] syntax.  Indicates a an array variable write."
-    sentinel_word
+    "]!!" sentinel_word
 ;
 
 : ]@ immediate description: "End of the [ index ] syntax.  Indicates an array read."
-    sentinel_word
+    "]@" sentinel_word
 ;
 
 : ]@@ immediate description: "End of the [ index ] syntax.  Indicates an array variable read."
-    sentinel_word
+    "]@@" sentinel_word
 ;
 
 
@@ -1342,23 +1342,23 @@
 ;
 
 : }! immediate description: "End of the { key } syntax.  Indicates a hash table write."
-    sentinel_word
+    "}!" sentinel_word
 ;
 
 : }!! immediate description: "End of the { key } syntax.  Indicates a a hash table variable write."
-    sentinel_word
+    "}!!" sentinel_word
 ;
 
 : }@ immediate description: "End of the { key } syntax.  Indicates a hash table read."
-    sentinel_word
+    "}@" sentinel_word
 ;
 
 : }@@ immediate description: "End of the { key } syntax.  Indicates a hash table variable read."
-    sentinel_word
+    "}@@" sentinel_word
 ;
 
 : } immediate description: "Hash table definition syntax."
-    sentinel_word
+    "}" sentinel_word
 ;
 
 
@@ -1508,11 +1508,11 @@
 ;
 
 : catch immediate description: "End of the try block, starts the catch block."
-    sentinel_word
+    "catch" sentinel_word
 ;
 
 : endcatch immediate description: "End of the total try/catch/endcatch block."
-    sentinel_word
+    "endcatch" sentinel_word
 ;
 
 
