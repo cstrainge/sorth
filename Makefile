@@ -67,10 +67,10 @@ else ifeq ($(OS),Linux)
 	LINKFLAGS += -fuse-ld=lld -ldl
 
 	ifeq ($(CXXTARGET),x86_64-unknown-linux-gnu)
-		LINKFLAGS += -static -stdlib=libc++
+		LINKFLAGS += -static -stdlib=libc++ -fuse-ld=lld -ldl
 	else ifeq ($(CXXTARGET),arm-unknown-linux-gnu)
 	# optionally use libatomic on arm
-		LINKFLAGS += -latomic -mfloat-abi=soft
+		LINKFLAGS += -latomic -mfloat-abi=soft -fuse-ld=lld -ldl
 	endif
 	CP_CMD := cp std.f $(BUILD)
 	CP_R := cp -r std $(BUILD)
