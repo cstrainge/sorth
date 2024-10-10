@@ -14,7 +14,6 @@ endif
 
 
 CXXFLAGS = -O3 -std=c++20
-LINKFLAGS = ""
 GCC_CXXFLAGS = -DMESSAGE='"Compiled with GCC: $(CXX_VERSION)"'
 CLANG_CXXFLAGS = -DMESSAGE='"Compiled with Clang: $(CXX_VERSION)"'
 UNKNOWN_CXXFLAGS = -DMESSAGE='"Compiled with an unknown compiler"'
@@ -51,10 +50,8 @@ ifeq ($(CXX),g++)
   CXXFLAGS += $(GCC_CXXFLAGS)
 else ifeq ($(CXX),clang++)
   CXXFLAGS += $(CLANG_CXXFLAGS)
-  CXXFLAGS += -Wno-vla-extension
 else ifeq ($(CXX),c++) # not sure if this is a good assumption, but it works for CI and local builds on MacOS
   CXXFLAGS += $(CLANG_CXXFLAGS)
-  CXXFLAGS += -Wno-vla-extension
 else
   CXXFLAGS += $(UNKNOWN_CXXFLAGS)
 endif
@@ -64,13 +61,13 @@ ifeq ($(OS),Darwin)
 	CP_CMD := cp std.f $(BUILD)
 	CP_R := cp -r std $(BUILD)
 else ifeq ($(OS),Linux)
-	LINKFLAGS += -fuse-ld=lld -ldl
+	CXXFLAGS += -fuse-ld=lld -ldl
 
 	ifeq ($(CXXTARGET),x86_64-unknown-linux-gnu)
-		LINKFLAGS += -static -stdlib=libc++ -fuse-ld=lld -ldl
+		CXXFLAGS += -static -stdlib=libc++
 	else ifeq ($(CXXTARGET),arm-unknown-linux-gnu)
 	# optionally use libatomic on arm
-		LINKFLAGS += -latomic -mfloat-abi=soft -fuse-ld=lld -ldl
+		CXXFLAGS += -latomic -mfloat-abi=soft
 	endif
 	CP_CMD := cp std.f $(BUILD)
 	CP_R := cp -r std $(BUILD)
@@ -97,7 +94,6 @@ $(BUILD)/$(TARGET): $(OBJS) ## Build binary
 	install -d $(BUILD) || true
 	$(CXX) \
 		$(CXXFLAGS) \
-		$(LINKFLAGS) \
 		$(OBJS) \
 		-o ./$(BUILD)/$(TARGET)
 
