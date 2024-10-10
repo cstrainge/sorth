@@ -915,6 +915,7 @@ namespace sorth
         }
 
 
+
         void word_ffi_struct(InterpreterPtr& interpreter)
         {
             auto location = interpreter->get_current_location();
@@ -1138,6 +1139,8 @@ namespace sorth
 
     void register_ffi_words(InterpreterPtr& interpreter)
     {
+        // TODO: Allow for structures: #.ffi ... ;
+
         ADD_NATIVE_WORD(interpreter, "ffi.load", word_ffi_open,
             "Load an binary library and register it with the ffi interface.",
             "lib-name -- ");
