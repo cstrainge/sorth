@@ -20,8 +20,8 @@ namespace sorth
             BlockingValueQueue(BlockingValueQueue&& queue);
 
         public:
-            BlockingValueQueue& operator=(const BlockingValueQueue& queue);
-            BlockingValueQueue& operator=(BlockingValueQueue&& queue);
+            BlockingValueQueue& operator =(const BlockingValueQueue& queue);
+            BlockingValueQueue& operator =(BlockingValueQueue&& queue);
 
         public:
             int64_t depth();
