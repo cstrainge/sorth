@@ -408,39 +408,6 @@
 
 
 
-( Read a literal value from the json input. )
-: json.read_value hidden  ( json.string -- value )
-    @ variable! json_source
-    variable new_value
-
-    json_source json.skip_whitespace
-
-    json_source json.string.eos@
-    if
-        "Unexpected end of json string." json_source json.error
-    then
-
-    json_source json.string.peek@
-    case
-        "t"  of "true"  json_source json.expect_string   true new_value !  endof
-        "f"  of "false" json_source json.expect_string  false new_value !  endof
-        "["  of         json_source json.read_array           new_value !  endof
-        "{"  of         json_source json.read_hash            new_value !  endof
-        "\"" of         json_source json.read_string          new_value !  endof
-
-        json_source json.string.peek@ json.is_numeric?
-        if
-            json_source json.read_number new_value !
-        else
-            "Unexpected json value type." json_source json.error
-        then
-    endcase
-
-    new_value @
-;
-
-
-
 ( Read a hash value from the json string in key/value pairs. )
 : json.read_hash hidden
     @ variable! json_source
@@ -478,6 +445,39 @@
     "}" json_source json.expect_char
 
     new_hash @
+;
+
+
+
+( Read a literal value from the json input. )
+: json.read_value hidden  ( json.string -- value )
+    @ variable! json_source
+    variable new_value
+
+    json_source json.skip_whitespace
+
+    json_source json.string.eos@
+    if
+        "Unexpected end of json string." json_source json.error
+    then
+
+    json_source json.string.peek@
+    case
+        "t"  of "true"  json_source json.expect_string   true new_value !  endof
+        "f"  of "false" json_source json.expect_string  false new_value !  endof
+        "["  of         json_source json.read_array           new_value !  endof
+        "{"  of         json_source json.read_hash            new_value !  endof
+        "\"" of         json_source json.read_string          new_value !  endof
+
+        json_source json.string.peek@ json.is_numeric?
+        if
+            json_source json.read_number new_value !
+        else
+            "Unexpected json value type." json_source json.error
+        then
+    endcase
+
+    new_value @
 ;
 
 
