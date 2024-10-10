@@ -23,6 +23,7 @@
         "endcase",
         "endcatch",
         "endof",
+        "FARPROC",
         "Forths",
         "libatomic",
         "npos",
