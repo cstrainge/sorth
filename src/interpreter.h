@@ -239,4 +239,13 @@ namespace sorth
     }
 
 
+    inline ArrayPtr as_array(InterpreterPtr& interpreter, const Value& value)
+    {
+        internal::throw_error_if(!std::holds_alternative<ArrayPtr>(value),
+                                 *interpreter,
+                                 "Expected an array object.");
+
+        return std::get<ArrayPtr>(value);
+    }
+
 }

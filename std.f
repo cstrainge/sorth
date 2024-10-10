@@ -1846,6 +1846,12 @@
 
 
 
+( Include or ffi interface words. )
+[include] std/ffi.f
+
+
+
+
 ( Quick hack to let scripts be executable from the command line. )
 : #!/usr/bin/env hidden ;
 : sorth hidden ;

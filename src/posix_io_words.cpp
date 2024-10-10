@@ -264,10 +264,10 @@ namespace sorth
         void word_file_read_string(InterpreterPtr& interpreter)
         {
             int fd = (int)as_numeric<int64_t>(interpreter, interpreter->pop());
-            size_t size = as_numeric<int64_t>(interpreter, interpreter->pop());
+            size_t new_size = as_numeric<int64_t>(interpreter, interpreter->pop());
 
-            char buffer[size + 1];
-            memset(buffer, 0, size + 1);
+            char buffer[new_size + 1];
+            memset(buffer, 0, new_size + 1);
 
             ssize_t result = 0;
             size_t read_bytes = 0;
@@ -278,14 +278,14 @@ namespace sorth
 
                 do
                 {
-                    result = read(fd, &buffer[read_bytes], size - read_bytes);
+                    result = read(fd, &buffer[read_bytes], new_size - read_bytes);
 
                     if (result > 0)
                     {
                         read_bytes += result;
                     }
                 }
-                while ((result > 0) && (read_bytes < size));
+                while ((result > 0) && (read_bytes < new_size));
             }
             while ((result == -1) && (errno == EINTR));
 

@@ -14,6 +14,7 @@ endif
 
 
 CXXFLAGS = -O3 -std=c++20
+LINKFLAGS = ""
 GCC_CXXFLAGS = -DMESSAGE='"Compiled with GCC: $(CXX_VERSION)"'
 CLANG_CXXFLAGS = -DMESSAGE='"Compiled with Clang: $(CXX_VERSION)"'
 UNKNOWN_CXXFLAGS = -DMESSAGE='"Compiled with an unknown compiler"'
@@ -50,8 +51,10 @@ ifeq ($(CXX),g++)
   CXXFLAGS += $(GCC_CXXFLAGS)
 else ifeq ($(CXX),clang++)
   CXXFLAGS += $(CLANG_CXXFLAGS)
+  CXXFLAGS += -Wno-vla-extension
 else ifeq ($(CXX),c++) # not sure if this is a good assumption, but it works for CI and local builds on MacOS
   CXXFLAGS += $(CLANG_CXXFLAGS)
+  CXXFLAGS += -Wno-vla-extension
 else
   CXXFLAGS += $(UNKNOWN_CXXFLAGS)
 endif
@@ -60,24 +63,21 @@ endif
 ifeq ($(OS),Darwin)
 	CP_CMD := cp std.f $(BUILD)
 	CP_R := cp -r std $(BUILD)
-	CP_H := cp src/sorth_ext.h $(BUILD)
 else ifeq ($(OS),Linux)
-	CXXFLAGS += -fuse-ld=lld -ldl
+	LINKFLAGS += -fuse-ld=lld -ldl -lffi -lm
 
 	ifeq ($(CXXTARGET),x86_64-unknown-linux-gnu)
-		CXXFLAGS += -static -stdlib=libc++
+		LINKFLAGS += -static -stdlib=libc++
 	else ifeq ($(CXXTARGET),arm-unknown-linux-gnu)
 	# optionally use libatomic on arm
-		CXXFLAGS += -latomic -mfloat-abi=soft
+		LINKFLAGS += -latomic -mfloat-abi=soft
 	endif
 	CP_CMD := cp std.f $(BUILD)
 	CP_R := cp -r std $(BUILD)
-	CP_H := cp src/sorth_ext.h $(BUILD)
 else ifeq ($(OS),Windows_NT)
 	TARGET := $(TARGET).exe
 	CP_CMD := robocopy "." "$(BUILD)" "std.f" || true
 	CP_R := robocopy "std" "$(BUILD)\std" /e || true
-	CP_H := robocopy "." "$(BUILD)" ".\src\sorth_ext.h" || true
 endif
 
 default: $(BUILD)/$(TARGET) copy_stdlib strip ## Default
@@ -97,6 +97,7 @@ $(BUILD)/$(TARGET): $(OBJS) ## Build binary
 	install -d $(BUILD) || true
 	$(CXX) \
 		$(CXXFLAGS) \
+		$(LINKFLAGS) \
 		$(OBJS) \
 		-o ./$(BUILD)/$(TARGET)
 
@@ -116,17 +117,13 @@ else ifeq ($(OS),Windows_NT)
 	strip $(BUILD)/$(TARGET)
 endif
 
-copy_stdlib: $(BUILD)/std.f $(BUILD)/std/* $(BUILD)/sorth_ext.h ## Copy stdlib and extension header
-                                                                ##  to build directory.
+copy_stdlib: $(BUILD)/std.f $(BUILD)/std/*  ## Copy stdlib to build directory.
 
 $(BUILD)/std.f: std.f ## Copy std.f to build directory
 	$(CP_CMD)
 
 $(BUILD)/std/*: std/* ## Copy std/* to build directory
 	$(CP_R)
-
-$(BUILD)/sorth_ext.h: src/sorth_ext.h
-	$(CP_H)
 
 bundle: ## Bundle binary assets for vsce
 

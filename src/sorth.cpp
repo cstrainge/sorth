@@ -112,7 +112,7 @@ int main(int argc, char* argv[])
         sorth::register_terminal_words(interpreter);
         sorth::register_io_words(interpreter);
         sorth::register_user_words(interpreter);
-        sorth::register_extension_module_words(interpreter);
+        sorth::register_ffi_words(interpreter);
 
         auto std_lib = interpreter->find_file("std.f");
         interpreter->process_source(std_lib);
