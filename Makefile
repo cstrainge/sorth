@@ -64,7 +64,7 @@ ifeq ($(OS),Darwin)
 	CP_CMD := cp std.f $(BUILD)
 	CP_R := cp -r std $(BUILD)
 else ifeq ($(OS),Linux)
-	LINKFLAGS += -fuse-ld=lld -ldl -lffi -lm
+	LINKFLAGS += -fuse-ld=lld -ldl
 
 	ifeq ($(CXXTARGET),x86_64-unknown-linux-gnu)
 		LINKFLAGS += -static -stdlib=libc++
