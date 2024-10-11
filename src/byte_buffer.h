@@ -10,14 +10,24 @@ namespace sorth
     {
         private:
             std::vector<unsigned char> bytes;
-            int64_t position;
+            int64_t current_position;
 
         public:
             ByteBuffer(int64_t size);
+            ByteBuffer(const ByteBuffer& buffer);
+            ByteBuffer(ByteBuffer&& buffer);
 
         public:
+            ByteBuffer& operator =(const ByteBuffer& buffer);
+            ByteBuffer& operator =(ByteBuffer&& buffer);
+
+        public:
+            void resize(int64_t new_size);
             int64_t size() const;
-            int64_t postion() const;
+
+            int64_t position() const;
+            void* position_ptr() const;
+
             void set_position(int64_t new_position);
 
         public:
@@ -32,6 +42,9 @@ namespace sorth
 
             void write_string(const std::string& string, int64_t max_size);
             std::string read_string(int64_t max_size);
+
+        private:
+            void increment_position(int64_t increment);
 
         private:
             friend std::ostream& operator <<(std::ostream& stream, const ByteBuffer& buffer);

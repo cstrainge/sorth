@@ -23,10 +23,9 @@ namespace sorth
 
     namespace
     {
-
         #ifdef IS_WINDOWS
 
-            using library_handle = HANDLE;
+            using library_handle = HMODULE;
             using fn_handle = FARPROC;
 
         #elif defined(IS_UNIX)
@@ -40,68 +39,16 @@ namespace sorth
         std::unordered_map<std::string, library_handle> library_map;
 
 
-        library_handle load_library(InterpreterPtr& interpreter, const std::string& lib_name)
-        {
-            library_handle handle =
-
-            #ifdef IS_WINDOWS
-                    LoadLibraryA(lib_name.c_str());
-
-                if (handle == nullptr)
-                {
-                    throw_windows_error(*interpreter,
-                                        "Could not load libary " + lib_name + ": ",
-                                        GetLastError());
-                }
-            #elif defined(IS_UNIX)
-                    dlopen(lib_name.c_str(), RTLD_NOW);
-
-                if (handle == nullptr)
-                {
-                    throw_error(*interpreter,
-                                std::string("Failed to load external library: ") + dlerror() + ".");
-                }
-            #endif
-
-            return handle;
-        }
-
-        fn_handle find_function(InterpreterPtr& interpreter,
-                                const std::string& lib_name,
-                                const std::string& function_name)
-        {
-            auto found = library_map.find(lib_name);
-
-            if (found == library_map.end())
-            {
-                throw_error(*interpreter, "Failed find open libary: " + lib_name + ".");
-            }
-
-            fn_handle fn_handle =
-                #ifdef IS_WINDOWS
-                    GetProcAddress(found->second, function_name.c_str());
-                #elif defined(IS_UNIX)
-                    dlsym(found->second, function_name.c_str());
-                #endif
-
-            if (fn_handle == nullptr)
-            {
-                throw_error(*interpreter, "Could not find function" + function_name +
-                                          " in library " + lib_name + ".");
-            }
-
-            return fn_handle;
-        }
-
-
         struct ConversionInfo
         {
-            size_t size;
+            int64_t size;
             ffi_type* type;
             bool is_ptr;
 
-            std::function<void(InterpreterPtr&, const Value&, void*)> convert_from;
-            std::function<Value(InterpreterPtr&, void*)> convert_to;
+            std::function<void(InterpreterPtr&, const Value&, ByteBuffer&)> convert_from;
+            std::function<Value(InterpreterPtr&, ByteBuffer&)> convert_to;
+
+            std::function<size_t(InterpreterPtr&, const Value&)> calculate_size;
         };
 
 
@@ -121,13 +68,14 @@ namespace sorth
                         .size = sizeof(int8_t),
                         .type = &ffi_type_sint8,
                         .is_ptr = false,
-                        .convert_from = [](auto interpreter, auto value, auto buffer)
+                        .convert_from = [](auto interpreter, auto& value, auto& buffer)
                             {
-                                *(int8_t*)buffer = as_numeric<int64_t>(interpreter, value);
+                                buffer.write_int(sizeof(int8_t),
+                                                 as_numeric<int64_t>(interpreter, value));
                             },
-                        .convert_to = [](auto Interpreter, auto buffer) -> Value
+                        .convert_to = [](auto Interpreter, auto& buffer) -> Value
                             {
-                                int64_t value = *reinterpret_cast<int8_t*>(buffer);
+                                int64_t value = buffer.read_int(sizeof(int8_t), true);
                                 return value;
                             }
                     }
@@ -138,13 +86,14 @@ namespace sorth
                         .size = sizeof(uint8_t),
                         .type = &ffi_type_uint8,
                         .is_ptr = false,
-                        .convert_from = [](auto interpreter, auto value, auto buffer)
+                        .convert_from = [](auto interpreter, auto& value, auto& buffer)
                             {
-                                *(uint8_t*)buffer = as_numeric<int64_t>(interpreter, value);
+                                buffer.write_int(sizeof(uint8_t),
+                                                 as_numeric<int64_t>(interpreter, value));
                             },
-                        .convert_to = [](auto Interpreter, auto buffer) -> Value
+                        .convert_to = [](auto Interpreter, auto& buffer) -> Value
                             {
-                                int64_t value = *reinterpret_cast<uint8_t*>(buffer);
+                                int64_t value = buffer.read_int(sizeof(uint8_t), false);
                                 return value;
                             }
                     }
@@ -155,13 +104,14 @@ namespace sorth
                         .size = sizeof(int16_t),
                         .type = &ffi_type_sint16,
                         .is_ptr = false,
-                        .convert_from = [](auto interpreter, auto value, auto buffer)
+                        .convert_from = [](auto interpreter, auto& value, auto& buffer)
                             {
-                                *(int16_t*)buffer = as_numeric<int64_t>(interpreter, value);
+                                buffer.write_int(sizeof(int16_t),
+                                                 as_numeric<int64_t>(interpreter, value));
                             },
-                        .convert_to = [](auto Interpreter, auto buffer) -> Value
+                        .convert_to = [](auto Interpreter, auto& buffer) -> Value
                             {
-                                int64_t value = *reinterpret_cast<int16_t*>(buffer);
+                                int64_t value = buffer.read_int(sizeof(int16_t), true);
                                 return value;
                             }
                     }
@@ -172,13 +122,14 @@ namespace sorth
                         .size = sizeof(uint16_t),
                         .type = &ffi_type_uint16,
                         .is_ptr = false,
-                        .convert_from = [](auto interpreter, auto value, auto buffer)
+                        .convert_from = [](auto interpreter, auto& value, auto& buffer)
                             {
-                                *(uint16_t*)buffer = as_numeric<int64_t>(interpreter, value);
+                                buffer.write_int(sizeof(uint16_t),
+                                                 as_numeric<int64_t>(interpreter, value));
                             },
-                        .convert_to = [](auto Interpreter, auto buffer) -> Value
+                        .convert_to = [](auto Interpreter, auto& buffer) -> Value
                             {
-                                int64_t value = *reinterpret_cast<uint16_t*>(buffer);
+                                int64_t value = buffer.read_int(sizeof(uint16_t), false);
                                 return value;
                             }
                     }
@@ -189,13 +140,14 @@ namespace sorth
                         .size = sizeof(int32_t),
                         .type = &ffi_type_sint32,
                         .is_ptr = false,
-                        .convert_from = [](auto interpreter, auto value, auto buffer)
+                        .convert_from = [](auto interpreter, auto& value, auto& buffer)
                             {
-                                *(int32_t*)buffer = as_numeric<int64_t>(interpreter, value);
+                                buffer.write_int(sizeof(int32_t),
+                                                 as_numeric<int64_t>(interpreter, value));
                             },
-                        .convert_to = [](auto Interpreter, auto buffer) -> Value
+                        .convert_to = [](auto Interpreter, auto& buffer) -> Value
                             {
-                                int64_t value = *reinterpret_cast<int32_t*>(buffer);
+                                int64_t value = buffer.read_int(sizeof(int32_t), true);
                                 return value;
                             }
                     }
@@ -206,13 +158,14 @@ namespace sorth
                         .size = sizeof(uint32_t),
                         .type = &ffi_type_uint32,
                         .is_ptr = false,
-                        .convert_from = [](auto interpreter, auto value, auto buffer)
+                        .convert_from = [](auto interpreter, auto& value, auto& buffer)
                             {
-                                *(uint32_t*)buffer = as_numeric<int64_t>(interpreter, value);
+                                buffer.write_int(sizeof(uint32_t),
+                                                 as_numeric<int64_t>(interpreter, value));
                             },
-                        .convert_to = [](auto Interpreter, auto buffer) -> Value
+                        .convert_to = [](auto Interpreter, auto& buffer) -> Value
                             {
-                                int64_t value = *reinterpret_cast<uint32_t*>(buffer);
+                                int64_t value = buffer.read_int(sizeof(uint32_t), false);
                                 return value;
                             }
                     }
@@ -223,13 +176,14 @@ namespace sorth
                         .size = sizeof(int64_t),
                         .type = &ffi_type_sint64,
                         .is_ptr = false,
-                        .convert_from = [](auto interpreter, auto value, auto buffer)
+                        .convert_from = [](auto interpreter, auto& value, auto& buffer)
                             {
-                                *(int64_t*)buffer = as_numeric<int64_t>(interpreter, value);
+                                buffer.write_int(sizeof(int64_t),
+                                                 as_numeric<int64_t>(interpreter, value));
                             },
-                        .convert_to = [](auto Interpreter, auto buffer) -> Value
+                        .convert_to = [](auto Interpreter, auto& buffer) -> Value
                             {
-                                int64_t value = *reinterpret_cast<int64_t*>(buffer);
+                                int64_t value = buffer.read_int(sizeof(int64_t), true);
                                 return value;
                             }
                     }
@@ -240,13 +194,14 @@ namespace sorth
                         .size = sizeof(uint64_t),
                         .type = &ffi_type_uint64,
                         .is_ptr = false,
-                        .convert_from = [](auto interpreter, auto value, auto buffer)
+                        .convert_from = [](auto interpreter, auto& value, auto& buffer)
                             {
-                                *(uint64_t*)buffer = as_numeric<int64_t>(interpreter, value);
+                                buffer.write_int(sizeof(uint64_t),
+                                                 as_numeric<int64_t>(interpreter, value));
                             },
-                        .convert_to = [](auto Interpreter, auto buffer) -> Value
+                        .convert_to = [](auto Interpreter, auto& buffer) -> Value
                             {
-                                int64_t value = *reinterpret_cast<uint64_t*>(buffer);
+                                int64_t value = buffer.read_int(sizeof(uint64_t), false);
                                 return value;
                             }
                     }
@@ -257,13 +212,14 @@ namespace sorth
                         .size = sizeof(float),
                         .type = &ffi_type_float,
                         .is_ptr = false,
-                        .convert_from = [](auto interpreter, auto value, auto buffer)
+                        .convert_from = [](auto interpreter, auto& value, auto& buffer)
                             {
-                                *(float*)buffer = as_numeric<double>(interpreter, value);
+                                buffer.write_float(sizeof(float),
+                                                   as_numeric<int64_t>(interpreter, value));
                             },
-                        .convert_to = [](auto Interpreter, auto buffer) -> Value
+                        .convert_to = [](auto Interpreter, auto& buffer) -> Value
                             {
-                                double value = *reinterpret_cast<float*>(buffer);
+                                double value = buffer.read_float(sizeof(float));
                                 return value;
                             }
                     }
@@ -274,13 +230,14 @@ namespace sorth
                         .size = sizeof(double),
                         .type = &ffi_type_double,
                         .is_ptr = false,
-                        .convert_from = [](auto interpreter, auto value, auto buffer)
+                        .convert_from = [](auto interpreter, auto& value, auto& buffer)
                             {
-                                *(double*)buffer = as_numeric<double>(interpreter, value);
+                                buffer.write_float(sizeof(double),
+                                                   as_numeric<int64_t>(interpreter, value));
                             },
-                        .convert_to = [](auto Interpreter, auto buffer) -> Value
+                        .convert_to = [](auto Interpreter, auto& buffer) -> Value
                             {
-                                double value = *reinterpret_cast<double*>(buffer);
+                                double value = buffer.read_float(sizeof(double));
                                 return value;
                             }
                     }
@@ -288,23 +245,23 @@ namespace sorth
                 {
                     "ffi.string",
                     {
-                        .size = sizeof(char*),
+                        .size = -1,
                         .type = &ffi_type_pointer,
                         .is_ptr = true,
-                        .convert_from = [](auto interpreter, auto value, auto buffer)
+                        .convert_from = [](auto interpreter, auto& value, auto& buffer)
                             {
                                 auto string = as_string(interpreter, value);
-                                auto str_buffer = new char[string.size() + 1];
-
-                                memcpy(str_buffer, string.c_str(), string.size());
-                                ((char*)str_buffer)[string.size()] = 0;
-
-                                *(reinterpret_cast<char**>(buffer)) = str_buffer;
+                                buffer.write_string(string, string.size() + 1);
                             },
-                        .convert_to = [](auto Interpreter, auto buffer) -> Value
+                        .convert_to = [](auto interpreter, auto& buffer) -> Value
                             {
-                                std::string str = reinterpret_cast<char*>(buffer);
+                                std::string str = reinterpret_cast<char*>(buffer.position_ptr());
                                 return str;
+                            },
+                        .calculate_size = [](auto interpreter, auto value)
+                            {
+                                auto string = as_string(interpreter, value);
+                                return string.size() + 1 + sizeof(void*);
                             }
                     }
                 }
@@ -336,15 +293,8 @@ namespace sorth
         }
 
 
-        ffi_type* get_type_from_name(InterpreterPtr& interpreter, const std::string& name)
-        {
-            return get_conversion_info(interpreter, name).type;
-        }
-
-
-        std::tuple<FfiParams,
-                   std::vector<ffi_type*>> create_param_info(InterpreterPtr& interpreter,
-                                                             const ArrayPtr& param_names)
+        std::tuple<FfiParams, std::vector<ffi_type*>>
+                         create_param_info(InterpreterPtr& interpreter, const ArrayPtr& param_names)
         {
             FfiParams params;
             std::vector<ffi_type*> types;
@@ -354,7 +304,8 @@ namespace sorth
                 auto name = as_string(interpreter, (*param_names)[i]);
                 auto& conversion = get_conversion_info(interpreter, name);
 
-                params.push_back(FfiParamInfo {
+                params.push_back(FfiParamInfo
+                    {
                         .type = conversion.type,
                         .type_name = name,
                         .conversion = conversion
@@ -371,10 +322,8 @@ namespace sorth
         {
             std::string output = "";
 
-            //for (const auto& param : params)
-            for (auto it = params.rbegin(); it != params.rend(); ++it)
+            for (const auto& param : params)
             {
-                const auto& param = *it;
                 output += param.type_name + " ";
             }
 
@@ -394,63 +343,133 @@ namespace sorth
         }
 
 
-        void free_params(const FfiParams& params, std::vector<void*>& param_values)
+        std::vector<void*> pop_params(InterpreterPtr& interpreter,
+                                      const FfiParams& params,
+                                      ByteBuffer& buffer)
         {
-            for (int i = 0; i < param_values.size(); ++i)
-            {
-                if (params[i].conversion.is_ptr)
-                {
-                    void* inner_pointer = *reinterpret_cast<void**>(param_values[i]);
-                    delete [] static_cast<char*>(inner_pointer);
-                }
-
-                delete[] static_cast<char*>(param_values[i]);
-            }
-        }
-
-
-        void* allocate_type(InterpreterPtr& interpreter, const std::string& ret_name)
-        {
-            const auto& conversion = get_conversion_info(interpreter, ret_name);
-            return new char[conversion.size];
-        }
-
-
-        std::vector<void*> pop_params(InterpreterPtr& interpreter, const FfiParams& params)
-        {
+            std::vector<Value> values;
             std::vector<void*> param_values;
 
-            try
-            {
-                //for (const auto& param : params)
-                for (auto it = params.rbegin(); it != params.rend(); ++it)
-                {
-                    const auto& param = *it;
+            values.resize(params.size());
 
-                    auto value = interpreter->pop();
-                    size_t size = param.conversion.size;
-                    void* buffer = new char[size];
+            size_t buffer_size = 0;
+
+            for (int i = 0; i < params.size(); ++i)
+            {
+                auto value = interpreter->pop();
+                values[params.size() - 1 - i] = value;
+
+                const auto& param = params[params.size() - 1 - i];
+                size_t size = param.conversion.size != -1
+                              ? param.conversion.size
+                              : param.conversion.calculate_size(interpreter, value) + sizeof(void*);
+                buffer_size += size;
+            }
+
+            buffer.resize(buffer_size);
+
+            for (int i = 0; i < params.size(); ++i)
+            {
+                const auto& param = params[i];
+
+                auto& value = values[i];
+
+                void* value_ptr = buffer.position_ptr();
+
+                if (param.conversion.is_ptr)
+                {
+                    auto start_pos = buffer.position();
+
+                    buffer.set_position(start_pos + sizeof(void*));
+                    auto data_ptr = buffer.position_ptr();
 
                     param.conversion.convert_from(interpreter, value, buffer);
-                    param_values.insert(param_values.begin(), buffer);
+
+                    auto end_pos = buffer.position();
+                    buffer.set_position(start_pos);
+                    buffer.write_int(sizeof(void*), (size_t)data_ptr);
+
+                    buffer.set_position(end_pos);
                 }
-            }
-            catch (...)
-            {
-                free_params(params, param_values);
-                throw;
+                else
+                {
+                    param.conversion.convert_from(interpreter, value, buffer);
+                }
+
+                param_values.push_back(value_ptr);
             }
 
             return param_values;
         }
 
 
-        void push_result(InterpreterPtr& interpreter,
-                         const std::string& ret_name,
-                         void* result)
+        void push_result(InterpreterPtr&interpreter, const ConversionInfo& conversion,
+                         ByteBuffer& buffer)
         {
-            const auto& conversion = get_conversion_info(interpreter, ret_name);
-            interpreter->push(conversion.convert_to(interpreter, result));
+            auto value = conversion.convert_to(interpreter, buffer);
+            interpreter->push(value);
+        }
+
+
+        library_handle load_library(InterpreterPtr& interpreter, const std::string& lib_name)
+        {
+            library_handle handle =
+
+            #ifdef IS_WINDOWS
+                    LoadLibraryA(lib_name.c_str());
+
+                if (handle == nullptr)
+                {
+                    throw_windows_error(*interpreter,
+                                        "Could not load libary " + lib_name + ": ",
+                                        GetLastError());
+                }
+            #elif defined(IS_UNIX)
+                    dlopen(lib_name.c_str(), RTLD_NOW);
+
+                if (handle == nullptr)
+                {
+                    throw_error(*interpreter,
+                                std::string("Failed to load external library: ") + dlerror() + ".");
+                }
+            #endif
+
+            return handle;
+        }
+
+
+        fn_handle find_function(InterpreterPtr& interpreter,
+                                const std::string& lib_name,
+                                const std::string& function_name)
+        {
+            auto found = library_map.find(lib_name);
+
+            if (found == library_map.end())
+            {
+                throw_error(*interpreter, "Failed find open libary: " + lib_name + ".");
+            }
+
+            fn_handle fn_handle =
+                #ifdef IS_WINDOWS
+                    GetProcAddress(found->second, function_name.c_str());
+
+                if (fn_handle == nullptr)
+                {
+                    throw_windows_error(*interpreter, "Could not find function " + function_name +
+                                                      " in library " + lib_name + ": ",
+                                        GetLastError());
+                }
+                #elif defined(IS_UNIX)
+                    dlsym(found->second, function_name.c_str());
+
+                if (fn_handle == nullptr)
+                {
+                    throw_error(*interpreter, "Could not find function " + function_name +
+                                              " in library " + lib_name + ".");
+                }
+                #endif
+
+            return fn_handle;
         }
 
 
@@ -460,9 +479,9 @@ namespace sorth
             auto lib_name = as_string(Interpreter, Interpreter->pop());
 
             auto handle = load_library(Interpreter, lib_name);
-
             library_map[register_name] = handle;
         }
+
 
         void word_ffi_fn(InterpreterPtr& interpreter)
         {
@@ -478,27 +497,28 @@ namespace sorth
             auto [ params, param_types ] = create_param_info(interpreter, raw_params);
 
             auto signature = generate_signature(params, ret_name);
+            auto ret_conversion = get_conversion_info(interpreter, ret_name);
 
-            if (ffi_prep_cif(cif.get(),
-                             FFI_DEFAULT_ABI,
-                             param_types.size(),
-                             get_type_from_name(interpreter, ret_name),
-                             param_types.data()) != FFI_OK)
-            {
-                throw_error(*interpreter, "Could not bind to function " + fn_name + ".");
-            }
-
-            auto word_handler = [cif, function, params, ret_name](InterpreterPtr& interpreter)
+            auto word_handler = [cif, fn_name, function, params, param_types, ret_conversion](InterpreterPtr& interpreter)
                 {
-                    auto param_values = pop_params(interpreter, params);
-                    void* result = allocate_type(interpreter, ret_name);
+                    auto types = param_types;
 
-                    ffi_call(cif.get(), FFI_FN(function), result, param_values.data());
-                    push_result(interpreter, ret_name, result);
+                    if (ffi_prep_cif(cif.get(),
+                                     FFI_DEFAULT_ABI,
+                                     types.size(),
+                                     ret_conversion.type,
+                                     types.data()) != FFI_OK)
+                    {
+                        throw_error(*interpreter, "Could not bind to function " + fn_name + ".");
+                    }
 
-                    free_params(params, param_values);
+                    auto param_buffer = ByteBuffer(0);
+                    auto param_values = pop_params(interpreter, params, param_buffer);
+                    auto result = ByteBuffer(ret_conversion.size != -1
+                                             ? ret_conversion.size : sizeof(void*));
 
-                    delete[] static_cast<char*>(result);
+                    ffi_call(cif.get(), FFI_FN(function), result.data_ptr(), param_values.data());
+                    push_result(interpreter, ret_conversion, result);
                 };
 
             std::string name = fn_alias != "" ? fn_alias : fn_name;

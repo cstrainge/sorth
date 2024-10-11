@@ -139,12 +139,12 @@ namespace sorth
         void check_buffer_index(InterpreterPtr& interpreter,
                                 const ByteBufferPtr& buffer, int64_t byte_size)
         {
-            if ((buffer->postion() + byte_size) > buffer->size())
+            if ((buffer->position() + byte_size) > buffer->size())
             {
                 std::stringstream stream;
 
                 stream << "Writing a value of size " << byte_size << " at a position of "
-                       << buffer->postion() << " would exceed the buffer size, "
+                       << buffer->position() << " would exceed the buffer size, "
                        << buffer->size() << ".";
 
                 throw_error(*interpreter, stream.str());
@@ -1760,7 +1760,7 @@ namespace sorth
     }
 
 
-    void word_buffer_set_postion(InterpreterPtr& interpreter)
+    void word_buffer_set_position(InterpreterPtr& interpreter)
     {
         auto buffer = as_byte_buffer(interpreter, interpreter->pop());
         auto new_position = as_numeric<int64_t>(interpreter, interpreter->pop());
@@ -1769,11 +1769,11 @@ namespace sorth
     }
 
 
-    void word_buffer_get_postion(InterpreterPtr& interpreter)
+    void word_buffer_get_position(InterpreterPtr& interpreter)
     {
         auto buffer = as_byte_buffer(interpreter, interpreter->pop());
 
-        interpreter->push(buffer->postion());
+        interpreter->push(buffer->position());
     }
 
 
@@ -2672,11 +2672,11 @@ namespace sorth
             "buffer size -- value");
 
 
-        ADD_NATIVE_WORD(interpreter, "buffer.position!", word_buffer_set_postion,
+        ADD_NATIVE_WORD(interpreter, "buffer.position!", word_buffer_set_position,
             "Set the position of the buffer pointer.",
             "position buffer -- ");
 
-        ADD_NATIVE_WORD(interpreter, "buffer.position@", word_buffer_get_postion,
+        ADD_NATIVE_WORD(interpreter, "buffer.position@", word_buffer_get_position,
             "Get the position of the buffer pointer.",
             "buffer -- position");
 
