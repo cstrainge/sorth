@@ -1,0 +1,10 @@
+
+{
+    "name": "strange-forth",
+    "version": "0.1.17",
+
+    "dependencies":
+    [
+        "libffi"
+    ]
+}

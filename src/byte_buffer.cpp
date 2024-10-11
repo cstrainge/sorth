@@ -25,7 +25,7 @@ namespace sorth
 
                 for (size_t i = start; i < stop; ++i)
                 {
-                    char next = buffer.bytes[i];
+                    unsigned char next = buffer.bytes[i];
                     bool is_ctrl = (iscntrl(next) != 0) || ((next & 0x80) != 0);
 
                     stream << (char)(is_ctrl ? '.' : next);
@@ -81,9 +81,58 @@ namespace sorth
 
 
     ByteBuffer::ByteBuffer(int64_t size)
-    : position(0)
+    : current_position(0)
     {
         bytes.resize(size);
+    }
+
+
+    ByteBuffer::ByteBuffer(const ByteBuffer& buffer)
+    : bytes(buffer.bytes),
+      current_position(buffer.current_position)
+    {
+    }
+
+
+    ByteBuffer::ByteBuffer(ByteBuffer&& buffer)
+    : bytes(std::move(buffer.bytes)),
+      current_position(buffer.current_position)
+    {
+    }
+
+
+    ByteBuffer& ByteBuffer::operator =(const ByteBuffer& buffer)
+    {
+        if (&buffer != this)
+        {
+            bytes = buffer.bytes;
+            current_position = buffer.current_position;
+        }
+
+        return *this;
+    }
+
+
+    ByteBuffer& ByteBuffer::operator =(ByteBuffer&& buffer)
+    {
+        if (&buffer != this)
+        {
+            bytes = std::move(buffer.bytes);
+            current_position = buffer.current_position;
+        }
+
+        return *this;
+    }
+
+
+    void ByteBuffer::resize(int64_t new_size)
+    {
+        bytes.resize(new_size);
+
+        if (current_position >= new_size)
+        {
+            current_position = new_size - 1;
+        }
     }
 
 
@@ -93,37 +142,43 @@ namespace sorth
     }
 
 
-    int64_t ByteBuffer::postion() const
+    int64_t ByteBuffer::position() const
     {
-        return position;
+        return current_position;
+    }
+
+
+    void* ByteBuffer::position_ptr() const
+    {
+        return (void*)&bytes[current_position];
     }
 
 
     void ByteBuffer::set_position(int64_t new_position)
     {
-        position = new_position;
+        current_position = new_position;
     }
 
 
     void* ByteBuffer::data_ptr()
     {
-        return (&bytes[0]);
+        return bytes.data();
     }
 
 
     void ByteBuffer::write_int(int64_t byte_size, int64_t value)
     {
-        void* data_ptr =(&bytes[position]);
+        void* data_ptr = position_ptr();
         memcpy(data_ptr, &value, byte_size);
 
-        position += byte_size;
+        increment_position(byte_size);
     }
 
 
     int64_t ByteBuffer::read_int(int64_t byte_size, bool is_signed)
     {
         int64_t value = 0;
-        void* data_ptr =(&bytes[position]);
+        void* data_ptr = position_ptr();
         memcpy(&value, data_ptr, byte_size);
 
         if (is_signed)
@@ -138,7 +193,7 @@ namespace sorth
             }
         }
 
-        position += byte_size;
+        increment_position(byte_size);
 
         return value;
     }
@@ -146,11 +201,11 @@ namespace sorth
 
     void ByteBuffer::write_float(int64_t byte_size, double value)
     {
-        void* data_ptr =(&bytes[position]);
+        void* data_ptr = position_ptr();
 
         if (byte_size == 4)
         {
-            float float_value = (float)value;
+            float float_value = static_cast<float>(value);
 
             memcpy(data_ptr, &float_value, 4);
         }
@@ -159,14 +214,14 @@ namespace sorth
             memcpy(data_ptr, &value, 8);
         }
 
-        position += byte_size;
+        increment_position(byte_size);
     }
 
 
     double ByteBuffer::read_float(int64_t byte_size)
     {
         double new_value = 0.0;
-        void* data_ptr =(&bytes[position]);
+        void* data_ptr = position_ptr();
 
         if (byte_size == 4)
         {
@@ -180,7 +235,7 @@ namespace sorth
             memcpy(&new_value, data_ptr, 8);
         }
 
-        position += byte_size;
+        increment_position(byte_size);
 
         return new_value;
     }
@@ -188,10 +243,10 @@ namespace sorth
 
     void ByteBuffer::write_string(const std::string& string, int64_t max_size)
     {
-        void* data_ptr =(&bytes[position]);
+        void* data_ptr = position_ptr();
 
-        strncpy((char*)data_ptr, string.c_str(), max_size);
-        position += max_size;
+        strncpy(static_cast<char*>(data_ptr), string.c_str(), max_size);
+        increment_position(max_size);
     }
 
 
@@ -203,14 +258,14 @@ namespace sorth
 
         try
         {
-            data_ptr = (&bytes[position]);
-            buffer = (char*)malloc(max_size + 1);
+            data_ptr = position_ptr();
+            buffer = static_cast<char*>(malloc(max_size + 1));
 
             memset(buffer, 0, max_size + 1);
             memcpy(buffer, data_ptr, max_size);
 
             new_string = buffer;
-            position += max_size;
+            increment_position(max_size);
 
             free(buffer);
         }
@@ -225,6 +280,25 @@ namespace sorth
         }
 
         return new_string;
+    }
+
+
+
+    void ByteBuffer::increment_position(int64_t increment)
+    {
+        size_t new_position = current_position + increment;
+
+        if (new_position > bytes.size())
+        {
+            std::stringstream stream;
+
+            stream << "ByteBuffer position " << new_position << " out of range, " << bytes.size()
+                   << ".";
+
+            throw std::runtime_error(stream.str());
+        }
+
+        current_position = new_position;
     }
 
 

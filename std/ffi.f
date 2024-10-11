@@ -44,7 +44,6 @@
         word next !
     repeat
 
-fn-params @ "-[{}]-" string.format .cr
 
     ( Finally call the native word to finish the registration process. )
     lib-name @   op.push_constant_value
@@ -63,13 +62,41 @@ fn-params @ "-[{}]-" string.format .cr
 
 
 
-: ffi.void   "ffi.void"   sentinel_word ;
-: ffi.i8     "ffi.i8"     sentinel_word ;
-: ffi.u8     "ffi.u8"     sentinel_word ;
-: ffi.i16    "ffi.i16"    sentinel_word ;
-: ffi.u16    "ffi.u16"    sentinel_word ;
-: ffi.i32    "ffi.i32"    sentinel_word ;
-: ffi.u32    "ffi.u32"    sentinel_word ;
-: ffi.f32    "ffi.f32"    sentinel_word ;
-: ffi.f64    "ffi.f64"    sentinel_word ;
-: ffi.string "ffi.string" sentinel_word ;
+: ffi.void     "ffi.void"     sentinel_word ;
+: ffi.i8       "ffi.i8"       sentinel_word ;
+: ffi.u8       "ffi.u8"       sentinel_word ;
+: ffi.i16      "ffi.i16"      sentinel_word ;
+: ffi.u16      "ffi.u16"      sentinel_word ;
+: ffi.i32      "ffi.i32"      sentinel_word ;
+: ffi.u32      "ffi.u32"      sentinel_word ;
+: ffi.f32      "ffi.f32"      sentinel_word ;
+: ffi.f64      "ffi.f64"      sentinel_word ;
+: ffi.string   "ffi.string"   sentinel_word ;
+: ffi.void-ptr "ffi.void-ptr" sentinel_word ;
+
+
+(
+ffi.# point packing 1
+    ffi.i32 x -> 0 ,
+    ffi.i32 y -> 0
+;
+
+ffi.# Rectangle packing 8
+    point-ptr top-left -> point.new ,
+    point-ptr bottom-right -> point.new ,
+    ffi.string label
+; )
+
+
+(
+[include] std/ffi.f
+
+ffi.load libm.so.6 as lib_m
+ffi.fn lib_m cos as math.cos ffi.f64 -> ffi.f64
+
+0.5 dup math.cos "cos({}) = {}" string.format .cr
+
+
+ffi.load lib_my_functions.so as my_lib
+ffi.fn my_lib example_function ffi.string ffi.f64 -> ffi.64
+)

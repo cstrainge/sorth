@@ -52,6 +52,14 @@ namespace sorth
         }
 
 
+        void word_user_cwd(InterpreterPtr& interpreter)
+        {
+            auto cwd = std::filesystem::current_path();
+
+            interpreter->push(cwd.string());
+        }
+
+
     }
 
 
@@ -65,6 +73,10 @@ namespace sorth
         ADD_NATIVE_WORD(interpreter, "user.os", word_user_os_read,
                         "Get the name of the OS the script is running under.",
                         " -- os_name");
+
+        ADD_NATIVE_WORD(interpreter, "user.cwd", word_user_cwd,
+            "Get the process's current working direcory.",
+            " -- directory_path");
     }
 
 
