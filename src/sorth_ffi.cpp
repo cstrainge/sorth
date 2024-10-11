@@ -215,7 +215,7 @@ namespace sorth
                         .convert_from = [](auto interpreter, auto& value, auto& buffer)
                             {
                                 buffer.write_float(sizeof(float),
-                                                   as_numeric<int64_t>(interpreter, value));
+                                                   as_numeric<double>(interpreter, value));
                             },
                         .convert_to = [](auto Interpreter, auto& buffer) -> Value
                             {
@@ -233,7 +233,7 @@ namespace sorth
                         .convert_from = [](auto interpreter, auto& value, auto& buffer)
                             {
                                 buffer.write_float(sizeof(double),
-                                                   as_numeric<int64_t>(interpreter, value));
+                                                   as_numeric<double>(interpreter, value));
                             },
                         .convert_to = [](auto Interpreter, auto& buffer) -> Value
                             {
