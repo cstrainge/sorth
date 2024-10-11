@@ -23,7 +23,6 @@ namespace sorth
 
     namespace
     {
-
         #ifdef IS_WINDOWS
 
             using library_handle = HMODULE;
