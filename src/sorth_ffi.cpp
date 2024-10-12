@@ -23,6 +23,7 @@ namespace sorth
 
     namespace
     {
+
         #ifdef IS_WINDOWS
 
             using library_handle = HMODULE;
@@ -271,7 +272,7 @@ namespace sorth
         struct FfiParamInfo
         {
             ffi_type* type;
-            std::string& type_name;
+            std::string type_name;
             const ConversionInfo& conversion;
         };
 
@@ -499,7 +500,7 @@ namespace sorth
             auto signature = generate_signature(params, ret_name);
             auto ret_conversion = get_conversion_info(interpreter, ret_name);
 
-            auto word_handler = [cif, fn_name, function, params, param_types, ret_conversion](InterpreterPtr& interpreter)
+            auto word_handler = [=](InterpreterPtr& interpreter)
                 {
                     auto types = param_types;
 
