@@ -4,15 +4,13 @@ project(sorth)
 
 
 
-find_package(unofficial-libffi CONFIG REQUIRED)
-
-#find_package(PkgConfig)
-#pkg_check_modules(LIBFFI REQUIRED IMPORTED_TARGET libffi)
-#target_link_libraries(main PRIVATE PkgConfig::LIBFFI)
-
-
-#find_package(PkgConfig)
-#pkg_check_modules(LIBFFI REQUIRED IMPORTED_TARGET libffi)
+# Find lib ffi.
+if(WIN32)
+    find_package(unofficial-libffi CONFIG REQUIRED)
+else()
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(FFI REQUIRED libffi)
+endif()
 
 
 
@@ -73,9 +71,13 @@ add_executable(${PROJECT_NAME} ${SRCS})
 # Set compiler flags.
 target_compile_options(${PROJECT_NAME} PRIVATE ${CXXFLAGS})
 
-# Linker flags.
-# target_link_libraries(${PROJECT_NAME} PRIVATE ${LINKFLAGS} PkgConfig::LIBFFI)
-target_link_libraries(${PROJECT_NAME} PRIVATE unofficial::libffi::libffi)
+# Add lib ffi to the target.
+if(WIN32)
+    target_link_libraries(${PROJECT_NAME} PRIVATE unofficial::libffi::libffi)
+else()
+    target_include_directories(${PROJECT_NAME} PRIVATE ${FFI_INCLUDE_DIRS})
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${FFI_LIBRARIES})
+endif()
 
 
 
