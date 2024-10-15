@@ -322,7 +322,10 @@ namespace sorth
                         .type = &ffi_type_pointer,
                         .convert_from = [](auto interpreter, auto& value, auto& buffer, auto& extra)
                             {
+                                auto string = as_string(interpreter, value);
 
+                                buffer.write_int(sizeof(char*), (size_t)extra.position_ptr());
+                                extra.write_string(string, string.size() + 1);
                             },
                         .convert_to = [](auto interpreter, auto& buffer) -> Value
                             {
@@ -332,7 +335,7 @@ namespace sorth
                         .calculate_size = [](auto interpreter, auto value) -> CalculatedSize
                             {
                                 auto string = as_string(interpreter, value);
-                                return { sizeof(char*), string.size() + 1 + sizeof(void*) };
+                                return { sizeof(char*), string.size() + 1 };
                             },
                         .base_size = []() -> size_t
                             {
@@ -596,7 +599,6 @@ namespace sorth
 
                     auto param_buffer = ByteBuffer(0);
                     auto ext_buffer = ByteBuffer(0);
-
                     auto param_values = pop_params(interpreter, params, param_buffer, ext_buffer);
                     auto ret_size = ret_conversion.base_size();
                     auto ret_buffer = ByteBuffer(ret_size);
