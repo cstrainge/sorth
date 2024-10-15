@@ -230,142 +230,6 @@ namespace sorth
 
 
 
-        void create_data_definition_words(const Location& location,
-                                          InterpreterPtr& interpreter,
-                                          DataObjectDefinitionPtr& definition_ptr,
-                                          bool is_hidden = false)
-        {
-            const bool is_immediate = false;
-            const bool is_scripted = false;
-
-            interpreter->add_word(definition_ptr->name + ".new",
-                [=](auto interpreter)
-                {
-                    auto new_object = make_data_object(interpreter, definition_ptr);
-                    interpreter->push(new_object);
-                },
-                location,
-                is_immediate,
-                is_hidden,
-                is_scripted,
-                "Create a new instance of the structure " + definition_ptr->name + ".",
-                " -- " + definition_ptr->name);
-
-            auto swap_tuple = interpreter->find_word("swap");
-            auto struct_write_tuple = interpreter->find_word("#!");
-            auto struct_read_tuple = interpreter->find_word("#@");
-
-            // Work around for older compilers that can't handle destructured variables being passed
-            // into a lambda function.
-            auto swap_found = std::get<0>(swap_tuple);
-            auto swap = std::get<1>(swap_tuple);
-
-            auto struct_write_found = std::get<0>(struct_write_tuple);
-            auto struct_write = std::get<1>(struct_write_tuple);
-
-            auto struct_read_found = std::get<0>(struct_read_tuple);
-            auto struct_read = std::get<1>(struct_read_tuple);
-
-            for (int64_t i = 0; i < (int64_t)definition_ptr->fieldNames.size(); ++i)
-            {
-                interpreter->add_word(definition_ptr->name + "." + definition_ptr->fieldNames[i],
-                    [i](auto interpreter)
-                    {
-                        interpreter->push(i);
-                    },
-                    location,
-                    is_immediate,
-                    is_hidden,
-                    is_scripted,
-                    "Access the structure field " + definition_ptr->fieldNames[i] + ".",
-                    " -- structure_field_index");
-
-                if (swap_found && struct_write_found && struct_read_found)
-                {
-                    auto field_writer = [i, swap, struct_write](auto interpreter)
-                        {
-                            interpreter->push(i);
-                            interpreter->execute_word(swap);
-                            interpreter->execute_word(struct_write);
-                        };
-
-                    auto field_reader = [i, swap, struct_read](auto interpreter)
-                        {
-                            interpreter->push(i);
-                            interpreter->execute_word(swap);
-                            interpreter->execute_word(struct_read);
-                        };
-
-                    auto var_field_writer = [i, swap, struct_write](auto interpreter)
-                        {
-                            interpreter->push(i);
-                            interpreter->execute_word(swap);
-
-                            auto variables = interpreter->get_variables();
-                            auto index = as_numeric<int64_t>(interpreter, interpreter->pop());
-                            interpreter->push(variables[index]);
-
-                            interpreter->execute_word(struct_write);
-                        };
-
-                    auto var_field_reader = [i, swap, struct_read](auto interpreter)
-                        {
-                            interpreter->push(i);
-                            interpreter->execute_word(swap);
-
-                            auto variables = interpreter->get_variables();
-                            auto index = as_numeric<int64_t>(interpreter, interpreter->pop());
-                            interpreter->push(variables[index]);
-
-                            interpreter->execute_word(struct_read);
-                        };
-
-                    interpreter->add_word(
-                        definition_ptr->name + "." + definition_ptr->fieldNames[i] + "!",
-                        field_writer,
-                        location,
-                        is_immediate,
-                        is_hidden,
-                        is_scripted,
-                        "Write to the structure field " + definition_ptr->fieldNames[i] + ".",
-                        "new_value structure -- ");
-
-                    interpreter->add_word(
-                        definition_ptr->name + "." + definition_ptr->fieldNames[i] + "@",
-                        field_reader,
-                        location,
-                        is_immediate,
-                        is_hidden,
-                        is_scripted,
-                        "Read from structure field " + definition_ptr->fieldNames[i] + ".",
-                        "structure -- value");
-
-                    interpreter->add_word(
-                        definition_ptr->name + "." + definition_ptr->fieldNames[i] + "!!",
-                        var_field_writer,
-                        location,
-                        is_immediate,
-                        is_hidden,
-                        is_scripted,
-                        "Write to the structure field " + definition_ptr->fieldNames[i] +
-                            " in a variable.",
-                        "new_value structure_var -- ");
-
-                    interpreter->add_word(
-                        definition_ptr->name + "." + definition_ptr->fieldNames[i] + "@@",
-                        var_field_reader,
-                        location,
-                        is_immediate,
-                        is_hidden,
-                        is_scripted,
-                        "Read from the structure field " + definition_ptr->fieldNames[i] +
-                            " in a variable.",
-                        "structure_var -- value");
-                }
-            }
-        }
-
-
         DataObjectDefinitionPtr make_location_info_definition()
         {
             auto location_definition = std::make_shared<DataObjectDefinition>();
@@ -1431,22 +1295,12 @@ namespace sorth
             defaults = as_array(interpreter, interpreter->pop());
         }
 
-        DataObjectDefinitionPtr definition_ptr = std::make_shared<DataObjectDefinition>();
-
-        definition_ptr->name = name;
-
-        definition_ptr->fieldNames.resize(fields->size());
-        definition_ptr->defaults.resize(fields->size());
-
-        for (int i = 0; i < fields->size(); ++i)
-        {
-            definition_ptr->fieldNames[i] = as_string(interpreter, (*fields)[i]);
-
-            if (defaults)
-            {
-                definition_ptr->defaults[i] = (*defaults)[i];
-            }
-        }
+        // Create the definition object.
+        auto definition_ptr = create_data_definition(interpreter,
+                                                     name,
+                                                     fields,
+                                                     defaults,
+                                                     is_hidden);
 
         // Create the words to allow the script to access this definition.  The word
         // <definition_name>.new will always hold a base reference to our definition object.

@@ -33,6 +33,18 @@ namespace sorth
     };
 
 
+    // Create and register a new data definition.
+    DataObjectDefinitionPtr create_data_definition(InterpreterPtr& interpreter,
+                                                   std::string name,
+                                                   ArrayPtr fields,
+                                                   ArrayPtr defaults,
+                                                   bool is_hidden);
+
+    void create_data_definition_words(const internal::Location &location,
+                                      InterpreterPtr &interpreter,
+                                      DataObjectDefinitionPtr &definition_ptr,
+                                      bool is_hidden = false);
+
     // Create a new data object for the given definition.
     DataObjectPtr make_data_object(InterpreterPtr& interpreter,
                                    const DataObjectDefinitionPtr& definition_ptr);
