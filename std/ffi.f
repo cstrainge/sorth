@@ -75,6 +75,99 @@
 : ffi.void-ptr "ffi.void-ptr" sentinel_word ;
 
 
+
+: ffi.# immediate
+    word variable! struct_name
+    false variable! is_hidden
+
+    4 variable! alignment
+
+    0 [].new variable! types
+    0 [].new variable! field_names
+    0 [].new variable! defaults
+
+    false variable! found_initializers
+
+    variable next_word
+    0 variable! index
+
+    code.new_block
+
+    begin
+        word next_word !
+
+        next_word @ ";" <>
+    while
+        next_word @
+        case
+            "hidden" of
+                    true is_hidden !
+                    continue
+                endof
+
+            "align" of
+                    word alignment !
+                    continue
+                endof
+
+            "{" of
+                    "(" execute
+                    continue
+                endof
+
+            "->" of
+                    true found_initializers !
+
+                    ` dup op.execute
+                    ";" "," 2 code.compile_until_words
+
+                    ` swap op.execute
+                    index @ -- op.push_constant_value
+                    ` swap op.execute
+                    ` []! op.execute
+
+                    ";" =
+                    if
+                        break
+                    then
+                endof
+
+            ( Get the type and name of the field. )
+            index ++!
+
+            ( Expand all our buffers. )
+            index @ types [].size!!
+            index @ field_names [].size!!
+            index @ defaults [].size!!
+
+            ( Use the word we have as a type name, and get the next word for the field name. )
+            next_word @ types       [ index @ -- ]!!
+            word        field_names [ index @ -- ]!!
+        endcase
+    repeat
+
+    found_initializers @
+    if
+        true code.insert_at_front
+        defaults @ op.push_constant_value
+        false code.insert_at_front
+    then
+
+    struct_name @        op.push_constant_value
+    alignment @          op.push_constant_value
+    field_names @        op.push_constant_value
+    types @              op.push_constant_value
+    is_hidden @          op.push_constant_value
+    found_initializers @ op.push_constant_value
+
+    ` ffi.#              op.execute
+
+    code.merge_stack_block
+;
+
+
+
+
 (
 ffi.# point packing 1
     ffi.i32 x -> 0 ,

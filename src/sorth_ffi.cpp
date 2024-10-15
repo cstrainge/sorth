@@ -629,7 +629,7 @@ namespace sorth
             auto is_hidden = as_numeric<bool>(interpreter, interpreter->pop());
             auto types = as_array(interpreter, interpreter->pop());
             auto fields = as_array(interpreter, interpreter->pop());
-            auto packing  = as_numeric<int64_t>(interpreter, interpreter->pop());
+            auto packing = as_numeric<int64_t>(interpreter, interpreter->pop());
             auto name = as_string(interpreter, interpreter->pop());
 
             ArrayPtr defaults;
@@ -639,7 +639,7 @@ namespace sorth
                 defaults = as_array(interpreter, interpreter->pop());
             }
 
-            /*
+
             // Create the definition object.
             auto definition_ptr = create_data_definition(interpreter,
                                                          name,
@@ -648,7 +648,7 @@ namespace sorth
                                                          is_hidden);
 
             // Populate the ffi type information for this struct.
-            set_type_information(definition_ptr, packing, types);
+            /*set_type_information(definition_ptr, packing, types);
 
             ConversionFrom convert_from = [](auto interpreter, auto& value, auto& buffer, auto& extra)
                 {
@@ -685,14 +685,14 @@ namespace sorth
                     //.is_ptr = true,
                     .convert_from = convert_from,
                     .convert_to = convert_to
-                };
+                };*/
 
-            type_map[name] = base_info;
-            type_map[name + "-ptr"] = ptr_info;
+            //type_map[name] = base_info;
+            //type_map[name + "-ptr"] = ptr_info;
 
             // Create the words to allow the script to access this definition.  The word
             // <definition_name>.new will always hold a base reference to our definition object.
-            create_data_definition_words(location, interpreter, definition_ptr, is_hidden);*/
+            create_data_definition_words(location, interpreter, definition_ptr, is_hidden);
         }
 
     }
