@@ -40,16 +40,23 @@ namespace sorth
         std::unordered_map<std::string, library_handle> library_map;
 
 
+        using CalculatedSize = std::tuple<size_t, size_t>;
+
+
+        using ConversionFrom = std::function<void(InterpreterPtr&, const Value&, ByteBuffer&, ByteBuffer&)>;
+        using ConversionTo = std::function<Value(InterpreterPtr&, ByteBuffer&)>;
+        using ConversionSize = std::function<CalculatedSize(InterpreterPtr&, const Value&)>;
+        using BaseSize = std::function<size_t()>;
+
+
         struct ConversionInfo
         {
-            int64_t size;
             ffi_type* type;
-            bool is_ptr;
 
-            std::function<void(InterpreterPtr&, const Value&, ByteBuffer&)> convert_from;
-            std::function<Value(InterpreterPtr&, ByteBuffer&)> convert_to;
-
-            std::function<size_t(InterpreterPtr&, const Value&)> calculate_size;
+            ConversionFrom convert_from;
+            ConversionTo convert_to;
+            ConversionSize calculate_size;
+            BaseSize base_size;
         };
 
 
@@ -58,18 +65,22 @@ namespace sorth
                 {
                     "ffi.void",
                     {
-                        .size = 0,
                         .type = &ffi_type_void,
-                        .is_ptr = false
+                        .calculate_size = [](auto interpreter, auto value) -> CalculatedSize
+                            {
+                                return { 0, 0 };
+                            },
+                        .base_size = []() -> size_t
+                            {
+                                return 0;
+                            }
                     }
                 },
                 {
                     "ffi.i8",
                     {
-                        .size = sizeof(int8_t),
                         .type = &ffi_type_sint8,
-                        .is_ptr = false,
-                        .convert_from = [](auto interpreter, auto& value, auto& buffer)
+                        .convert_from = [](auto interpreter, auto& value, auto& buffer, auto& extra)
                             {
                                 buffer.write_int(sizeof(int8_t),
                                                  as_numeric<int64_t>(interpreter, value));
@@ -78,16 +89,22 @@ namespace sorth
                             {
                                 int64_t value = buffer.read_int(sizeof(int8_t), true);
                                 return value;
+                            },
+                        .calculate_size = [](auto interpreter, auto value) -> CalculatedSize
+                            {
+                                return { sizeof(int8_t), 0 };
+                            },
+                        .base_size = []() -> size_t
+                            {
+                                return sizeof(int8_t);
                             }
                     }
                 },
                 {
                     "ffi.u8",
                     {
-                        .size = sizeof(uint8_t),
                         .type = &ffi_type_uint8,
-                        .is_ptr = false,
-                        .convert_from = [](auto interpreter, auto& value, auto& buffer)
+                        .convert_from = [](auto interpreter, auto& value, auto& buffer, auto& extra)
                             {
                                 buffer.write_int(sizeof(uint8_t),
                                                  as_numeric<int64_t>(interpreter, value));
@@ -96,16 +113,22 @@ namespace sorth
                             {
                                 int64_t value = buffer.read_int(sizeof(uint8_t), false);
                                 return value;
+                            },
+                        .calculate_size = [](auto interpreter, auto value) -> CalculatedSize
+                            {
+                                return { sizeof(uint8_t), 0 };
+                            },
+                        .base_size = []() -> size_t
+                            {
+                                return sizeof(uint8_t);
                             }
                     }
                 },
                 {
                     "ffi.i16",
                     {
-                        .size = sizeof(int16_t),
                         .type = &ffi_type_sint16,
-                        .is_ptr = false,
-                        .convert_from = [](auto interpreter, auto& value, auto& buffer)
+                        .convert_from = [](auto interpreter, auto& value, auto& buffer, auto& extra)
                             {
                                 buffer.write_int(sizeof(int16_t),
                                                  as_numeric<int64_t>(interpreter, value));
@@ -114,16 +137,22 @@ namespace sorth
                             {
                                 int64_t value = buffer.read_int(sizeof(int16_t), true);
                                 return value;
+                            },
+                        .calculate_size = [](auto interpreter, auto value) -> CalculatedSize
+                            {
+                                return { sizeof(int16_t), 0 };
+                            },
+                        .base_size = []() -> size_t
+                            {
+                                return sizeof(uint16_t);
                             }
                     }
                 },
                 {
                     "ffi.u16",
                     {
-                        .size = sizeof(uint16_t),
                         .type = &ffi_type_uint16,
-                        .is_ptr = false,
-                        .convert_from = [](auto interpreter, auto& value, auto& buffer)
+                        .convert_from = [](auto interpreter, auto& value, auto& buffer, auto& extra)
                             {
                                 buffer.write_int(sizeof(uint16_t),
                                                  as_numeric<int64_t>(interpreter, value));
@@ -132,16 +161,22 @@ namespace sorth
                             {
                                 int64_t value = buffer.read_int(sizeof(uint16_t), false);
                                 return value;
+                            },
+                        .calculate_size = [](auto interpreter, auto value) -> CalculatedSize
+                            {
+                                return { sizeof(uint16_t), 0 };
+                            },
+                        .base_size = []() -> size_t
+                            {
+                                return sizeof(uint16_t);
                             }
                     }
                 },
                 {
                     "ffi.i32",
                     {
-                        .size = sizeof(int32_t),
                         .type = &ffi_type_sint32,
-                        .is_ptr = false,
-                        .convert_from = [](auto interpreter, auto& value, auto& buffer)
+                        .convert_from = [](auto interpreter, auto& value, auto& buffer, auto& extra)
                             {
                                 buffer.write_int(sizeof(int32_t),
                                                  as_numeric<int64_t>(interpreter, value));
@@ -150,16 +185,22 @@ namespace sorth
                             {
                                 int64_t value = buffer.read_int(sizeof(int32_t), true);
                                 return value;
+                            },
+                        .calculate_size = [](auto interpreter, auto value) -> CalculatedSize
+                            {
+                                return { sizeof(int32_t), 0 };
+                            },
+                        .base_size = []() -> size_t
+                            {
+                                return sizeof(int32_t);
                             }
                     }
                 },
                 {
                     "ffi.u32",
                     {
-                        .size = sizeof(uint32_t),
                         .type = &ffi_type_uint32,
-                        .is_ptr = false,
-                        .convert_from = [](auto interpreter, auto& value, auto& buffer)
+                        .convert_from = [](auto interpreter, auto& value, auto& buffer, auto& extra)
                             {
                                 buffer.write_int(sizeof(uint32_t),
                                                  as_numeric<int64_t>(interpreter, value));
@@ -168,16 +209,22 @@ namespace sorth
                             {
                                 int64_t value = buffer.read_int(sizeof(uint32_t), false);
                                 return value;
+                            },
+                        .calculate_size = [](auto interpreter, auto value) -> CalculatedSize
+                            {
+                                return { sizeof(uint32_t), 0 };
+                            },
+                        .base_size = []() -> size_t
+                            {
+                                return sizeof(uint32_t);
                             }
                     }
                 },
                 {
                     "ffi.i64",
                     {
-                        .size = sizeof(int64_t),
                         .type = &ffi_type_sint64,
-                        .is_ptr = false,
-                        .convert_from = [](auto interpreter, auto& value, auto& buffer)
+                        .convert_from = [](auto interpreter, auto& value, auto& buffer, auto& extra)
                             {
                                 buffer.write_int(sizeof(int64_t),
                                                  as_numeric<int64_t>(interpreter, value));
@@ -186,16 +233,22 @@ namespace sorth
                             {
                                 int64_t value = buffer.read_int(sizeof(int64_t), true);
                                 return value;
+                            },
+                        .calculate_size = [](auto interpreter, auto value) -> CalculatedSize
+                            {
+                                return { sizeof(int64_t), 0 };
+                            },
+                        .base_size = []() -> size_t
+                            {
+                                return sizeof(int64_t);
                             }
                     }
                 },
                 {
                     "ffi.u64",
                     {
-                        .size = sizeof(uint64_t),
                         .type = &ffi_type_uint64,
-                        .is_ptr = false,
-                        .convert_from = [](auto interpreter, auto& value, auto& buffer)
+                        .convert_from = [](auto interpreter, auto& value, auto& buffer, auto& extra)
                             {
                                 buffer.write_int(sizeof(uint64_t),
                                                  as_numeric<int64_t>(interpreter, value));
@@ -204,16 +257,22 @@ namespace sorth
                             {
                                 int64_t value = buffer.read_int(sizeof(uint64_t), false);
                                 return value;
+                            },
+                        .calculate_size = [](auto interpreter, auto value) -> CalculatedSize
+                            {
+                                return { sizeof(uint64_t), 0 };
+                            },
+                        .base_size = []() -> size_t
+                            {
+                                return sizeof(uint64_t);
                             }
                     }
                 },
                 {
                     "ffi.f32",
                     {
-                        .size = sizeof(float),
                         .type = &ffi_type_float,
-                        .is_ptr = false,
-                        .convert_from = [](auto interpreter, auto& value, auto& buffer)
+                        .convert_from = [](auto interpreter, auto& value, auto& buffer, auto& extra)
                             {
                                 buffer.write_float(sizeof(float),
                                                    as_numeric<double>(interpreter, value));
@@ -222,16 +281,22 @@ namespace sorth
                             {
                                 double value = buffer.read_float(sizeof(float));
                                 return value;
+                            },
+                        .calculate_size = [](auto interpreter, auto value) -> CalculatedSize
+                            {
+                                return { sizeof(float), 0 };
+                            },
+                        .base_size = []() -> size_t
+                            {
+                                return sizeof(float);
                             }
                     }
                 },
                 {
                     "ffi.f64",
                     {
-                        .size = sizeof(double),
                         .type = &ffi_type_double,
-                        .is_ptr = false,
-                        .convert_from = [](auto interpreter, auto& value, auto& buffer)
+                        .convert_from = [](auto interpreter, auto& value, auto& buffer, auto& extra)
                             {
                                 buffer.write_float(sizeof(double),
                                                    as_numeric<double>(interpreter, value));
@@ -240,29 +305,62 @@ namespace sorth
                             {
                                 double value = buffer.read_float(sizeof(double));
                                 return value;
+                            },
+                        .calculate_size = [](auto interpreter, auto value) -> CalculatedSize
+                            {
+                                return { sizeof(double), 0 };
+                            },
+                        .base_size = []() -> size_t
+                            {
+                                return sizeof(double);
                             }
                     }
                 },
                 {
                     "ffi.string",
                     {
-                        .size = -1,
                         .type = &ffi_type_pointer,
-                        .is_ptr = true,
-                        .convert_from = [](auto interpreter, auto& value, auto& buffer)
+                        .convert_from = [](auto interpreter, auto& value, auto& buffer, auto& extra)
                             {
-                                auto string = as_string(interpreter, value);
-                                buffer.write_string(string, string.size() + 1);
+
                             },
                         .convert_to = [](auto interpreter, auto& buffer) -> Value
                             {
                                 std::string str = reinterpret_cast<char*>(buffer.position_ptr());
                                 return str;
                             },
-                        .calculate_size = [](auto interpreter, auto value)
+                        .calculate_size = [](auto interpreter, auto value) -> CalculatedSize
                             {
                                 auto string = as_string(interpreter, value);
-                                return string.size() + 1 + sizeof(void*);
+                                return { sizeof(char*), string.size() + 1 + sizeof(void*) };
+                            },
+                        .base_size = []() -> size_t
+                            {
+                                return sizeof(char*);
+                            }
+                    }
+                },
+                {
+                    "ffi.void-ptr",
+                    {
+                        .type = &ffi_type_pointer,
+                        .convert_from = [](auto interpreter, auto& value, auto& buffer, auto& extra)
+                            {
+                                buffer.write_int(sizeof(uint32_t),
+                                                 as_numeric<int64_t>(interpreter, value));
+                            },
+                        .convert_to = [](auto Interpreter, auto& buffer) -> Value
+                            {
+                                int64_t value = buffer.read_int(sizeof(uint32_t), false);
+                                return value;
+                            },
+                        .calculate_size = [](auto interpreter, auto value) -> CalculatedSize
+                            {
+                                return { sizeof(void*), 0 };
+                            },
+                        .base_size = []() -> size_t
+                            {
+                                return sizeof(void*);
                             }
                     }
                 }
@@ -346,7 +444,8 @@ namespace sorth
 
         std::vector<void*> pop_params(InterpreterPtr& interpreter,
                                       const FfiParams& params,
-                                      ByteBuffer& buffer)
+                                      ByteBuffer& buffer,
+                                      ByteBuffer& ext_buffer)
         {
             std::vector<Value> values;
             std::vector<void*> param_values;
@@ -354,6 +453,7 @@ namespace sorth
             values.resize(params.size());
 
             size_t buffer_size = 0;
+            size_t ext_buffer_size = 0;
 
             for (int i = 0; i < params.size(); ++i)
             {
@@ -361,42 +461,23 @@ namespace sorth
                 values[params.size() - 1 - i] = value;
 
                 const auto& param = params[params.size() - 1 - i];
-                size_t size = param.conversion.size != -1
-                              ? param.conversion.size
-                              : param.conversion.calculate_size(interpreter, value) + sizeof(void*);
-                buffer_size += size;
+                auto [ new_size, new_ext_size ] = param.conversion.calculate_size(interpreter,
+                                                                                  value);
+                buffer_size += new_size;
+                ext_buffer_size += new_ext_size;
             }
 
             buffer.resize(buffer_size);
+            ext_buffer.resize(ext_buffer_size);
 
             for (int i = 0; i < params.size(); ++i)
             {
                 const auto& param = params[i];
 
                 auto& value = values[i];
-
                 void* value_ptr = buffer.position_ptr();
 
-                if (param.conversion.is_ptr)
-                {
-                    auto start_pos = buffer.position();
-
-                    buffer.set_position(start_pos + sizeof(void*));
-                    auto data_ptr = buffer.position_ptr();
-
-                    param.conversion.convert_from(interpreter, value, buffer);
-
-                    auto end_pos = buffer.position();
-                    buffer.set_position(start_pos);
-                    buffer.write_int(sizeof(void*), (size_t)data_ptr);
-
-                    buffer.set_position(end_pos);
-                }
-                else
-                {
-                    param.conversion.convert_from(interpreter, value, buffer);
-                }
-
+                param.conversion.convert_from(interpreter, value, buffer, ext_buffer);
                 param_values.push_back(value_ptr);
             }
 
@@ -474,12 +555,12 @@ namespace sorth
         }
 
 
-        void word_ffi_open(InterpreterPtr& Interpreter)
+        void word_ffi_open(InterpreterPtr& interpreter)
         {
-            auto register_name = as_string(Interpreter, Interpreter->pop());
-            auto lib_name = as_string(Interpreter, Interpreter->pop());
+            auto register_name = as_string(interpreter, interpreter->pop());
+            auto lib_name = as_string(interpreter, interpreter->pop());
 
-            auto handle = load_library(Interpreter, lib_name);
+            auto handle = load_library(interpreter, lib_name);
             library_map[register_name] = handle;
         }
 
@@ -514,12 +595,18 @@ namespace sorth
                     }
 
                     auto param_buffer = ByteBuffer(0);
-                    auto param_values = pop_params(interpreter, params, param_buffer);
-                    auto result = ByteBuffer(ret_conversion.size != -1
-                                             ? ret_conversion.size : sizeof(void*));
+                    auto ext_buffer = ByteBuffer(0);
 
-                    ffi_call(cif.get(), FFI_FN(function), result.data_ptr(), param_values.data());
-                    push_result(interpreter, ret_conversion, result);
+                    auto param_values = pop_params(interpreter, params, param_buffer, ext_buffer);
+                    auto ret_size = ret_conversion.base_size();
+                    auto ret_buffer = ByteBuffer(ret_size);
+
+                    ffi_call(cif.get(),
+                             FFI_FN(function),
+                             ret_buffer.data_ptr(),
+                             param_values.data());
+
+                    push_result(interpreter, ret_conversion, ret_buffer);
                 };
 
             std::string name = fn_alias != "" ? fn_alias : fn_name;
@@ -531,13 +618,86 @@ namespace sorth
                             signature);
         }
 
+
+        void word_ffi_struct(InterpreterPtr& interpreter)
+        {
+            auto location = interpreter->get_current_location();
+
+            auto found_initializers = as_numeric<bool>(interpreter, interpreter->pop());
+            auto is_hidden = as_numeric<bool>(interpreter, interpreter->pop());
+            auto types = as_array(interpreter, interpreter->pop());
+            auto fields = as_array(interpreter, interpreter->pop());
+            auto packing  = as_numeric<int64_t>(interpreter, interpreter->pop());
+            auto name = as_string(interpreter, interpreter->pop());
+
+            ArrayPtr defaults;
+
+            if (found_initializers)
+            {
+                defaults = as_array(interpreter, interpreter->pop());
+            }
+
+            /*
+            // Create the definition object.
+            auto definition_ptr = create_data_definition(interpreter,
+                                                         name,
+                                                         fields,
+                                                         defaults,
+                                                         is_hidden);
+
+            // Populate the ffi type information for this struct.
+            set_type_information(definition_ptr, packing, types);
+
+            ConversionFrom convert_from = [](auto interpreter, auto& value, auto& buffer, auto& extra)
+                {
+                    //
+                };
+
+            ConversionTo convert_to = [](auto interpreter, auto& buffer) -> Value
+                {
+                    return value;
+                };
+
+            ConversionSize calculate_size = [](auto interpreter, auto value)
+                {
+                    return 1;
+                };
+
+            // Now register this new struct with the ffi type conversion system.
+            auto base_info = ConversionInfo
+                {
+                    .size = -1,
+                    .extra = -1,
+                    .type = &ffi_type_structure,
+                    //.is_ptr = false,
+                    .convert_from = convert_from,
+                    .convert_to = convert_to,
+                    .calculate_size = calculate_size
+                };
+
+            auto ptr_info = ConversionInfo
+                {
+                    .size = sizeof(void*),
+                    .extra = -1,
+                    .type = &ffi_type_structure,
+                    //.is_ptr = true,
+                    .convert_from = convert_from,
+                    .convert_to = convert_to
+                };
+
+            type_map[name] = base_info;
+            type_map[name + "-ptr"] = ptr_info;
+
+            // Create the words to allow the script to access this definition.  The word
+            // <definition_name>.new will always hold a base reference to our definition object.
+            create_data_definition_words(location, interpreter, definition_ptr, is_hidden);*/
+        }
+
     }
 
 
     void register_ffi_words(InterpreterPtr& interpreter)
     {
-        // TODO: Allow for structures: #.ffi ... ;
-
         ADD_NATIVE_WORD(interpreter, "ffi.load", word_ffi_open,
             "Load an binary library and register it with the ffi interface.",
             "lib-name -- ");
@@ -545,6 +705,10 @@ namespace sorth
         ADD_NATIVE_WORD(interpreter, "ffi.fn", word_ffi_fn,
             "Bind to an external function.",
             "lib-name fn-name fn-alias fn-params ret-name -- ");
+
+        ADD_NATIVE_WORD(interpreter, "ffi.#", word_ffi_struct,
+            "Create a strucure compatable with the ffi interface.",
+            "lib-name -- ");
     }
 
 }
