@@ -120,8 +120,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE VERSION="${VERSION}")
 add_custom_target(copy_stdlib ALL
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/std.f ${BUILD_DIR}/std.f
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/std ${BUILD_DIR}/std
-    COMMENT "Copying standard library files to the build directory."
-)
+    COMMENT "Copying standard library files to the build directory.")
 
 
 # Ensure copy_stdlib runs before the main target
