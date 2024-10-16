@@ -105,6 +105,30 @@ namespace sorth
                     }
                 },
                 {
+                    "ffi.bool",
+                    {
+                        .type = &ffi_type_uint8,
+                        .convert_from = [](auto interpreter, auto& value, auto& buffer, auto& extra)
+                            {
+                                buffer.write_int(sizeof(int8_t),
+                                                 as_numeric<bool>(interpreter, value));
+                            },
+                        .convert_to = [](auto Interpreter, auto& buffer) -> Value
+                            {
+                                bool value = buffer.read_int(sizeof(bool), true);
+                                return value;
+                            },
+                        .calculate_size = [](auto interpreter, auto value) -> CalculatedSize
+                            {
+                                return { sizeof(bool), 0 };
+                            },
+                        .base_size = []() -> size_t
+                            {
+                                return sizeof(bool);
+                            }
+                    }
+                },
+                {
                     "ffi.i8",
                     {
                         .type = &ffi_type_sint8,
@@ -629,7 +653,7 @@ namespace sorth
                     auto ext_buffer = ByteBuffer(0);
                     auto param_values = pop_params(interpreter, params, param_buffer, ext_buffer);
                     auto ret_size = ret_conversion.base_size();
-                    auto ret_buffer = ByteBuffer(ret_size);
+                    auto ret_buffer = ByteBuffer(ret_size + (ret_size % 8));
 
                     ffi_call(cif.get(),
                              FFI_FN(function),

@@ -105,6 +105,7 @@ namespace sorth
       byte_size(new_size),
       current_position(0)
     {
+        memset(bytes, 0, byte_size);
     }
 
 
@@ -195,6 +196,8 @@ namespace sorth
 
         byte_size = new_size;
         bytes = new_buffer;
+
+        memset(bytes, 0, byte_size);
 
         if (current_position >= new_size)
         {
