@@ -43,8 +43,8 @@ namespace sorth
         using CalculatedSize = std::tuple<size_t, size_t>;
 
 
-        using ConversionFrom = std::function<void(InterpreterPtr&, const Value&, ByteBuffer&, ByteBuffer&)>;
-        using ConversionTo = std::function<Value(InterpreterPtr&, ByteBuffer&)>;
+        using ConversionFrom = std::function<void(InterpreterPtr&, const Value&, Buffer&, Buffer&)>;
+        using ConversionTo = std::function<Value(InterpreterPtr&, Buffer&)>;
         using ConversionSize = std::function<CalculatedSize(InterpreterPtr&, const Value&)>;
         using BaseSize = std::function<size_t()>;
 
@@ -60,7 +60,35 @@ namespace sorth
         };
 
 
-        std::unordered_map<std::string, ConversionInfo> type_map =
+        using ConversionTypeMap = std::unordered_map<std::string, ConversionInfo>;
+
+
+        ConversionTypeMap create_type_map();
+
+
+        ConversionTypeMap type_map = std::move(create_type_map());
+
+
+        struct FfiParamInfo
+        {
+            ffi_type* type;
+            std::string type_name;
+            const ConversionInfo& conversion;
+        };
+
+
+        using FfiParams = std::vector<FfiParamInfo>;
+
+
+        using StructTypeMap = std::unordered_map<std::string, ffi_type>;
+
+
+        StructTypeMap struct_map;
+
+
+        ConversionTypeMap create_type_map()
+        {
+            return
             {
                 {
                     "ffi.void",
@@ -368,17 +396,7 @@ namespace sorth
                     }
                 }
             };
-
-
-        struct FfiParamInfo
-        {
-            ffi_type* type;
-            std::string type_name;
-            const ConversionInfo& conversion;
-        };
-
-
-        using FfiParams = std::vector<FfiParamInfo>;
+        }
 
 
         const ConversionInfo& get_conversion_info(InterpreterPtr& interpreter,
@@ -523,6 +541,16 @@ namespace sorth
         }
 
 
+        void unload_library(library_handle handle)
+        {
+            #ifdef IS_WINDOWS
+                FreeLibrary(handle);
+            #elif defined(IS_UNIX)
+                dlclose(handle);
+            #endif
+        }
+
+
         fn_handle find_function(InterpreterPtr& interpreter,
                                 const std::string& lib_name,
                                 const std::string& function_name)
@@ -647,48 +675,168 @@ namespace sorth
                                                          defaults,
                                                          is_hidden);
 
-            // Populate the ffi type information for this struct.
-            /*set_type_information(definition_ptr, packing, types);
+            // Gather conversions for the structure's fields.
+            std::vector<ConversionInfo> field_conversions;
+            field_conversions.resize(types->size());
 
-            ConversionFrom convert_from = [](auto interpreter, auto& value, auto& buffer, auto& extra)
+            for (size_t i = 0; i < types->size(); ++i)
+            {
+                field_conversions[i] = get_conversion_info(interpreter,
+                                                           as_string(interpreter, (*types)[i]));
+            }
+
+            // Centralize the size calculation for the struct.
+            auto size_calculation = [=](InterpreterPtr interpreter, Value value) -> CalculatedSize
                 {
-                    //
+                    auto data_object = as_data_object(interpreter, value);
+
+                    size_t size = 0;
+                    size_t extra = 0;
+
+                    for (int i = 0; i < field_conversions.size(); ++i)
+                    {
+                        auto [ new_size, new_extra ] =
+                                            field_conversions[i].calculate_size(interpreter,
+                                                                            data_object->fields[i]);
+
+                        size += new_size;
+                        extra += new_extra;
+                    }
+
+                    return { size, extra };
                 };
 
-            ConversionTo convert_to = [](auto interpreter, auto& buffer) -> Value
+            // Create and register the FFI struct information for this data object.
+            ffi_type** field_types = new ffi_type*[field_conversions.size() + 1];
+
+            for (size_t i = 0; i < field_conversions.size(); ++i)
+            {
+                field_types[i] = field_conversions[i].type;
+            }
+
+            field_types[field_conversions.size()] = nullptr;
+
+            ffi_type struct_type =
                 {
-                    return value;
+                    .size = 0,
+                    .alignment = static_cast<unsigned short>(packing),
+
+                    #ifdef IS_WINDOWS
+                        .type = FFI_TYPE_MS_STRUCT,
+                    #else
+                        .type = FFI_TYPE_STRUCT,
+                    #endif
+
+                    .elements = field_types,
                 };
 
-            ConversionSize calculate_size = [](auto interpreter, auto value)
+            auto iter = struct_map.find(name);
+
+            if (iter != struct_map.end())
+            {
+                delete [] iter->second.elements;
+            }
+
+            struct_map[name] = struct_type;
+
+            // Create a converter for the struct.
+            auto base_conversion = ConversionInfo
                 {
-                    return 1;
+                    .type = &struct_map[name],
+                    .convert_from = [=](auto interpreter, auto& value, auto& buffer, auto& extra)
+                        {
+                            auto data_object = as_data_object(interpreter, value);
+
+                            for (int i = 0; i < field_conversions.size(); ++i)
+                            {
+                                field_conversions[i].convert_from(interpreter,
+                                                                  data_object->fields[i],
+                                                                  buffer,
+                                                                  extra);
+                            }
+                        },
+                    .convert_to = [=](auto interpreter, auto& buffer) -> Value
+                        {
+                            auto data = make_data_object(interpreter, definition_ptr);
+
+                            for (int i = 0; i < field_conversions.size(); ++i)
+                            {
+                                auto value = field_conversions[i].convert_to(interpreter, buffer);
+                                data->fields[i] = value;
+                            }
+
+                            return data;
+                        },
+                    .calculate_size = [=](auto interpreter, auto value) -> CalculatedSize
+                        {
+                            return size_calculation(interpreter, value);
+                        },
+                    .base_size = [=]() -> size_t
+                        {
+                            size_t size = 0;
+
+                            for (int i = 0; i < field_conversions.size(); ++i)
+                            {
+                                auto new_size = field_conversions[i].base_size();
+
+                                size += new_size;
+                            }
+
+                            return size;
+                        }
                 };
 
-            // Now register this new struct with the ffi type conversion system.
-            auto base_info = ConversionInfo
+            // Create a converter for a struct pointer.
+            auto ptr_conversion = ConversionInfo
                 {
-                    .size = -1,
-                    .extra = -1,
-                    .type = &ffi_type_structure,
-                    //.is_ptr = false,
-                    .convert_from = convert_from,
-                    .convert_to = convert_to,
-                    .calculate_size = calculate_size
+                    .type = &ffi_type_pointer,
+                    .convert_from = [=](auto interpreter, auto& value, auto& buffer, auto& extra)
+                        {
+                            auto [ size, extra_size ] = size_calculation(interpreter, value);
+
+                            auto data_object = as_data_object(interpreter, value);
+                            auto sub_buffer = SubBuffer(extra, extra_size);
+
+                            buffer.write_int(sizeof(char*), (size_t)extra.position_ptr());
+
+                            for (int i = 0; i < field_conversions.size(); ++i)
+                            {
+                                field_conversions[i].convert_from(interpreter,
+                                                                  data_object->fields[i],
+                                                                  extra,
+                                                                  sub_buffer);
+                            }
+                        },
+                    .convert_to = [=](auto interpreter, auto& buffer) -> Value
+                        {
+                            auto value = buffer.read_int(sizeof(void*), false);
+                            void* raw_ptr = reinterpret_cast<void*>(static_cast<uintptr_t>(value));
+                            auto raw_buffer = ByteBuffer(raw_ptr, -1);
+                            auto data = make_data_object(interpreter, definition_ptr);
+
+                            for (int i = 0; i < field_conversions.size(); ++i)
+                            {
+                                auto value = field_conversions[i].convert_to(interpreter,
+                                                                             raw_buffer);
+                                data->fields[i] = value;
+                            }
+
+                            return data;
+                        },
+                    .calculate_size = [=](auto interpreter, auto value) -> CalculatedSize
+                        {
+                            auto [ size, extra ] = size_calculation(interpreter, value);
+                            return { sizeof(void*), size + extra };
+                        },
+                    .base_size = []() -> size_t
+                        {
+                            return sizeof(void*);
+                        }
                 };
 
-            auto ptr_info = ConversionInfo
-                {
-                    .size = sizeof(void*),
-                    .extra = -1,
-                    .type = &ffi_type_structure,
-                    //.is_ptr = true,
-                    .convert_from = convert_from,
-                    .convert_to = convert_to
-                };*/
-
-            //type_map[name] = base_info;
-            //type_map[name + "-ptr"] = ptr_info;
+            // Register our converters with the type map.
+            type_map[name] = base_conversion;
+            type_map[name + "-ptr"] = ptr_conversion;
 
             // Create the words to allow the script to access this definition.  The word
             // <definition_name>.new will always hold a base reference to our definition object.
@@ -711,6 +859,30 @@ namespace sorth
         ADD_NATIVE_WORD(interpreter, "ffi.#", word_ffi_struct,
             "Create a strucure compatable with the ffi interface.",
             "lib-name -- ");
+
+        ADD_NATIVE_WORD(interpreter, "ffi.[]", word_ffi_struct,
+            "Register a new ffi array type for the specified ff.",
+            "struct-name -- ");
+    }
+
+
+    void reset_ffi()
+    {
+        type_map = std::move(create_type_map());
+
+        for (auto& item : struct_map)
+        {
+            delete [] item.second.elements;
+        }
+
+        struct_map.clear();
+
+        for (auto& item : library_map)
+        {
+            unload_library(item.second);
+        }
+
+        library_map.clear();
     }
 
 }
