@@ -324,6 +324,8 @@ namespace sorth
         interpreter->release_context();
         interpreter->clear_stack();
 
+        reset_ffi();
+
         interpreter->mark_context();
     }
 

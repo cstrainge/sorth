@@ -2,13 +2,20 @@
 #include "sorth.h"
 
 
+#ifdef min
+    #undef min
+#endif
+
+
 
 namespace sorth
 {
 
 
-    std::ostream& operator <<(std::ostream& stream, const ByteBuffer& buffer)
+    std::ostream& operator <<(std::ostream& stream, const Buffer& buffer)
     {
+        auto data_ptr = static_cast<const unsigned char*>(buffer.data_ptr());
+
         auto byte_string = [&](size_t start, size_t stop)
             {
                 if (stop == 0)
@@ -25,7 +32,7 @@ namespace sorth
 
                 for (size_t i = start; i < stop; ++i)
                 {
-                    unsigned char next = buffer.bytes[i];
+                    auto next = data_ptr[i];
                     bool is_ctrl = (iscntrl(next) != 0) || ((next & 0x80) != 0);
 
                     stream << (char)(is_ctrl ? '.' : next);
@@ -34,7 +41,7 @@ namespace sorth
 
         stream << "          00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f";
 
-        for (size_t i = 0; i < buffer.bytes.size(); ++i)
+        for (size_t i = 0; i < buffer.size(); ++i)
         {
             if ((i == 0) || ((i % 16) == 0))
             {
@@ -45,17 +52,17 @@ namespace sorth
             }
 
             stream << std::setw(2) << std::setfill('0') << std::hex
-                   << (uint32_t)buffer.bytes[i] << " ";
+                   << (uint32_t)data_ptr[i] << " ";
         }
 
         stream << std::dec << std::setfill(' ');
 
-        auto left_over = buffer.bytes.size() % 16;
+        auto left_over = buffer.size() % 16;
 
         if (left_over != 0)
         {
-            auto index = buffer.bytes.size() - left_over;
-            byte_string(index, buffer.bytes.size());
+            auto index = buffer.size() - left_over;
+            byte_string(index, buffer.size());
         }
 
         return stream;
@@ -80,24 +87,62 @@ namespace sorth
     }
 
 
-    ByteBuffer::ByteBuffer(int64_t size)
-    : current_position(0)
+
+    Buffer::Buffer()
     {
-        bytes.resize(size);
+    }
+
+
+    Buffer::~Buffer()
+    {
+    }
+
+
+
+    ByteBuffer::ByteBuffer(int64_t new_size)
+    : owned(true),
+      bytes(new unsigned char[new_size]),
+      byte_size(new_size),
+      current_position(0)
+    {
+    }
+
+
+    ByteBuffer::ByteBuffer(void* raw_ptr, int64_t size)
+    : owned(false),
+      bytes(reinterpret_cast<unsigned char*>(raw_ptr)),
+      byte_size(size),
+      current_position(0)
+    {
     }
 
 
     ByteBuffer::ByteBuffer(const ByteBuffer& buffer)
-    : bytes(buffer.bytes),
+    : owned(true),
+      bytes(new unsigned char[buffer.byte_size]),
+      byte_size(buffer.byte_size),
       current_position(buffer.current_position)
     {
+        memcpy(bytes, buffer.bytes, byte_size);
     }
 
 
     ByteBuffer::ByteBuffer(ByteBuffer&& buffer)
-    : bytes(std::move(buffer.bytes)),
+    : owned(buffer.owned),
+      bytes(buffer.bytes),
+      byte_size(buffer.byte_size),
       current_position(buffer.current_position)
     {
+        buffer.owned = false;
+        buffer.bytes = nullptr;
+        buffer.byte_size = 0;
+        buffer.current_position = 0;
+    }
+
+
+    ByteBuffer::~ByteBuffer()
+    {
+        reset();
     }
 
 
@@ -105,7 +150,11 @@ namespace sorth
     {
         if (&buffer != this)
         {
-            bytes = buffer.bytes;
+            reset();
+
+            owned = true;
+            bytes = new unsigned char[buffer.byte_size];
+            byte_size = buffer.byte_size;
             current_position = buffer.current_position;
         }
 
@@ -117,8 +166,15 @@ namespace sorth
     {
         if (&buffer != this)
         {
-            bytes = std::move(buffer.bytes);
+            reset();
+
+            owned = buffer.owned;
+            bytes = buffer.bytes;
+            byte_size = buffer.byte_size;
             current_position = buffer.current_position;
+
+            buffer.owned = false;
+            buffer.reset();
         }
 
         return *this;
@@ -127,7 +183,18 @@ namespace sorth
 
     void ByteBuffer::resize(int64_t new_size)
     {
-        bytes.resize(new_size);
+        if (owned == false)
+        {
+            throw std::runtime_error("Resizing a byte buffer that isn't owned.");
+        }
+
+        auto new_buffer = new unsigned char[new_size];
+
+        memcpy(new_buffer, bytes, std::min(new_size, byte_size));
+        delete [] bytes;
+
+        byte_size = new_size;
+        bytes = new_buffer;
 
         if (current_position >= new_size)
         {
@@ -138,7 +205,7 @@ namespace sorth
 
     int64_t ByteBuffer::size() const
     {
-        return bytes.size();
+        return byte_size;
     }
 
 
@@ -162,7 +229,13 @@ namespace sorth
 
     void* ByteBuffer::data_ptr()
     {
-        return bytes.data();
+        return bytes;
+    }
+
+
+    const void* ByteBuffer::data_ptr() const
+    {
+        return bytes;
     }
 
 
@@ -283,16 +356,16 @@ namespace sorth
     }
 
 
-
     void ByteBuffer::increment_position(int64_t increment)
     {
         size_t new_position = current_position + increment;
 
-        if (new_position > bytes.size())
+        if (   (new_position > byte_size)
+            && (byte_size != -1))
         {
             std::stringstream stream;
 
-            stream << "ByteBuffer position " << new_position << " out of range, " << bytes.size()
+            stream << "ByteBuffer position " << new_position << " out of range, " << byte_size
                    << ".";
 
             throw std::runtime_error(stream.str());
@@ -301,5 +374,187 @@ namespace sorth
         current_position = new_position;
     }
 
+
+    void ByteBuffer::reset()
+    {
+        if (   (owned)
+            && (bytes != nullptr))
+        {
+            delete []bytes;
+        }
+
+        bytes = nullptr;
+        byte_size = 0;
+        current_position = 0;
+    }
+
+
+
+
+    SubBuffer::SubBuffer(Buffer& parent, int64_t base_position)
+    : parent(parent),
+      base_position(base_position)
+    {
+    }
+
+
+    SubBuffer::~SubBuffer()
+    {
+    }
+
+
+    void SubBuffer::resize(int64_t new_size)
+    {
+        parent.resize(new_size + base_position);
+    }
+
+
+    int64_t SubBuffer::size() const
+    {
+        return parent.size() - base_position;
+    }
+
+
+    int64_t SubBuffer::position() const
+    {
+        return current_position;
+    }
+
+
+    void* SubBuffer::position_ptr() const
+    {
+        auto original = parent.position();
+
+        parent.set_position(base_position + current_position);
+        auto result = parent.position_ptr();
+        parent.set_position(original);
+
+        return result;
+    }
+
+
+    void SubBuffer::set_position(int64_t new_position)
+    {
+        if (new_position > size())
+        {
+            std::stringstream stream;
+
+            stream << "SubBuffer position " << new_position << " out of range, " << size()
+                   << ".";
+
+            throw std::runtime_error(stream.str());
+        }
+
+        current_position = new_position;
+    }
+
+
+    void* SubBuffer::data_ptr()
+    {
+        auto original = parent.position();
+
+        parent.set_position(base_position);
+        auto result = parent.position_ptr();
+        parent.set_position(original);
+
+        return result;
+    }
+
+
+    const void* SubBuffer::data_ptr() const
+    {
+        auto original = parent.position();
+
+        parent.set_position(base_position);
+        auto result = parent.position_ptr();
+        parent.set_position(original);
+
+        return result;
+    }
+
+
+    void SubBuffer::write_int(int64_t byte_size, int64_t value)
+    {
+        auto original = parent.position();
+
+        parent.set_position(base_position + current_position);
+        parent.write_int(byte_size, value);
+        parent.set_position(original);
+
+        increment_position(byte_size);
+    }
+
+
+    int64_t SubBuffer::read_int(int64_t byte_size, bool is_signed)
+    {
+        auto original = parent.position();
+
+        parent.set_position(base_position + current_position);
+        auto result = parent.read_int(byte_size, is_signed);
+        parent.set_position(original);
+
+        increment_position(byte_size);
+
+        return result;
+    }
+
+
+    void SubBuffer::write_float(int64_t byte_size, double value)
+    {
+        auto original = parent.position();
+
+        parent.set_position(base_position + current_position);
+        parent.write_float(byte_size, value);
+        parent.set_position(original);
+
+        increment_position(byte_size);
+    }
+
+
+    double SubBuffer::read_float(int64_t byte_size)
+    {
+        auto original = parent.position();
+
+        parent.set_position(base_position + current_position);
+        auto result = parent.read_float(byte_size);
+        parent.set_position(original);
+
+        increment_position(byte_size);
+
+        return result;
+    }
+
+
+    void SubBuffer::write_string(const std::string& string, int64_t max_size)
+    {
+        auto original = parent.position();
+
+        parent.set_position(base_position + current_position);
+        parent.write_string(string, max_size);
+        parent.set_position(original);
+
+        increment_position(max_size);
+    }
+
+
+    std::string SubBuffer::read_string(int64_t max_size)
+    {
+        auto original = parent.position();
+
+        parent.set_position(base_position + current_position);
+        auto result = parent.read_string(max_size);
+        parent.set_position(original);
+
+        increment_position(max_size);
+
+        return result;
+    }
+
+
+    void SubBuffer::increment_position(int64_t increment)
+    {
+        size_t new_position = current_position + increment;
+        set_position(new_position);
+    }
 
 }

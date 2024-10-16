@@ -228,6 +228,17 @@ namespace sorth
     }
 
 
+    inline DataObjectPtr as_data_object(InterpreterPtr interpreter, Value value)
+    {
+        if (!std::holds_alternative<DataObjectPtr>(value))
+        {
+            internal::throw_error(*interpreter, "Expected a data object.");
+        }
+
+        return std::get<DataObjectPtr>(value);
+    }
+
+
     inline HashTablePtr as_hash_table(InterpreterPtr interpreter, Value value)
     {
         if (!std::holds_alternative<HashTablePtr>(value))
