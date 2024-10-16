@@ -81,6 +81,11 @@ endif()
 
 
 
+add_library(TestLib SHARED
+    ${CMAKE_SOURCE_DIR}/tests/test_ffi_lib.cpp)
+
+
+
 # Output directory.
 set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${BUILD_DIR})
 

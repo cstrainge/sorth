@@ -54,3 +54,9 @@ cr
 "tests/08_test_hashes.f" include
 
 cr
+
+"--- Testing the ffi. ---" .cr
+
+"tests/09_test_ffi.f" include
+
+cr

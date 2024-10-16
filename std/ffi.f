@@ -63,6 +63,7 @@
 
 
 : ffi.void     "ffi.void"     sentinel_word ;
+: ffi.bool     "ffi.bool"     sentinel_word ;
 : ffi.i8       "ffi.i8"       sentinel_word ;
 : ffi.u8       "ffi.u8"       sentinel_word ;
 : ffi.i16      "ffi.i16"      sentinel_word ;
