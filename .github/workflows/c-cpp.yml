@@ -77,15 +77,6 @@ jobs:
         with:
           target: ${{ matrix.target }}
 
-      # Install or upgrade Clang to version 18 or higher (Linux/macOS)
-      - name: Install or upgrade Clang (Linux/macOS)
-        if: ${{ runner.os != 'Windows' }}
-        run: |
-          if [ $(uname) = "Linux" ]; then
-            sudo apt-get update
-            sudo apt-get install -y clang
-          fi
-
       # Optionally install libatomic for cross-compilation
       - name: Optionally install libatomic for cross-compilation
         if: ${{ matrix.target == 'arm-unknown-linux-gnu' }}
@@ -115,7 +106,7 @@ jobs:
       # Configure CMake (Windows)
       - name: Configure CMake (Windows)
         if: ${{ runner.os == 'Windows' }}
-        run: cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ --preset=default -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake .. -G Ninja
+        run: cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ --preset=default -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake ..
         working-directory: build
 
       # Configure CMake (Linux/macOS)
