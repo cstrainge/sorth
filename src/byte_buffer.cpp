@@ -230,6 +230,25 @@ namespace sorth
     }
 
 
+    void ByteBuffer::increment_position(int64_t increment)
+    {
+        auto new_position = current_position + increment;
+
+        if (   (new_position > byte_size)
+            && (byte_size != -1))
+        {
+            std::stringstream stream;
+
+            stream << "ByteBuffer position " << new_position << " out of range, " << byte_size
+                   << ".";
+
+            throw std::runtime_error(stream.str());
+        }
+
+        current_position = new_position;
+    }
+
+
     void* ByteBuffer::data_ptr()
     {
         return bytes;
@@ -359,25 +378,6 @@ namespace sorth
     }
 
 
-    void ByteBuffer::increment_position(int64_t increment)
-    {
-        size_t new_position = current_position + increment;
-
-        if (   (new_position > byte_size)
-            && (byte_size != -1))
-        {
-            std::stringstream stream;
-
-            stream << "ByteBuffer position " << new_position << " out of range, " << byte_size
-                   << ".";
-
-            throw std::runtime_error(stream.str());
-        }
-
-        current_position = new_position;
-    }
-
-
     void ByteBuffer::reset()
     {
         if (   (owned)
@@ -452,6 +452,12 @@ namespace sorth
     }
 
 
+    void SubBuffer::increment_position(int64_t increment)
+    {
+        parent.increment_position(increment);
+    }
+
+
     void* SubBuffer::data_ptr()
     {
         auto original = parent.position();
@@ -484,7 +490,7 @@ namespace sorth
         parent.write_int(byte_size, value);
         parent.set_position(original);
 
-        increment_position(byte_size);
+        local_increment_position(byte_size);
     }
 
 
@@ -496,7 +502,7 @@ namespace sorth
         auto result = parent.read_int(byte_size, is_signed);
         parent.set_position(original);
 
-        increment_position(byte_size);
+        local_increment_position(byte_size);
 
         return result;
     }
@@ -510,7 +516,7 @@ namespace sorth
         parent.write_float(byte_size, value);
         parent.set_position(original);
 
-        increment_position(byte_size);
+        local_increment_position(byte_size);
     }
 
 
@@ -522,7 +528,7 @@ namespace sorth
         auto result = parent.read_float(byte_size);
         parent.set_position(original);
 
-        increment_position(byte_size);
+        local_increment_position(byte_size);
 
         return result;
     }
@@ -536,7 +542,7 @@ namespace sorth
         parent.write_string(string, max_size);
         parent.set_position(original);
 
-        increment_position(max_size);
+        local_increment_position(max_size);
     }
 
 
@@ -548,16 +554,29 @@ namespace sorth
         auto result = parent.read_string(max_size);
         parent.set_position(original);
 
-        increment_position(max_size);
+        local_increment_position(max_size);
 
         return result;
     }
 
 
-    void SubBuffer::increment_position(int64_t increment)
+    void SubBuffer::local_increment_position(int64_t increment)
     {
-        size_t new_position = current_position + increment;
-        set_position(new_position);
+        auto new_position = current_position + increment;
+        auto byte_size = parent.size();
+
+        if (   (new_position > (byte_size - base_position))
+            && (byte_size != -1))
+        {
+            std::stringstream stream;
+
+            stream << "ByteBuffer position " << new_position << " out of range, " << byte_size
+                   << ".";
+
+            throw std::runtime_error(stream.str());
+        }
+
+        current_position = new_position;
     }
 
 }

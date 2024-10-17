@@ -20,6 +20,7 @@ namespace sorth
             virtual void* position_ptr() const = 0;
 
             virtual void set_position(int64_t new_position) = 0;
+            virtual void increment_position(int64_t increment) = 0;
 
         public:
             virtual void* data_ptr() = 0;
@@ -70,6 +71,7 @@ namespace sorth
             virtual void* position_ptr() const override;
 
             virtual void set_position(int64_t new_position) override;
+            virtual void increment_position(int64_t increment) override;
 
         public:
             virtual void* data_ptr() override;
@@ -86,7 +88,6 @@ namespace sorth
             virtual std::string read_string(int64_t max_size) override;
 
         private:
-            void increment_position(int64_t increment);
             void reset();
     };
 
@@ -111,6 +112,7 @@ namespace sorth
             virtual void* position_ptr() const override;
 
             virtual void set_position(int64_t new_position) override;
+            virtual void increment_position(int64_t increment) override;
 
         public:
             virtual void* data_ptr() override;
@@ -127,7 +129,7 @@ namespace sorth
             virtual std::string read_string(int64_t max_size) override;
 
         private:
-            void increment_position(int64_t increment);
+            void local_increment_position(int64_t increment);
     };
 
 
