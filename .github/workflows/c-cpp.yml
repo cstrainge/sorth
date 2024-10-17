@@ -77,6 +77,13 @@ jobs:
         with:
           target: ${{ matrix.target }}
 
+      # Install or upgrade Clang to version 18 or higher (Linux/macOS)
+      - name: Install or upgrade Clang (Linux/macOS)
+        if: ${{ runner.os != 'Windows' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-18
+
       # Optionally install libatomic for cross-compilation
       - name: Optionally install libatomic for cross-compilation
         if: ${{ matrix.target == 'arm-unknown-linux-gnu' }}
