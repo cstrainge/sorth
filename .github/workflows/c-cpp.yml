@@ -82,18 +82,28 @@ jobs:
         if: ${{ matrix.target == 'arm-unknown-linux-gnu' }}
         run: sudo apt-get install -y libatomic1-arm64-cross
 
-#      # Install Ninja build system
-#      - name: Install Ninja (Windows)
-#        if: ${{ runner.os == 'Windows' }}
-#        run: choco install ninja
-#      - name: Install Ninja (Linux/macOS)
-#        if: ${{ runner.os != 'Windows' }}
-#        run: |
-#          if [ $(uname) = "Linux" ]; then
-#            sudo apt-get install -y ninja-build
-#          elif [ $(uname) = "Darwin" ]; then
-#            brew install ninja
-#          fi
+      # Install Ninja build system
+      - name: Install Ninja (Linux/macOS)
+        if: ${{ runner.os != 'Windows' }}
+        run: |
+          if [ $(uname) = "Linux" ]; then
+            sudo apt-get install -y ninja-build
+          elif [ $(uname) = "Darwin" ]; then
+            brew install ninja
+          fi
+
+      - name: Install Ninja (Windows)
+          if: ${{ runner.os == 'Windows' }}
+          run: choco install ninja
+          shell: cmd
+
+      # Ensure Ninja is available (Windows)
+      - name: Add Ninja to PATH (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        run: |
+          $env:Path += ";C:\ProgramData\chocolatey\bin"
+          refreshenv
+        shell: pwsh
 
       # targets and version debug
       - name: targets and version debug
@@ -107,24 +117,24 @@ jobs:
       - name: Configure CMake (Windows)
         if: ${{ runner.os == 'Windows' }}
         #run: cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ --preset=default -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake ..
-        run: cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ --preset=default ..
+        run: cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ --preset=default .. -G Ninja
         working-directory: build
 
       # Configure CMake (Linux/macOS)
       - name: Configure CMake (Linux/macOS)
         if: ${{ runner.os != 'Windows' }}
-        run: cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ ..
+        run: cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ .. -G Ninja
         working-directory: build
 
       # Build with make
       - name: Configure CMake (Windows)
         if: ${{ runner.os == 'Windows' }}
-        run: nmake
+        run: ninja
         working-directory: build
 
       - name: Build with make
         if: ${{ runner.os != 'Windows' }}
-        run: make
+        run: ninja
         working-directory: build
 
       # Locate libffi DLL (Windows)
