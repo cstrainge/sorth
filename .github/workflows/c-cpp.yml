@@ -167,7 +167,7 @@ jobs:
       - name: release
         uses: xresloader/upload-to-github-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.SORTH_PERSONAL_ACCESS_TOKEN }}
         with:
           file: "build/sorth-${{ matrix.target }}.zip"
 ##          tags: true
