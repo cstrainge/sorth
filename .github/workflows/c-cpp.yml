@@ -83,6 +83,19 @@ jobs:
         if: ${{ matrix.target == 'arm-unknown-linux-gnu' }}
         run: sudo apt-get install -y libatomic1-arm64-cross
 
+      # Install Ninja build system
+      - name: Install Ninja (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        run: choco install ninja
+      - name: Install Ninja (Linux/macOS)
+        if: ${{ runner.os != 'Windows' }}
+        run: |
+          if [ $(uname) = "Linux" ]; then
+            sudo apt-get install -y ninja-build
+          elif [ $(uname) = "Darwin" ]; then
+            brew install ninja
+          fi
+
       # targets and version debug
       - name: targets and version debug
         run: clang++ -print-targets && clang++ --version
