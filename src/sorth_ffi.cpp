@@ -5,6 +5,14 @@
 
     #include <windows.h>
 
+    #ifdef min
+        #undef min
+    #endif
+
+    #ifdef max
+        #undef max
+    #endif
+
 #elif defined(IS_UNIX)
 
     #include <dlfcn.h>
@@ -43,10 +51,18 @@ namespace sorth
         using CalculatedSize = std::tuple<size_t, size_t>;
 
 
-        using ConversionFrom = std::function<void(InterpreterPtr&, const Value&, Buffer&, Buffer&)>;
-        using ConversionTo = std::function<Value(InterpreterPtr&, Buffer&)>;
-        using ConversionSize = std::function<CalculatedSize(InterpreterPtr&, const Value&)>;
-        using BaseSize = std::function<size_t()>;
+        using ConversionFrom = std::function<void(InterpreterPtr&,
+                                                  const Value&,
+                                                  size_t,
+                                                  Buffer&,
+                                                  Buffer&)>;
+
+        using ConversionTo = std::function<Value(InterpreterPtr&, size_t, Buffer&)>;
+
+        using ConversionSize = std::function<CalculatedSize(InterpreterPtr&,
+                                                            size_t,
+                                                            const Value&)>;
+        using BaseSize = std::function<size_t(size_t)>;
 
 
         struct ConversionInfo
@@ -86,6 +102,15 @@ namespace sorth
         StructTypeMap struct_map;
 
 
+        constexpr std::tuple<int64_t, int64_t> alignment(int64_t size, int64_t align)
+        {
+            const auto aligned_size = (size + align - 1) & ~(align - 1);
+            const auto padding = aligned_size - size;
+
+            return { size, padding };
+        }
+
+
         ConversionTypeMap create_type_map()
         {
             return
@@ -94,11 +119,13 @@ namespace sorth
                     "ffi.void",
                     {
                         .type = &ffi_type_void,
-                        .calculate_size = [](auto interpreter, auto value) -> CalculatedSize
+                        .calculate_size = [](auto interpreter,
+                                             auto align,
+                                             auto value) -> CalculatedSize
                             {
                                 return { 0, 0 };
                             },
-                        .base_size = []() -> size_t
+                        .base_size = [](auto align) -> size_t
                             {
                                 return 0;
                             }
@@ -108,23 +135,39 @@ namespace sorth
                     "ffi.bool",
                     {
                         .type = &ffi_type_uint8,
-                        .convert_from = [](auto interpreter, auto& value, auto& buffer, auto& extra)
+                        .convert_from = [](auto interpreter,
+                                           auto& value,
+                                           auto align,
+                                           auto& buffer,
+                                           auto& extra)
                             {
-                                buffer.write_int(sizeof(int8_t),
-                                                 as_numeric<bool>(interpreter, value));
+                                const auto [ size, padding ] = alignment(sizeof(bool), align);
+
+                                buffer.write_int(size, as_numeric<bool>(interpreter, value));
+                                buffer.increment_position(padding);
                             },
-                        .convert_to = [](auto Interpreter, auto& buffer) -> Value
+                        .convert_to = [](auto Interpreter, auto align, auto& buffer) -> Value
                             {
-                                bool value = buffer.read_int(sizeof(bool), true);
+                                const auto [ size, padding ] = alignment(sizeof(bool), align);
+                                bool value = buffer.read_int(size, true);
+
+                                buffer.increment_position(padding);
+
                                 return value;
                             },
-                        .calculate_size = [](auto interpreter, auto value) -> CalculatedSize
+                        .calculate_size = [](auto interpreter,
+                                             auto align,
+                                             auto value) -> CalculatedSize
                             {
-                                return { sizeof(bool), 0 };
+                                const auto [ size, padding ] = alignment(sizeof(bool), align);
+
+                                return { size + padding, 0 };
                             },
-                        .base_size = []() -> size_t
+                        .base_size = [](auto align) -> size_t
                             {
-                                return sizeof(bool);
+                                const auto [ size, padding ] = alignment(sizeof(bool), align);
+
+                                return size + padding;
                             }
                     }
                 },
@@ -132,23 +175,39 @@ namespace sorth
                     "ffi.i8",
                     {
                         .type = &ffi_type_sint8,
-                        .convert_from = [](auto interpreter, auto& value, auto& buffer, auto& extra)
+                        .convert_from = [](auto interpreter,
+                                           auto& value,
+                                           auto align,
+                                           auto& buffer,
+                                           auto& extra)
                             {
-                                buffer.write_int(sizeof(int8_t),
-                                                 as_numeric<int64_t>(interpreter, value));
+                                const auto [ size, padding ] = alignment(sizeof(int8_t), align);
+
+                                buffer.write_int(size, as_numeric<int64_t>(interpreter, value));
+                                buffer.increment_position(padding);
                             },
-                        .convert_to = [](auto Interpreter, auto& buffer) -> Value
+                        .convert_to = [](auto Interpreter, auto align, auto& buffer) -> Value
                             {
-                                int64_t value = buffer.read_int(sizeof(int8_t), true);
+                                const auto [ size, padding ] = alignment(sizeof(int8_t), align);
+                                int64_t value = buffer.read_int(size, true);
+
+                                buffer.increment_position(padding);
+
                                 return value;
                             },
-                        .calculate_size = [](auto interpreter, auto value) -> CalculatedSize
+                        .calculate_size = [](auto interpreter,
+                                             auto align,
+                                             auto value) -> CalculatedSize
                             {
-                                return { sizeof(int8_t), 0 };
+                                const auto [ size, padding ] = alignment(sizeof(int8_t), align);
+
+                                return { sizeof(int8_t) + padding, 0 };
                             },
-                        .base_size = []() -> size_t
+                        .base_size = [](auto align) -> size_t
                             {
-                                return sizeof(int8_t);
+                                const auto [ size, padding ] = alignment(sizeof(int8_t), align);
+
+                                return sizeof(int8_t) + padding;
                             }
                     }
                 },
@@ -156,23 +215,39 @@ namespace sorth
                     "ffi.u8",
                     {
                         .type = &ffi_type_uint8,
-                        .convert_from = [](auto interpreter, auto& value, auto& buffer, auto& extra)
+                        .convert_from = [](auto interpreter,
+                                           auto& value,
+                                           auto align,
+                                           auto& buffer,
+                                           auto& extra)
                             {
-                                buffer.write_int(sizeof(uint8_t),
-                                                 as_numeric<int64_t>(interpreter, value));
+                                const auto [ size, padding ] = alignment(sizeof(uint8_t), align);
+
+                                buffer.write_int(size, as_numeric<int64_t>(interpreter, value));
+                                buffer.increment_position(align - sizeof(bool));
                             },
-                        .convert_to = [](auto Interpreter, auto& buffer) -> Value
+                        .convert_to = [](auto Interpreter, auto align, auto& buffer) -> Value
                             {
-                                int64_t value = buffer.read_int(sizeof(uint8_t), false);
+                                const auto [ size, padding ] = alignment(sizeof(uint8_t), align);
+
+                                int64_t value = buffer.read_int(size, false);
+                                buffer.increment_position(align - sizeof(bool));
+
                                 return value;
                             },
-                        .calculate_size = [](auto interpreter, auto value) -> CalculatedSize
+                        .calculate_size = [](auto interpreter,
+                                             auto align,
+                                             auto value) -> CalculatedSize
                             {
-                                return { sizeof(uint8_t), 0 };
+                                const auto [ size, padding ] = alignment(sizeof(uint8_t), align);
+
+                                return { size + padding, 0 };
                             },
-                        .base_size = []() -> size_t
+                        .base_size = [](auto align) -> size_t
                             {
-                                return sizeof(uint8_t);
+                                const auto [ size, padding ] = alignment(sizeof(uint8_t), align);
+
+                                return size + padding;
                             }
                     }
                 },
@@ -180,23 +255,39 @@ namespace sorth
                     "ffi.i16",
                     {
                         .type = &ffi_type_sint16,
-                        .convert_from = [](auto interpreter, auto& value, auto& buffer, auto& extra)
+                        .convert_from = [](auto interpreter,
+                                           auto& value,
+                                           auto align,
+                                           auto& buffer,
+                                           auto& extra)
                             {
-                                buffer.write_int(sizeof(int16_t),
-                                                 as_numeric<int64_t>(interpreter, value));
+                                const auto [ size, padding ] = alignment(sizeof(int16_t), align);
+
+                                buffer.write_int(size, as_numeric<int64_t>(interpreter, value));
+                                buffer.increment_position(padding);
                             },
-                        .convert_to = [](auto Interpreter, auto& buffer) -> Value
+                        .convert_to = [](auto Interpreter, auto align, auto& buffer) -> Value
                             {
-                                int64_t value = buffer.read_int(sizeof(int16_t), true);
+                                const auto [ size, padding ] = alignment(sizeof(int16_t), align);
+
+                                int64_t value = buffer.read_int(size, true);
+                                buffer.increment_position(padding);
+
                                 return value;
                             },
-                        .calculate_size = [](auto interpreter, auto value) -> CalculatedSize
+                        .calculate_size = [](auto interpreter,
+                                             auto align,
+                                             auto value) -> CalculatedSize
                             {
-                                return { sizeof(int16_t), 0 };
+                                const auto [ size, padding ] = alignment(sizeof(int16_t), align);
+
+                                return { size + padding, 0 };
                             },
-                        .base_size = []() -> size_t
+                        .base_size = [](auto align) -> size_t
                             {
-                                return sizeof(uint16_t);
+                                const auto [ size, padding ] = alignment(sizeof(int16_t), align);
+
+                                return size + padding;
                             }
                     }
                 },
@@ -204,23 +295,39 @@ namespace sorth
                     "ffi.u16",
                     {
                         .type = &ffi_type_uint16,
-                        .convert_from = [](auto interpreter, auto& value, auto& buffer, auto& extra)
+                        .convert_from = [](auto interpreter,
+                                           auto& value,
+                                           auto align,
+                                           auto& buffer,
+                                           auto& extra)
                             {
-                                buffer.write_int(sizeof(uint16_t),
-                                                 as_numeric<int64_t>(interpreter, value));
+                                const auto [ size, padding ] = alignment(sizeof(uint16_t), align);
+
+                                buffer.write_int(size, as_numeric<int64_t>(interpreter, value));
+                                buffer.increment_position(padding);
                             },
-                        .convert_to = [](auto Interpreter, auto& buffer) -> Value
+                        .convert_to = [](auto Interpreter, auto align, auto& buffer) -> Value
                             {
-                                int64_t value = buffer.read_int(sizeof(uint16_t), false);
+                                const auto [ size, padding ] = alignment(sizeof(uint16_t), align);
+
+                                int64_t value = buffer.read_int(size, false);
+                                buffer.increment_position(padding);
+
                                 return value;
                             },
-                        .calculate_size = [](auto interpreter, auto value) -> CalculatedSize
+                        .calculate_size = [](auto interpreter,
+                                             auto align,
+                                             auto value) -> CalculatedSize
                             {
-                                return { sizeof(uint16_t), 0 };
+                                const auto [ size, padding ] = alignment(sizeof(uint16_t), align);
+
+                                return { size + padding, 0 };
                             },
-                        .base_size = []() -> size_t
+                        .base_size = [](auto align) -> size_t
                             {
-                                return sizeof(uint16_t);
+                                const auto [ size, padding ] = alignment(sizeof(uint16_t), align);
+
+                                return size + padding;
                             }
                     }
                 },
@@ -228,23 +335,39 @@ namespace sorth
                     "ffi.i32",
                     {
                         .type = &ffi_type_sint32,
-                        .convert_from = [](auto interpreter, auto& value, auto& buffer, auto& extra)
+                        .convert_from = [](auto interpreter,
+                                           auto& value,
+                                           auto align,
+                                           auto& buffer,
+                                           auto& extra)
                             {
-                                buffer.write_int(sizeof(int32_t),
-                                                 as_numeric<int64_t>(interpreter, value));
+                                const auto [ size, padding ] = alignment(sizeof(int32_t), align);
+
+                                buffer.write_int(size, as_numeric<int64_t>(interpreter, value));
+                                buffer.increment_position(padding);
                             },
-                        .convert_to = [](auto Interpreter, auto& buffer) -> Value
+                        .convert_to = [](auto Interpreter, auto align, auto& buffer) -> Value
                             {
+                                const auto [ size, padding ] = alignment(sizeof(int32_t), align);
                                 int64_t value = buffer.read_int(sizeof(int32_t), true);
+
+                                buffer.increment_position(padding);
+
                                 return value;
                             },
-                        .calculate_size = [](auto interpreter, auto value) -> CalculatedSize
+                        .calculate_size = [](auto interpreter,
+                                             auto align,
+                                             auto value) -> CalculatedSize
                             {
-                                return { sizeof(int32_t), 0 };
+                                const auto [ size, padding ] = alignment(sizeof(int32_t), align);
+
+                                return { size + padding, 0 };
                             },
-                        .base_size = []() -> size_t
+                        .base_size = [](auto align) -> size_t
                             {
-                                return sizeof(int32_t);
+                                const auto [ size, padding ] = alignment(sizeof(int32_t), align);
+
+                                return size + padding;
                             }
                     }
                 },
@@ -252,23 +375,37 @@ namespace sorth
                     "ffi.u32",
                     {
                         .type = &ffi_type_uint32,
-                        .convert_from = [](auto interpreter, auto& value, auto& buffer, auto& extra)
+                        .convert_from = [](auto interpreter,
+                                           auto& value,
+                                           auto align,
+                                           auto& buffer,
+                                           auto& extra)
                             {
-                                buffer.write_int(sizeof(uint32_t),
-                                                 as_numeric<int64_t>(interpreter, value));
+                                const auto [ size, padding ] = alignment(sizeof(uint32_t), align);
+
+                                buffer.write_int(size, as_numeric<int64_t>(interpreter, value));
+                                buffer.increment_position(padding);
                             },
-                        .convert_to = [](auto Interpreter, auto& buffer) -> Value
+                        .convert_to = [](auto Interpreter, auto align, auto& buffer) -> Value
                             {
-                                int64_t value = buffer.read_int(sizeof(uint32_t), false);
+                                const auto [ size, padding ] = alignment(sizeof(uint32_t), align);
+                                int64_t value = buffer.read_int(size, false);
+
+                                buffer.increment_position(padding);
+
                                 return value;
                             },
-                        .calculate_size = [](auto interpreter, auto value) -> CalculatedSize
+                        .calculate_size = [](auto interpreter,
+                                             auto align,
+                                             auto value) -> CalculatedSize
                             {
-                                return { sizeof(uint32_t), 0 };
+                                const auto [ size, padding ] = alignment(sizeof(uint32_t), align);
+                                return { size + padding, 0 };
                             },
-                        .base_size = []() -> size_t
+                        .base_size = [](auto align) -> size_t
                             {
-                                return sizeof(uint32_t);
+                                const auto [ size, padding ] = alignment(sizeof(uint32_t), align);
+                                return size + padding;
                             }
                     }
                 },
@@ -276,23 +413,38 @@ namespace sorth
                     "ffi.i64",
                     {
                         .type = &ffi_type_sint64,
-                        .convert_from = [](auto interpreter, auto& value, auto& buffer, auto& extra)
+                        .convert_from = [](auto interpreter,
+                                           auto& value,
+                                           auto align,
+                                           auto& buffer,
+                                           auto& extra)
                             {
-                                buffer.write_int(sizeof(int64_t),
-                                                 as_numeric<int64_t>(interpreter, value));
+                                const auto [ size, padding ] = alignment(sizeof(int64_t), align);
+
+                                buffer.write_int(size, as_numeric<int64_t>(interpreter, value));
+                                buffer.increment_position(padding);
                             },
-                        .convert_to = [](auto Interpreter, auto& buffer) -> Value
+                        .convert_to = [](auto Interpreter, auto align, auto& buffer) -> Value
                             {
+                                const auto [ size, padding ] = alignment(sizeof(int64_t), align);
                                 int64_t value = buffer.read_int(sizeof(int64_t), true);
+
+                                buffer.increment_position(padding);
+
                                 return value;
                             },
-                        .calculate_size = [](auto interpreter, auto value) -> CalculatedSize
+                        .calculate_size = [](auto interpreter,
+                                             auto align,
+                                             auto value) -> CalculatedSize
                             {
-                                return { sizeof(int64_t), 0 };
+                                const auto [ size, padding ] = alignment(sizeof(int64_t), align);
+
+                                return { size + padding, 0 };
                             },
-                        .base_size = []() -> size_t
+                        .base_size = [](auto align) -> size_t
                             {
-                                return sizeof(int64_t);
+                                const auto [ size, padding ] = alignment(sizeof(int64_t), align);
+                                return size + padding;
                             }
                     }
                 },
@@ -300,23 +452,39 @@ namespace sorth
                     "ffi.u64",
                     {
                         .type = &ffi_type_uint64,
-                        .convert_from = [](auto interpreter, auto& value, auto& buffer, auto& extra)
+                        .convert_from = [](auto interpreter,
+                                           auto& value,
+                                           auto align,
+                                           auto& buffer,
+                                           auto& extra)
                             {
-                                buffer.write_int(sizeof(uint64_t),
-                                                 as_numeric<int64_t>(interpreter, value));
+                                const auto [ size, padding ] = alignment(sizeof(uint64_t), align);
+
+                                buffer.write_int(size, as_numeric<int64_t>(interpreter, value));
+                                buffer.increment_position(padding);
                             },
-                        .convert_to = [](auto Interpreter, auto& buffer) -> Value
+                        .convert_to = [](auto Interpreter, auto align, auto& buffer) -> Value
                             {
+                                const auto [ size, padding ] = alignment(sizeof(uint64_t), align);
                                 int64_t value = buffer.read_int(sizeof(uint64_t), false);
+
+                                buffer.increment_position(padding);
+
                                 return value;
                             },
-                        .calculate_size = [](auto interpreter, auto value) -> CalculatedSize
+                        .calculate_size = [](auto interpreter,
+                                             auto align,
+                                             auto value) -> CalculatedSize
                             {
-                                return { sizeof(uint64_t), 0 };
+                                const auto [ size, padding ] = alignment(sizeof(uint64_t), align);
+
+                                return { size + padding, 0 };
                             },
-                        .base_size = []() -> size_t
+                        .base_size = [](auto align) -> size_t
                             {
-                                return sizeof(uint64_t);
+                                const auto [ size, padding ] = alignment(sizeof(uint64_t), align);
+
+                                return size + padding;
                             }
                     }
                 },
@@ -324,23 +492,39 @@ namespace sorth
                     "ffi.f32",
                     {
                         .type = &ffi_type_float,
-                        .convert_from = [](auto interpreter, auto& value, auto& buffer, auto& extra)
+                        .convert_from = [](auto interpreter,
+                                           auto& value,
+                                           auto align,
+                                           auto& buffer,
+                                           auto& extra)
                             {
-                                buffer.write_float(sizeof(float),
-                                                   as_numeric<double>(interpreter, value));
+                                const auto [ size, padding ] = alignment(sizeof(float), align);
+
+                                buffer.write_float(size, as_numeric<double>(interpreter, value));
+                                buffer.increment_position(padding);
                             },
-                        .convert_to = [](auto Interpreter, auto& buffer) -> Value
+                        .convert_to = [](auto Interpreter, auto align, auto& buffer) -> Value
                             {
-                                double value = buffer.read_float(sizeof(float));
+                                const auto [ size, padding ] = alignment(sizeof(float), align);
+                                double value = buffer.read_float(size);
+
+                                buffer.increment_position(padding);
+
                                 return value;
                             },
-                        .calculate_size = [](auto interpreter, auto value) -> CalculatedSize
+                        .calculate_size = [](auto interpreter,
+                                             auto align,
+                                             auto value) -> CalculatedSize
                             {
-                                return { sizeof(float), 0 };
+                                const auto [ size, padding ] = alignment(sizeof(float), align);
+
+                                return { size + padding, 0 };
                             },
-                        .base_size = []() -> size_t
+                        .base_size = [](auto align) -> size_t
                             {
-                                return sizeof(float);
+                                const auto [ size, padding ] = alignment(sizeof(float), align);
+
+                                return size + padding;
                             }
                     }
                 },
@@ -348,23 +532,39 @@ namespace sorth
                     "ffi.f64",
                     {
                         .type = &ffi_type_double,
-                        .convert_from = [](auto interpreter, auto& value, auto& buffer, auto& extra)
+                        .convert_from = [](auto interpreter,
+                                           auto& value,
+                                           auto align,
+                                           auto& buffer,
+                                           auto& extra)
                             {
-                                buffer.write_float(sizeof(double),
-                                                   as_numeric<double>(interpreter, value));
+                                const auto [ size, padding ] = alignment(sizeof(double), align);
+
+                                buffer.write_float(size, as_numeric<double>(interpreter, value));
+                                buffer.increment_position(padding);
                             },
-                        .convert_to = [](auto Interpreter, auto& buffer) -> Value
+                        .convert_to = [](auto Interpreter, auto align, auto& buffer) -> Value
                             {
-                                double value = buffer.read_float(sizeof(double));
+                                const auto [ size, padding ] = alignment(sizeof(double), align);
+                                double value = buffer.read_float(size);
+
+                                buffer.increment_position(padding);
+
                                 return value;
                             },
-                        .calculate_size = [](auto interpreter, auto value) -> CalculatedSize
+                        .calculate_size = [](auto interpreter,
+                                             auto align,
+                                             auto value) -> CalculatedSize
                             {
-                                return { sizeof(double), 0 };
+                                const auto [ size, padding ] = alignment(sizeof(double), align);
+
+                                return { size + padding, 0 };
                             },
-                        .base_size = []() -> size_t
+                        .base_size = [](auto align) -> size_t
                             {
-                                return sizeof(double);
+                                const auto [ size, padding ] = alignment(sizeof(double), align);
+
+                                return size + padding;
                             }
                     }
                 },
@@ -372,26 +572,53 @@ namespace sorth
                     "ffi.string",
                     {
                         .type = &ffi_type_pointer,
-                        .convert_from = [](auto interpreter, auto& value, auto& buffer, auto& extra)
+                        .convert_from = [](auto interpreter,
+                                           auto& value,
+                                           auto align,
+                                           auto& buffer,
+                                           auto& extra)
                             {
                                 auto string = as_string(interpreter, value);
 
-                                buffer.write_int(sizeof(char*), (size_t)extra.position_ptr());
-                                extra.write_string(string, string.size() + 1);
+                                const auto [ ptr_size, ptr_padding ] = alignment(sizeof(char*),
+                                                                                 align);
+
+                                buffer.write_int(ptr_size, (size_t)extra.position_ptr());
+                                buffer.increment_position(ptr_padding);
+
+                                const auto [ str_size, str_padding ] = alignment(string.size() + 1,
+                                                                                 align);
+
+                                extra.write_string(string, str_size);
+                                extra.increment_position(str_padding);
                             },
-                        .convert_to = [](auto interpreter, auto& buffer) -> Value
+                        .convert_to = [](auto Interpreter, auto align, auto& buffer) -> Value
                             {
                                 std::string str = reinterpret_cast<char*>(buffer.position_ptr());
+                                const auto [ size, padding ] = alignment(sizeof(char*), align);
+
+                                buffer.increment_position(padding);
+
                                 return str;
                             },
-                        .calculate_size = [](auto interpreter, auto value) -> CalculatedSize
+                        .calculate_size = [](auto interpreter,
+                                             auto align,
+                                             auto value) -> CalculatedSize
                             {
+                                const auto [ ptr_size, ptr_padding ] = alignment(sizeof(char*),
+                                                                                 align);
+
                                 auto string = as_string(interpreter, value);
-                                return { sizeof(char*), string.size() + 1 };
+                                const auto [ str_size, str_padding ] = alignment(string.size() + 1,
+                                                                                 align);
+
+                                return { ptr_size + ptr_padding, str_size + str_padding };
                             },
-                        .base_size = []() -> size_t
+                        .base_size = [](auto align) -> size_t
                             {
-                                return sizeof(char*);
+                                const auto [ size, padding ] = alignment(sizeof(char*), align);
+
+                                return size + padding;
                             }
                     }
                 },
@@ -399,23 +626,39 @@ namespace sorth
                     "ffi.void-ptr",
                     {
                         .type = &ffi_type_pointer,
-                        .convert_from = [](auto interpreter, auto& value, auto& buffer, auto& extra)
+                        .convert_from = [](auto interpreter,
+                                           auto& value,
+                                           auto align,
+                                           auto& buffer,
+                                           auto& extra)
                             {
-                                buffer.write_int(sizeof(uint32_t),
-                                                 as_numeric<int64_t>(interpreter, value));
+                                const auto [ size, padding ] = alignment(sizeof(void*), align);
+
+                                buffer.write_int(size, as_numeric<int64_t>(interpreter, value));
+                                buffer.increment_position(padding);
                             },
-                        .convert_to = [](auto Interpreter, auto& buffer) -> Value
+                        .convert_to = [](auto Interpreter, auto align, auto& buffer) -> Value
                             {
-                                int64_t value = buffer.read_int(sizeof(uint32_t), false);
+                                const auto [ size, padding ] = alignment(sizeof(void*), align);
+                                int64_t value = buffer.read_int(size, false);
+
+                                buffer.increment_position(padding);
+
                                 return value;
                             },
-                        .calculate_size = [](auto interpreter, auto value) -> CalculatedSize
+                        .calculate_size = [](auto interpreter,
+                                             auto align,
+                                             auto value) -> CalculatedSize
                             {
-                                return { sizeof(void*), 0 };
+                                const auto [ size, padding ] = alignment(sizeof(void*), align);
+
+                                return { size + padding, 0 };
                             },
-                        .base_size = []() -> size_t
+                        .base_size = [](auto align) -> size_t
                             {
-                                return sizeof(void*);
+                                const auto [ size, padding ] = alignment(sizeof(void*), align);
+
+                                return size + padding;
                             }
                     }
                 }
@@ -499,6 +742,7 @@ namespace sorth
 
             size_t buffer_size = 0;
             size_t ext_buffer_size = 0;
+            const size_t alignment = 8;
 
             for (int i = 0; i < params.size(); ++i)
             {
@@ -507,6 +751,7 @@ namespace sorth
 
                 const auto& param = params[params.size() - 1 - i];
                 auto [ new_size, new_ext_size ] = param.conversion.calculate_size(interpreter,
+                                                                                  alignment,
                                                                                   value);
                 buffer_size += new_size;
                 ext_buffer_size += new_ext_size;
@@ -522,7 +767,7 @@ namespace sorth
                 auto& value = values[i];
                 void* value_ptr = buffer.position_ptr();
 
-                param.conversion.convert_from(interpreter, value, buffer, ext_buffer);
+                param.conversion.convert_from(interpreter, value, 8, buffer, ext_buffer);
                 param_values.push_back(value_ptr);
             }
 
@@ -531,9 +776,9 @@ namespace sorth
 
 
         void push_result(InterpreterPtr&interpreter, const ConversionInfo& conversion,
-                         ByteBuffer& buffer)
+                         int64_t align, ByteBuffer& buffer)
         {
-            auto value = conversion.convert_to(interpreter, buffer);
+            auto value = conversion.convert_to(interpreter, align, buffer);
             interpreter->push(value);
         }
 
@@ -649,18 +894,20 @@ namespace sorth
                         throw_error(*interpreter, "Could not bind to function " + fn_name + ".");
                     }
 
+                    const size_t alignment = 8;
+
                     auto param_buffer = ByteBuffer(0);
                     auto ext_buffer = ByteBuffer(0);
                     auto param_values = pop_params(interpreter, params, param_buffer, ext_buffer);
-                    auto ret_size = ret_conversion.base_size();
-                    auto ret_buffer = ByteBuffer(ret_size + (ret_size % 8));
+                    auto ret_size = ret_conversion.base_size(8);
+                    auto ret_buffer = ByteBuffer(ret_size);
 
                     ffi_call(cif.get(),
                              FFI_FN(function),
                              ret_buffer.data_ptr(),
                              param_values.data());
 
-                    push_result(interpreter, ret_conversion, ret_buffer);
+                    push_result(interpreter, ret_conversion, 8, ret_buffer);
                 };
 
             std::string name = fn_alias != "" ? fn_alias : fn_name;
@@ -710,7 +957,9 @@ namespace sorth
             }
 
             // Centralize the size calculation for the struct.
-            auto size_calculation = [=](InterpreterPtr interpreter, Value value) -> CalculatedSize
+            auto size_calculation = [=](InterpreterPtr interpreter,
+                                        size_t align,
+                                        Value value) -> CalculatedSize
                 {
                     auto data_object = as_data_object(interpreter, value);
 
@@ -721,6 +970,7 @@ namespace sorth
                     {
                         auto [ new_size, new_extra ] =
                                             field_conversions[i].calculate_size(interpreter,
+                                                                            align,
                                                                             data_object->fields[i]);
 
                         size += new_size;
@@ -767,7 +1017,11 @@ namespace sorth
             auto base_conversion = ConversionInfo
                 {
                     .type = &struct_map[name],
-                    .convert_from = [=](auto interpreter, auto& value, auto& buffer, auto& extra)
+                    .convert_from = [=](auto interpreter,
+                                        auto& value,
+                                        auto align,
+                                        auto& buffer,
+                                        auto& extra)
                         {
                             auto data_object = as_data_object(interpreter, value);
 
@@ -775,33 +1029,38 @@ namespace sorth
                             {
                                 field_conversions[i].convert_from(interpreter,
                                                                   data_object->fields[i],
+                                                                  8,
                                                                   buffer,
                                                                   extra);
                             }
                         },
-                    .convert_to = [=](auto interpreter, auto& buffer) -> Value
+                    .convert_to = [=](auto interpreter, auto align, auto& buffer) -> Value
                         {
                             auto data = make_data_object(interpreter, definition_ptr);
 
                             for (int i = 0; i < field_conversions.size(); ++i)
                             {
-                                auto value = field_conversions[i].convert_to(interpreter, buffer);
+                                auto value = field_conversions[i].convert_to(interpreter,
+                                                                             align,
+                                                                             buffer);
                                 data->fields[i] = value;
                             }
 
                             return data;
                         },
-                    .calculate_size = [=](auto interpreter, auto value) -> CalculatedSize
+                    .calculate_size = [=](auto interpreter,
+                                          auto value,
+                                          auto align) -> CalculatedSize
                         {
-                            return size_calculation(interpreter, value);
+                            return size_calculation(interpreter, value, align);
                         },
-                    .base_size = [=]() -> size_t
+                    .base_size = [=](auto align) -> size_t
                         {
                             size_t size = 0;
 
                             for (int i = 0; i < field_conversions.size(); ++i)
                             {
-                                auto new_size = field_conversions[i].base_size();
+                                auto new_size = field_conversions[i].base_size(align);
 
                                 size += new_size;
                             }
@@ -814,9 +1073,13 @@ namespace sorth
             auto ptr_conversion = ConversionInfo
                 {
                     .type = &ffi_type_pointer,
-                    .convert_from = [=](auto interpreter, auto& value, auto& buffer, auto& extra)
+                    .convert_from = [=](auto interpreter,
+                                        auto& value,
+                                        auto align,
+                                        auto& buffer,
+                                        auto& extra)
                         {
-                            auto [ size, extra_size ] = size_calculation(interpreter, value);
+                            auto [ size, extra_size ] = size_calculation(interpreter, align, value);
 
                             auto data_object = as_data_object(interpreter, value);
                             auto sub_buffer = SubBuffer(extra, extra_size);
@@ -827,11 +1090,12 @@ namespace sorth
                             {
                                 field_conversions[i].convert_from(interpreter,
                                                                   data_object->fields[i],
+                                                                  align,
                                                                   extra,
                                                                   sub_buffer);
                             }
                         },
-                    .convert_to = [=](auto interpreter, auto& buffer) -> Value
+                    .convert_to = [=](auto interpreter, auto align, auto& buffer) -> Value
                         {
                             auto value = buffer.read_int(sizeof(void*), false);
                             void* raw_ptr = reinterpret_cast<void*>(static_cast<uintptr_t>(value));
@@ -841,20 +1105,27 @@ namespace sorth
                             for (int i = 0; i < field_conversions.size(); ++i)
                             {
                                 auto value = field_conversions[i].convert_to(interpreter,
+                                                                             align,
                                                                              raw_buffer);
                                 data->fields[i] = value;
                             }
 
                             return data;
                         },
-                    .calculate_size = [=](auto interpreter, auto value) -> CalculatedSize
+                    .calculate_size = [=](auto interpreter,
+                                          auto align,
+                                          auto value) -> CalculatedSize
                         {
-                            auto [ size, extra ] = size_calculation(interpreter, value);
-                            return { sizeof(void*), size + extra };
+                            const auto [ ptr_size, ptr_padding ] = alignment(sizeof(void*), align);
+                            auto [ size, extra ] = size_calculation(interpreter, align, value);
+
+                            return { ptr_size + ptr_padding, size + extra };
                         },
-                    .base_size = []() -> size_t
+                    .base_size = [](auto align) -> size_t
                         {
-                            return sizeof(void*);
+                            const auto [ size, padding ] = alignment(sizeof(void*), align);
+
+                            return size + padding;
                         }
                 };
 
