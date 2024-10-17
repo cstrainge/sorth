@@ -5,14 +5,6 @@
 
     #include <windows.h>
 
-    #ifdef min
-        #undef min
-    #endif
-
-    #ifdef max
-        #undef max
-    #endif
-
 #elif defined(IS_UNIX)
 
     #include <dlfcn.h>
