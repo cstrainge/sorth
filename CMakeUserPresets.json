@@ -4,7 +4,17 @@
     "configurePresets": [
         {
             "name": "default",
-            "inherits": "vcpkg"
+            "inherits": "vcpkg",
+            "environment": {
+                "VCPKG_ROOT": "${sourceDir}/../vcpkg/"
+            }
+        },
+        {
+            "name": "cibuild",
+            "inherits": "vcpkg",
+            "environment": {
+                "VCPKG_ROOT": "C:\\Users\\nullp\\workdir\\vcpkg\\"
+            }
         }
     ]
 }
