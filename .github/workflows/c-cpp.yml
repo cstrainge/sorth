@@ -170,5 +170,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.SORTH_PERSONAL_ACCESS_TOKEN }}
         with:
           file: "build/sorth-${{ matrix.target }}.zip"
-##          tags: true
-##          draft: true
+          retention-days: 30
+#          tags: true
+#          draft: true
