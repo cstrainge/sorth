@@ -7,6 +7,9 @@ on:
   pull_request:
     branches: [ "main" ]
 
+env:
+  VERSION: "v1.0.0" # Example version
+
 jobs:
   build:
     strategy:
@@ -46,47 +49,80 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       CXXTARGET: ${{ matrix.target }}
+      VERSION: ${{ env.VERSION }}
 
     steps:
-    - uses: actions/checkout@v3
-    # https://github.com/taiki-e/setup-cross-toolchain-action
-    - name: Install cross-compilation tools
-      uses: taiki-e/setup-cross-toolchain-action@v1
-      with:
-        target: ${{ matrix.target }}
-    - name: Optionally install libatomic for cross-compilation
-      if: ${{ matrix.target == 'arm-unknown-linux-gnu' }}
-      run: sudo apt-get install -y libatomic1-arm64-cross
-    - name: targets and version debug
-      run: clang++ -print-targets && clang++ --version
-    - name: make
-      run: make default
-      env:
-        TARGET: sorth-${{ matrix.target }}
-    - name: List files in build directory
-      run: ls build
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v3.1.3
-      with:
-        # Artifact name
-        name: sorth-${{ matrix.target }} # optional, default is artifact
-        # A file, directory or wildcard pattern that describes what to upload
-        path: build/sorth-${{ matrix.target }}*
-        # The desired behavior if no files are found using the provided path.
-        if-no-files-found: error
-    - name: Archive Release
-      uses: thedoctor0/zip-release@0.7.1
-      with:
-        type: 'zip'
-        filename: 'sorth-${{ matrix.target }}'
-        directory: 'build'
-    - name: List files in build directory
-      run: ls build
-#    - name: release
-#      uses: xresloader/upload-to-github-release@v1
-#      env:
-#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#      with:
-#        file: "build/sorth-${{ matrix.target }}.zip"
-#        tags: true
-#        draft: true
+      - uses: actions/checkout@v3
+
+      # Install VCPKG on Windows
+      - name: Install VCPKG (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git
+          ./vcpkg/bootstrap-vcpkg.bat
+          ./vcpkg/vcpkg install libffi
+        env:
+          VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+
+      # Install libffi for Linux and macOS
+      - name: Install libffi (Linux/macOS)
+        if: ${{ runner.os != 'Windows' }}
+        run: |
+          if [ $(uname) = "Linux" ]; then
+            sudo apt-get update
+            sudo apt-get install -y libffi-dev
+          elif [ $(uname) = "Darwin" ]; then
+            brew install libffi
+          fi
+
+      # Install cross-compilation tools
+      - name: Install cross-compilation tools
+        uses: taiki-e/setup-cross-toolchain-action@v1
+        with:
+          target: ${{ matrix.target }}
+
+      # Optionally install libatomic for cross-compilation
+      - name: Optionally install libatomic for cross-compilation
+        if: ${{ matrix.target == 'arm-unknown-linux-gnu' }}
+        run: sudo apt-get install -y libatomic1-arm64-cross
+
+      # targets and version debug
+      - name: targets and version debug
+        run: clang++ -print-targets && clang++ --version
+
+      # Create build directory
+      - name: Create build directory
+        run: mkdir -p build
+
+      # Configure CMake (Windows)
+      - name: Configure CMake (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        run: cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ --preset=default -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake .. -G Ninja
+        working-directory: build
+
+      # Configure CMake (Linux/macOS)
+      - name: Configure CMake (Linux/macOS)
+        if: ${{ runner.os != 'Windows' }}
+        run: cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ .. -G Ninja
+        working-directory: build
+
+      # Build with Ninja
+      - name: Build with Ninja
+        run: ninja
+        working-directory: build
+
+      # Locate libffi DLL (Windows)
+      - name: Locate and copy libffi DLL (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        run: |
+          set VCPKG_LIBFFI_DIR=$(vcpkg list libffi --x-manifest --triplet=x64-windows | findstr /i libffi)
+          for /R "%VCPKG_ROOT%\installed\x64-windows\bin" %%f in (libffi*.dll) do copy "%%f" build
+        shell: cmd
+
+      # List files in build directory
+      - name: List files in build directory
+        run: ls build
+
+      # Upload a Build Artifact
+      - name: Upload a Build Artifact
+        uses: actions
