@@ -141,13 +141,13 @@ jobs:
         run: ninja
         working-directory: build
 
-      # Locate libffi DLL (Windows)
-      - name: Locate and copy libffi DLL (Windows)
-        if: ${{ runner.os == 'Windows' }}
-        run: |
-          set VCPKG_LIBFFI_DIR=$(vcpkg list libffi --x-manifest --triplet=x64-windows | findstr /i libffi)
-          for /R "%VCPKG_ROOT%\installed\x64-windows\bin" %%f in (libffi*.dll) do copy "%%f" build
-        shell: cmd
+##      # Locate libffi DLL (Windows)
+##      - name: Locate and copy libffi DLL (Windows)
+##        if: ${{ runner.os == 'Windows' }}
+##        run: |
+##          set VCPKG_LIBFFI_DIR=$(vcpkg list libffi --x-manifest --triplet=x64-windows | findstr /i libffi)
+##          for /R "%VCPKG_ROOT%\installed\x64-windows\bin" %%f in (libffi*.dll) do copy "%%f" build
+##        shell: cmd
 
       # List files in build directory
       - name: List files in build directory
