@@ -876,7 +876,7 @@ namespace sorth
             auto signature = generate_signature(params, ret_name);
             auto ret_conversion = get_conversion_info(interpreter, ret_name);
 
-            auto word_handler = [cif, param_types, ret_conversion, fn_name, params, function](InterpreterPtr& interpreter)
+            auto word_handler = [=](InterpreterPtr& interpreter)
                 {
                     auto types = param_types;
 
