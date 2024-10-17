@@ -60,6 +60,11 @@ jobs:
         env:
           VCPKG_ROOT: ${{ github.workspace }}/vcpkg
 
+      # Set VCPKG_ROOT environment variable (Windows)
+      - name: Set VCPKG_ROOT (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        run: echo "VCPKG_ROOT=${{ github.workspace }}\\vcpkg" >> $GITHUB_ENV
+
       # Install libffi for Linux and macOS
       - name: Install libffi (Linux/macOS)
         if: ${{ runner.os != 'Windows' }}
