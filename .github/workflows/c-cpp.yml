@@ -116,8 +116,8 @@ jobs:
         working-directory: build
 
       # Build with Ninja
-      - name: Build with Ninja
-        run: ninja
+      - name: Build with make
+        run: make
         working-directory: build
 
       # Locate libffi DLL (Windows)
