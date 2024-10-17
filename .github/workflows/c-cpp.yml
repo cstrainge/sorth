@@ -116,7 +116,7 @@ jobs:
       - name: Configure CMake (Windows)
         if: ${{ runner.os == 'Windows' }}
         #run: cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ --preset=default -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake ..
-        run: cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ --preset=default .. -G Ninja
+        run: cmake -DCMAKE_MAKE_PROGRAM=C:\ProgramData\chocolatey\bin\ninja.exe -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ --preset=default .. -G Ninja
         working-directory: build
 
       # Configure CMake (Linux/macOS)
