@@ -102,7 +102,6 @@ jobs:
         if: ${{ runner.os == 'Windows' }}
         run: |
           $env:Path += ";C:\ProgramData\chocolatey\bin"
-          refreshenv
         shell: pwsh
 
       # targets and version debug
