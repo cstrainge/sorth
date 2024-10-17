@@ -107,7 +107,7 @@ jobs:
       - name: Configure CMake (Windows)
         if: ${{ runner.os == 'Windows' }}
         #run: cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ --preset=default -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake ..
-        run: cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ --preset=default .. -G "NMake Makefiles"
+        run: cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ --preset=default ..
         working-directory: build
 
       # Configure CMake (Linux/macOS)
