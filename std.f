@@ -409,6 +409,33 @@
 
 
 
+: 2drop description: "Drop the top two items from the stack."
+        signature: "a b -- "
+    drop
+    drop
+;
+
+
+
+: 3drop description: "Drop the top three items from the stack."
+        signature: "a b -- "
+    drop
+    drop
+    drop
+;
+
+
+
+: 4drop description: "Drop the top two items from the stack."
+        signature: "a b -- "
+    drop
+    drop
+    drop
+    drop
+;
+
+
+
 : clear description: "Clear out the stack."
         signature: " -- "
     begin
