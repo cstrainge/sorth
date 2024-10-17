@@ -4,7 +4,7 @@
     "configurePresets": [
         {
             "name": "default",
-            "inherits": "vcpkg",
+            "inherits": "vcpkg"
         }
     ]
 }
