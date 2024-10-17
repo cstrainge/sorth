@@ -868,12 +868,15 @@ namespace sorth
             auto function = find_function(interpreter, lib_name, fn_name);
             auto cif = std::make_shared<ffi_cif>();
 
-            auto [ params, param_types ] = create_param_info(interpreter, raw_params);
+            auto info = create_param_info(interpreter, raw_params);
+
+            auto params = std::move(std::get<0>(info));
+            auto param_types = std::move(std::get<1>(info));
 
             auto signature = generate_signature(params, ret_name);
             auto ret_conversion = get_conversion_info(interpreter, ret_name);
 
-            auto word_handler = [cif, param_types, ret_conversion, fn_name, params, function](InterpreterPtr& interpreter)
+            auto word_handler = [=](InterpreterPtr& interpreter)
                 {
                     auto types = param_types;
 
