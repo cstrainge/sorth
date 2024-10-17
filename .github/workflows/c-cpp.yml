@@ -48,7 +48,7 @@ jobs:
       CXXTARGET: ${{ matrix.target }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.2.1
       # https://github.com/taiki-e/setup-cross-toolchain-action
 
       # Install VCPKG on Windows
