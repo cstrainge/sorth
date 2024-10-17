@@ -2,13 +2,10 @@ name: C/C++ CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "ffi" ]
     tags: ["v*"]
   pull_request:
     branches: [ "main" ]
-
-env:
-  VERSION: "v1.0.0" # Example version
 
 jobs:
   build:
@@ -49,10 +46,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       CXXTARGET: ${{ matrix.target }}
-      VERSION: ${{ env.VERSION }}
 
     steps:
       - uses: actions/checkout@v3
+      # https://github.com/taiki-e/setup-cross-toolchain-action
 
       # Install VCPKG on Windows
       - name: Install VCPKG (Windows)
@@ -124,5 +121,9 @@ jobs:
         run: ls build
 
       # Upload a Build Artifact
-      - name: Upload a Build Artifact
-        uses: actions
+      - name: Archive Release
+        uses: thedoctor0/zip-release@0.7.1
+        with:
+          type: 'zip'
+          filename: 'sorth-${{ matrix.target }}'
+          directory: 'build'
