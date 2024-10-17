@@ -133,11 +133,11 @@ add_dependencies(${PROJECT_NAME} copy_stdlib)
 
 
 # Strip target for release builds
-if(NOT WIN32)
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND strip -s $<TARGET_FILE:${PROJECT_NAME}>
-        COMMENT "Stripping binary.")
-endif()
+#if(NOT WIN32)
+#    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+#        COMMAND strip -s $<TARGET_FILE:${PROJECT_NAME}>
+#        COMMENT "Stripping binary.")
+#endif()
 
 
 # Clean target.
