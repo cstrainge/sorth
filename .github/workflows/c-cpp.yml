@@ -93,9 +93,9 @@ jobs:
           fi
 
       - name: Install Ninja (Windows)
-          if: ${{ runner.os == 'Windows' }}
-          run: choco install ninja
-          shell: cmd
+        if: ${{ runner.os == 'Windows' }}
+        run: choco install ninja
+        shell: cmd
 
       # Ensure Ninja is available (Windows)
       - name: Add Ninja to PATH (Windows)
