@@ -82,18 +82,18 @@ jobs:
         if: ${{ matrix.target == 'arm-unknown-linux-gnu' }}
         run: sudo apt-get install -y libatomic1-arm64-cross
 
-      # Install Ninja build system
-      - name: Install Ninja (Windows)
-        if: ${{ runner.os == 'Windows' }}
-        run: choco install ninja
-      - name: Install Ninja (Linux/macOS)
-        if: ${{ runner.os != 'Windows' }}
-        run: |
-          if [ $(uname) = "Linux" ]; then
-            sudo apt-get install -y ninja-build
-          elif [ $(uname) = "Darwin" ]; then
-            brew install ninja
-          fi
+#      # Install Ninja build system
+#      - name: Install Ninja (Windows)
+#        if: ${{ runner.os == 'Windows' }}
+#        run: choco install ninja
+#      - name: Install Ninja (Linux/macOS)
+#        if: ${{ runner.os != 'Windows' }}
+#        run: |
+#          if [ $(uname) = "Linux" ]; then
+#            sudo apt-get install -y ninja-build
+#          elif [ $(uname) = "Darwin" ]; then
+#            brew install ninja
+#          fi
 
       # targets and version debug
       - name: targets and version debug
@@ -107,7 +107,7 @@ jobs:
       - name: Configure CMake (Windows)
         if: ${{ runner.os == 'Windows' }}
         #run: cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ --preset=default -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake ..
-        run: cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ --preset=default .. -G "Unix Makefiles"
+        run: cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ --preset=default .. -G "NMake Makefiles"
         working-directory: build
 
       # Configure CMake (Linux/macOS)
@@ -116,8 +116,14 @@ jobs:
         run: cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ ..
         working-directory: build
 
-      # Build with Ninja
+      # Build with make
+      - name: Configure CMake (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        run: nmake
+        working-directory: build
+
       - name: Build with make
+        if: ${{ runner.os != 'Windows' }}
         run: make
         working-directory: build
 
