@@ -13,7 +13,7 @@
             "name": "cibuild",
             "inherits": "vcpkg",
             "environment": {
-                "VCPKG_ROOT": "C:\\Users\\nullp\\workdir\\vcpkg\\"
+                "VCPKG_ROOT": "D:\\a\\sorth\\sorth\\vcpkg\\"
             }
         }
     ]
