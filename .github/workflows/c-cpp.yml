@@ -152,7 +152,7 @@ jobs:
 
       # Add the build artifacts to the action.
       - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4.4.3
         with:
           name: sorth-build
           path: "dist/sorth-${{ matrix.target }}.zip"
