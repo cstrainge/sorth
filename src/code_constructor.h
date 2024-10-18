@@ -10,6 +10,7 @@ namespace sorth::internal
     {
         bool is_immediate;
         bool is_hidden;
+        bool is_context_managed;
 
         std::string name;
         std::string description;

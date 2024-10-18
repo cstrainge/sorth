@@ -20,7 +20,7 @@
 		"keywords": {
 			"patterns": [{
 				"name": "keyword.control.strangeforth",
-				"match": "\\b(do|loop|immediate|hidden|case|of|endof|endcase|if|else|then|begin|while|until|repeat|continue|break|try|catch|endcatch|throw|\\:|\\;|variable\\! |variable|constant|include|description|signature)\\b"
+				"match": "\\b(do|loop|immediate|hidden|contextless|case|of|endof|endcase|if|else|then|begin|while|until|repeat|continue|break|try|catch|endcatch|throw|\\:|\\;|variable\\! |variable|constant|include|description|signature)\\b"
 			}]
 		},
 		"strings": {

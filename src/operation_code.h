@@ -22,8 +22,8 @@ namespace sorth::internal
             unmark_loop_exit,
             mark_catch,
             unmark_catch,
-            // mark_context,    // TODO: Look into context relative words?
-            // unmark_context,
+            mark_context,
+            release_context,
             jump,
             jump_if_zero,
             jump_if_not_zero,

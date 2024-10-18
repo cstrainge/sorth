@@ -23,6 +23,8 @@ namespace sorth::internal
             case OperationCode::Id::unmark_loop_exit:    stream << "unmark_loop_exit   "; break;
             case OperationCode::Id::mark_catch:          stream << "mark_catch         "; break;
             case OperationCode::Id::unmark_catch:        stream << "unmark_catch       "; break;
+            case OperationCode::Id::mark_context:        stream << "mark_context       "; break;
+            case OperationCode::Id::release_context:     stream << "release_context    "; break;
             case OperationCode::Id::jump:                stream << "jump               "; break;
             case OperationCode::Id::jump_if_zero:        stream << "jump_if_zero       "; break;
             case OperationCode::Id::jump_if_not_zero:    stream << "jump_if_not_zero   "; break;
@@ -44,6 +46,8 @@ namespace sorth::internal
                        || (id == OperationCode::Id::jump_target)
                        || (id == OperationCode::Id::unmark_loop_exit)
                        || (id == OperationCode::Id::unmark_catch)
+                       || (id == OperationCode::Id::mark_context)
+                       || (id == OperationCode::Id::release_context)
                        || (id == OperationCode::Id::jump_loop_exit);
             };
 
