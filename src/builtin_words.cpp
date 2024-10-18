@@ -50,21 +50,32 @@ namespace sorth
 
             private:
                 std::string name;
+                bool is_context_managed;
                 ByteCode code;
 
             public:
-                ScriptWord(const std::string& new_name, const ByteCode& new_code,
-                           const Location& new_location)
+                ScriptWord(const std::string& new_name,
+                           const ByteCode& new_code,
+                           const Location& new_location,
+                           const bool new_is_context_managed)
                 : name(new_name),
-                  code(new_code)
+                  code(new_code),
+                  is_context_managed(new_is_context_managed)
                 {
                 }
 
             public:
                 void operator ()(InterpreterPtr& interpreter)
                 {
-                    ContextManager manager(interpreter);
-                    interpreter->execute_code(name, code);
+                    if (is_context_managed)
+                    {
+                        ContextManager manager(interpreter);
+                        interpreter->execute_code(name, code);
+                    }
+                    else
+                    {
+                        interpreter->execute_code(name, code);
+                    }
                 }
 
             public:
@@ -625,6 +636,26 @@ namespace sorth
     }
 
 
+    void word_op_mark_context(InterpreterPtr& interpreter)
+    {
+        insert_user_instruction(interpreter,
+            {
+                .id = OperationCode::Id::mark_context,
+                .value = (int64_t)0
+            });
+    }
+
+
+    void word_op_release_context(InterpreterPtr& interpreter)
+    {
+        insert_user_instruction(interpreter,
+            {
+                .id = OperationCode::Id::release_context,
+                .value = (int64_t)0
+            });
+    }
+
+
     void word_op_jump(InterpreterPtr& interpreter)
     {
         insert_user_instruction(interpreter,
@@ -688,6 +719,19 @@ namespace sorth
     void word_code_new_block(InterpreterPtr& interpreter)
     {
         interpreter->constructor().stack.push({});
+    }
+
+
+    void word_code_drop_stack_block(InterpreterPtr& interpreter)
+    {
+        interpreter->constructor().stack.pop();
+    }
+
+
+    void word_code_execute_stack_block(InterpreterPtr& interpreter)
+    {
+        auto name = as_string(interpreter, interpreter->pop());
+        interpreter->execute_code(name, interpreter->constructor().stack.top().code);
     }
 
 
@@ -1022,6 +1066,7 @@ namespace sorth
         interpreter->constructor().stack.push({
                 .is_immediate = false,
                 .is_hidden = false,
+                .is_context_managed = true,
                 .name = name,
                 .description = "",
                 .location = location
@@ -1035,7 +1080,10 @@ namespace sorth
         auto construction = interpreter->constructor().stack.top();
         interpreter->constructor().stack.pop();
 
-        auto new_word = ScriptWord(construction.name, construction.code, construction.location);
+        auto new_word = ScriptWord(construction.name,
+                                   construction.code,
+                                   construction.location,
+                                   construction.is_context_managed);
 
         if (interpreter->showing_bytecode())
         {
@@ -1066,6 +1114,12 @@ namespace sorth
     void word_hidden(InterpreterPtr& interpreter)
     {
         interpreter->constructor().stack.top().is_hidden = true;
+    }
+
+
+    void word_contextless(InterpreterPtr& interpreter)
+    {
+        interpreter->constructor().stack.top().is_context_managed = false;
     }
 
 
@@ -2202,6 +2256,14 @@ namespace sorth
             "Insert this instruction into the byte stream.",
             " -- ");
 
+        ADD_NATIVE_WORD(interpreter, "op.mark_context", word_op_mark_context,
+            "Insert this instruction into the byte stream.",
+            " -- ");
+
+        ADD_NATIVE_WORD(interpreter, "op.release_context", word_op_release_context,
+            "Insert this instruction into the byte stream.",
+            " -- ");
+
         ADD_NATIVE_WORD(interpreter, "op.jump", word_op_jump,
             "Insert this instruction into the byte stream.",
             "identifier -- ");
@@ -2229,6 +2291,14 @@ namespace sorth
 
         ADD_NATIVE_WORD(interpreter, "code.new_block", word_code_new_block,
             "Create a new sub-block on the code generation stack.",
+            " -- ");
+
+        ADD_NATIVE_WORD(interpreter, "code.drop_stack_block", word_code_drop_stack_block,
+            "Drop the code object that's at the top of the construction stack.",
+            " -- ");
+
+        ADD_NATIVE_WORD(interpreter, "code.execute_stack_block", word_code_execute_stack_block,
+            "Take the top code block of the current construction and execute it now.",
             " -- ");
 
         ADD_NATIVE_WORD(interpreter, "code.merge_stack_block", word_code_merge_stack_block,
@@ -2326,6 +2396,10 @@ namespace sorth
 
         ADD_IMMEDIATE_WORD(interpreter, "hidden", word_hidden,
             "Mark the current word being built as hidden.",
+            " -- ");
+
+        ADD_IMMEDIATE_WORD(interpreter, "contextless", word_contextless,
+            "Disable automatic context management for the word.",
             " -- ");
 
         ADD_IMMEDIATE_WORD(interpreter, "description:", word_description,

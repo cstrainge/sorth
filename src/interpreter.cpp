@@ -507,13 +507,39 @@ namespace sorth
 
         void InterpreterImpl::execute_code(const std::string& name, const ByteCode& code)
         {
+            // Keep track of any contexts that get marked so that we can safely clean up if any
+            // releases are missed.
+            size_t contexts = 0;
+
+            auto cleanup_contexts = [this, &contexts](bool throw_exception)
+                {
+                    // Make sure we have ballance...
+                    for (size_t i = 0; i < contexts; ++i)
+                    {
+                        release_context();
+                    }
+
+                    // Detect and report an error if we're not already in a cleanup context.
+                    if ((throw_exception) && (contexts > 0))
+                    {
+                        throw_error(*this, "Unbalanced context handling detected.");
+                    }
+
+                    // Otherwise clear up the marker.
+                    contexts = 0;
+                };
+
+            // Showing debug information?
             if (is_showing_run_code)
             {
                 std::cout << "-------[ " << name << " ]------------------------------" << std::endl;
             }
 
+            // Keep track if the current location has been included in the current instruction and
+            // the call stack accordingly updated.
             bool call_stack_pushed = false;
 
+            // Keep track of any try/catch blocks and loops.
             std::vector<int64_t> catch_locations;
             std::vector<std::pair<int64_t, int64_t>> loop_locations;
 
@@ -704,6 +730,21 @@ namespace sorth
                             catch_locations.pop_back();
                             break;
 
+                        case OperationCode::Id::mark_context:
+                            mark_context();
+                            ++contexts;
+                            break;
+
+                        case OperationCode::Id::release_context:
+                            if (contexts == 0)
+                            {
+                                throw_error(*this, "Unbalanced context release detected.");
+                            }
+
+                            release_context();
+                            --contexts;
+                            break;
+
                         case OperationCode::Id::jump:
                             pc += as_numeric<int64_t>(shared_from_this(), operation.value) - 1;
                             break;
@@ -766,6 +807,7 @@ namespace sorth
                         call_stack_pushed = false;
                     }
 
+                    // Check for any catch blocks.
                     if (!catch_locations.empty())
                     {
                         pc = catch_locations.back() - 1;
@@ -774,11 +816,20 @@ namespace sorth
                     }
                     else
                     {
+                        // No catch block, so clean up any unresolved contexts and rethrow the
+                        // exception, we don't need to throw an exception here as this is part of
+                        // the cleanup process.
+                        cleanup_contexts(false);
                         throw error;
                     }
                 }
             }
 
+            // Make sure the context acquisitions are balanced.  Throw an exception if the contexts
+            // are unbalanced.
+            cleanup_contexts(true);
+
+            // Print debugging information.
             if (is_showing_run_code)
             {
                 std::cout << "=======[ " << name << " ]==============================" << std::endl;

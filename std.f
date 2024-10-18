@@ -44,6 +44,20 @@
 
 
 
+: mark_context immediate description: "Create a new variable and word context."
+                         signature: " -- "
+    op.mark_context
+;
+
+
+: release_context immediate description: "Release the current context freeing it's variables and words."
+                         signature: " -- "
+    op.release_context
+;
+
+
+
+
 : if immediate
     unique_str variable! else_label
     unique_str variable! end_label
