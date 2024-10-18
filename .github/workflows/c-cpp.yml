@@ -151,10 +151,13 @@ jobs:
         run: ls dist
 
       # Add the build artifacts to the action.
+      - name: Get Git Commit ID
+        run: echo "COMMIT_ID=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4.4.3
         with:
-          name: sorth-build
+          name: 'sorth-${{ matrix.target }}-${{ env.COMMIT_ID }}'
           path: "dist/sorth-${{ matrix.target }}.zip"
           retention-days: 5
 
