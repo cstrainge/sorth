@@ -150,6 +150,15 @@ jobs:
       - name: List files again.
         run: ls dist
 
+      # Add the build artifacts to the action.
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: sorth-build
+          path: "dist/sorth-${{ matrix.target }}.zip"
+          retention-days: 5
+
+      # Create a draft release for a tag.
       - name: Release
         uses: xresloader/upload-to-github-release@v1.6.0
         env:
@@ -157,5 +166,5 @@ jobs:
         with:
           file: "dist/sorth-${{ matrix.target }}.zip"
           draft: true
-          tags: false
+          tags: true
           overwrite: true
