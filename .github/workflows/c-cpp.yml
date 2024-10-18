@@ -157,8 +157,8 @@ jobs:
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4.4.3
         with:
-          name: 'sorth-build-${{ env.COMMIT_ID }}'
-          path: "dist/sorth-${{ matrix.target }}.zip"
+          name: 'sorth-${{ matrix.target }}-build-${{ env.COMMIT_ID }}'
+          path: "dist/*"
           retention-days: 5
 
       # Create a draft release for a tag.
