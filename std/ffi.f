@@ -62,22 +62,59 @@
 
 
 
-: ffi.void     "ffi.void"     sentinel_word ;
-: ffi.bool     "ffi.bool"     sentinel_word ;
-: ffi.i8       "ffi.i8"       sentinel_word ;
-: ffi.u8       "ffi.u8"       sentinel_word ;
-: ffi.i16      "ffi.i16"      sentinel_word ;
-: ffi.u16      "ffi.u16"      sentinel_word ;
-: ffi.i32      "ffi.i32"      sentinel_word ;
-: ffi.u32      "ffi.u32"      sentinel_word ;
-: ffi.f32      "ffi.f32"      sentinel_word ;
-: ffi.f64      "ffi.f64"      sentinel_word ;
-: ffi.string   "ffi.string"   sentinel_word ;
-: ffi.void-ptr "ffi.void-ptr" sentinel_word ;
+: ffi.void description: "Corresponds to a C void type."
+    "ffi.void" sentinel_word
+;
+
+: ffi.bool description: "Corresponds to a C boolean type."
+    "ffi.bool" sentinel_word
+;
+
+: ffi.i8 description: "Corresponds to a C 8 bit integer type."
+    "ffi.i8" sentinel_word
+;
+
+: ffi.u8 description: "Corresponds to a C 8 bit unsigned integer type."
+    "ffi.u8" sentinel_word
+;
+
+: ffi.i16 description: "Corresponds to a C 16 bit integer type."
+    "ffi.i16" sentinel_word
+;
+
+: ffi.u16 description: "Corresponds to a C 16 bit unsigned integer type."
+    "ffi.u16" sentinel_word
+;
+
+: ffi.i32 description: "Corresponds to a C 32 bit integer type."
+    "ffi.i32" sentinel_word
+;
+
+: ffi.u32 description: "Corresponds to a C 32 bit unsigned integer type."
+    "ffi.u32" sentinel_word
+;
+
+: ffi.f32 description: "Corresponds to a C 32 bit floating point type."
+    "ffi.f32" sentinel_word
+;
+
+: ffi.f64 description: "Corresponds to a C 64 bit floating point type."
+    "ffi.f64" sentinel_word
+;
+
+: ffi.string description: "Corresponds to a C string type."
+    "ffi.string" sentinel_word
+;
+
+: ffi.void-ptr description: "Corresponds to a C pointer type."
+    "ffi.void-ptr" sentinel_word
+;
 
 
 
-: ffi.# immediate
+
+: ffi.# immediate description: "Create a strucure compatable with the ffi interface."
+                  signature: "ffi# type field -> default ... ;"
     word variable! struct_name
     false variable! is_hidden
 
