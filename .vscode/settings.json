@@ -27,6 +27,7 @@
         "FARPROC",
         "Forths",
         "libatomic",
+        "libc",
         "npos",
         "readline",
         "sftmp",

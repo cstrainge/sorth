@@ -120,7 +120,6 @@ jobs:
       # Configure CMake (Windows)
       - name: Configure CMake (Windows)
         if: ${{ runner.os == 'Windows' }}
-        #run: cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ --preset=default -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake ..
         run: cmake -DCMAKE_MAKE_PROGRAM=C:\ProgramData\chocolatey\bin\ninja.exe -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ --preset=cibuild .. -G Ninja
         working-directory: build
 
@@ -136,8 +135,8 @@ jobs:
         working-directory: build
 
       # List files in build directory
-      - name: List files in build directory
-        run: ls build
+      - name: List files in dist directory
+        run: ls dist
 
       # Upload a Build Artifact
       - name: Archive Release
@@ -145,17 +144,18 @@ jobs:
         with:
           type: 'zip'
           filename: 'sorth-${{ matrix.target }}'
-          directory: 'build'
+          directory: 'dist'
 
+      # Make sure to upload the build.
       - name: List files again.
-        run: ls build
+        run: ls dist
 
       - name: Release
         uses: xresloader/upload-to-github-release@v1.6.0
         env:
           GITHUB_TOKEN: ${{ secrets.SORTH_PERSONAL_ACCESS_TOKEN }}
         with:
-          file: "build/sorth-${{ matrix.target }}.zip"
+          file: "dist/sorth-${{ matrix.target }}.zip"
           draft: true
           tags: false
           overwrite: true
