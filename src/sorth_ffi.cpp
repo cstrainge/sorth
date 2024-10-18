@@ -1133,6 +1133,12 @@ namespace sorth
             create_data_definition_words(location, interpreter, definition_ptr, is_hidden);
         }
 
+
+        void word_ffi_array(InterpreterPtr& interpreter)
+        {
+            throw_error(*interpreter, "FFI arrays are unimplemented.");
+        }
+
     }
 
 
@@ -1148,10 +1154,10 @@ namespace sorth
 
         ADD_NATIVE_WORD(interpreter, "ffi.#", word_ffi_struct,
             "Create a strucure compatable with the ffi interface.",
-            "lib-name -- ");
+            "found_initializers is_hidden types fields packing name [defaults] -- ");
 
-        ADD_NATIVE_WORD(interpreter, "ffi.[]", word_ffi_struct,
-            "Register a new ffi array type for the specified ff.",
+        ADD_NATIVE_WORD(interpreter, "ffi.[]", word_ffi_array,
+            "Register a new ffi array type for the existing ffi type.",
             "struct-name -- ");
     }
 
