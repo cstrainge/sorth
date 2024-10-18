@@ -590,10 +590,9 @@ namespace sorth
 
                                 ADD_NATIVE_WORD(this,
                                                 name,
-                                                [value](auto This)
+                                                [value](InterpreterPtr& This)
                                                 {
-                                                    This->push(deep_copy_value(shared_from_this(),
-                                                                               value));
+                                                    This->push(deep_copy_value(This, value));
                                                 },
                                                 "Constant value " + name + ".",
                                                 " -- value");
