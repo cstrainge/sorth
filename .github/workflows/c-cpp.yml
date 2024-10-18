@@ -138,18 +138,6 @@ jobs:
       - name: List files in dist directory
         run: ls dist
 
-      # Upload a Build Artifact
-      - name: Archive Release
-        uses: thedoctor0/zip-release@0.7.1
-        with:
-          type: 'zip'
-          filename: 'sorth-${{ matrix.target }}'
-          directory: 'dist'
-
-      # Make sure to upload the build.
-      - name: List files again.
-        run: ls dist
-
       # Add the build artifacts to the action.
       - name: Get Git Commit ID
         run: echo "COMMIT_ID=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
@@ -160,6 +148,18 @@ jobs:
           name: 'sorth-${{ matrix.target }}-build-${{ env.COMMIT_ID }}'
           path: "dist/*"
           retention-days: 5
+
+      # Zip up the build.
+      - name: Archive Release
+        uses: thedoctor0/zip-release@0.7.1
+        with:
+          type: 'zip'
+          filename: 'sorth-${{ matrix.target }}'
+          directory: 'dist'
+
+      # Make sure to upload the build.
+      - name: List files again.
+        run: ls dist
 
       # Create a draft release for a tag.
       - name: Release
