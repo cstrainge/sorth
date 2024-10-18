@@ -915,7 +915,6 @@ namespace sorth
         }
 
 
-
         void word_ffi_struct(InterpreterPtr& interpreter)
         {
             auto location = interpreter->get_current_location();
