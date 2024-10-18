@@ -161,14 +161,15 @@ jobs:
           filename: 'sorth-${{ matrix.target }}'
           directory: 'build'
 
-      - name: List files in base directory
-        run: ls
+      - name: List files again.
+        run: ls build
 
-      - name: release
-        uses: xresloader/upload-to-github-release@v1
+      - name: Release
+        uses: xresloader/upload-to-github-release@v1.6.0
         env:
           GITHUB_TOKEN: ${{ secrets.SORTH_PERSONAL_ACCESS_TOKEN }}
         with:
           file: "build/sorth-${{ matrix.target }}.zip"
-#          tags: true
-#          draft: true
+          draft: true
+          tags: false
+          overwrite: true
