@@ -25,24 +25,20 @@ set(SRC_DIR "src")
 file(GLOB SRCS "${SRC_DIR}/*.cpp")
 
 set(BUILD_DIR "${CMAKE_BINARY_DIR}")
-set(DIST_DIR "${CMAKE_BINARY_DIR}/dist")
+set(DIST_DIR "${CMAKE_SOURCE_DIR}/dist")
 
 
 
-# Define compiler flags based on compiler and OS.
-# if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-#     set(CXXFLAGS "-O3 -DMESSAGE=\"Compiled with GCC: ${CMAKE_CXX_COMPILER_VERSION}\"")
-# elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-#     set(CXXFLAGS "-O3 -DMESSAGE=\"Compiled with Clang: ${CMAKE_CXX_COMPILER_VERSION}\" -Wno-vla-extension")
-# elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-#     set(CXXFLAGS "/O2 /DMESSAGE=\"Compiled with MSVC: ${CMAKE_CXX_COMPILER_VERSION}\"")
-# else()
-#     set(CXXFLAGS "-O3 -DMESSAGE=\"Compiled with an unknown compiler\"")
-# endif()
+# Custom target to create the dist directory
+add_custom_target(create_dist_dir ALL
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${DIST_DIR}
+    COMMENT "Creating dist directory.")
+
 
 
 # Get the compiler version:
 set(CXXFLAGS "-DMESSAGE=\"Compiled with ${CMAKE_CXX_COMPILER_VERSION}\"")
+
 
 
 # Detect OS for setting compiler flags and other OS-specific settings
@@ -61,15 +57,21 @@ else()
 endif()
 
 
+
 # Include directories.
 include_directories(${SRC_DIR})
+
 
 
 # Define target.
 add_executable(${PROJECT_NAME} ${SRCS})
 
+
+
 # Set compiler flags.
 target_compile_options(${PROJECT_NAME} PRIVATE ${CXXFLAGS})
+
+
 
 # Add lib ffi to the target.
 if(WIN32)
@@ -81,13 +83,20 @@ endif()
 
 
 
+# Output directory.
+set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${DIST_DIR})
+
+
+
+# Build the library that the tests depend on.
 add_library(TestLib SHARED
     ${CMAKE_SOURCE_DIR}/tests/test_ffi_lib.cpp)
 
+set_target_properties(TestLib PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${DIST_DIR}
+    LIBRARY_OUTPUT_DIRECTORY ${DIST_DIR}
+    ARCHIVE_OUTPUT_DIRECTORY ${DIST_DIR})
 
-
-# Output directory.
-set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${BUILD_DIR})
 
 
 # Git versioning.
@@ -105,7 +114,6 @@ execute_process(COMMAND git describe --abbrev=0 --tags ${TAG_COMMIT}
                 ERROR_QUIET
                 OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-
 if(TAG STREQUAL "")
     set(TAG "dev")
 endif()
@@ -117,19 +125,24 @@ string(SUBSTRING ${COMMIT} 0 8 COMMIT)
 set(VERSION "${TAG}-v${COMMIT}-${DATE}")
 
 
+
 # Define preprocessor macro for version
 target_compile_definitions(${PROJECT_NAME} PRIVATE VERSION="${VERSION}")
 
 
+
 # Custom target to copy the standard library
 add_custom_target(copy_stdlib ALL
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/std.f ${BUILD_DIR}/std.f
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/std ${BUILD_DIR}/std
-    COMMENT "Copying standard library files to the build directory.")
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/std.f ${DIST_DIR}/std.f
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/std ${DIST_DIR}/std
+    COMMENT "Copying standard library files to the dist directory.")
 
 
-# Ensure copy_stdlib runs before the main target
-add_dependencies(${PROJECT_NAME} copy_stdlib)
+
+# Ensure the dist dir exists and copy_stdlib runs before the main target.
+add_dependencies(copy_stdlib create_dist_dir)
+add_dependencies(${PROJECT_NAME} copy_stdlib TestLib)
+
 
 
 # Strip target for release builds
@@ -138,10 +151,3 @@ add_dependencies(${PROJECT_NAME} copy_stdlib)
 #        COMMAND strip -s $<TARGET_FILE:${PROJECT_NAME}>
 #        COMMENT "Stripping binary.")
 #endif()
-
-
-# Clean target.
-#add_custom_target(clean
-#    COMMAND ${CMAKE_COMMAND} -E remove_directory ${BUILD_DIR}
-#    COMMAND ${CMAKE_COMMAND} -E remove_directory obj
-#    COMMENT "Cleaning up build and object directories.")
