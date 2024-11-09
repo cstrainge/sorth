@@ -2103,7 +2103,7 @@ namespace sorth
     }
 
 
-    void word_show_word(InterpreterPtr& interpreter)
+    void word_show_word_bytecode(InterpreterPtr& interpreter)
     {
         std::string name;
         auto value = interpreter->pop();
@@ -2134,32 +2134,6 @@ namespace sorth
 
         auto& handler_info = interpreter->get_handler_info(word.handler_index);
 
-        std::cout << "Word, " << word.handler_index << " -> " << name
-                  << (word.is_scripted ? "" : ", is a native word.")
-                  << std::endl
-                  << "Defined at: " << handler_info.definition_location
-                  << "." << std::endl;
-
-        if (word.is_immediate)
-        {
-            std::cout << "Word is immediate." << std::endl;
-        }
-
-        if (word.is_hidden)
-        {
-            std::cout << "Word is hidden from the directory." << std::endl;
-        }
-
-        if (word.description)
-        {
-            std::cout << "Description: " << (*word.description) << std::endl;
-        }
-
-        if (word.signature)
-        {
-            std::cout << "Signature: " << (*word.signature) << std::endl;
-        }
-
         if (word.is_scripted)
         {
             auto& handler = handler_info.function;
@@ -2167,6 +2141,10 @@ namespace sorth
             auto inverse_list = interpreter->get_inverse_lookup_list();
 
             script_handler->show(std::cout, interpreter, inverse_list);
+        }
+        else
+        {
+            std::cerr << "Word, " << name << ", was not written in Forth." << std::endl;
         }
     }
 
@@ -2808,15 +2786,15 @@ namespace sorth
             " -- compiler_info");
 
 
-        ADD_NATIVE_WORD(interpreter, "show_bytecode", word_show_bytecode,
-            "If set to true, show bytecode as it's generated.",
-            "bool -- ");
+        //ADD_NATIVE_WORD(interpreter, "show_bytecode", word_show_bytecode,
+        //    "If set to true, show bytecode as it's generated.",
+        //    "bool -- ");
+        //
+        //ADD_NATIVE_WORD(interpreter, "show_run_code", word_show_run_code,
+        //    "If set to true show bytecode as it's executed.",
+        //    "bool -- ");
 
-        ADD_NATIVE_WORD(interpreter, "show_run_code", word_show_run_code,
-            "If set to true show bytecode as it's executed.",
-            "bool -- ");
-
-        ADD_NATIVE_WORD(interpreter, "show_word", word_show_word,
+        ADD_NATIVE_WORD(interpreter, "show_bytecode", word_show_word_bytecode,
             "Show detailed information about a word.",
             "word -- ");
 
