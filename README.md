@@ -39,7 +39,7 @@ For more details with getting started and playing with the language please see t
 
 There is still a lot to do with the language... Non exhaustively some things that would really help the usefulness of the language...
 
- - [x] The language has the start of a FFI.  So better interop with other languages is a must.
+ - [x] The language has the start of a FFI.  But better interop with other languages is a must.
  - [ ] Continue to build out the io words.  For example, currently we can not create IPC servers with the language.
  - [ ] Take a stability pass on the REPL.  There are known bugs with single/multi-line editing modes.
  - [ ] Also, take a stability pass on the language server.  We've introduced threads to the language so we should use that support within the LSP implementation.
