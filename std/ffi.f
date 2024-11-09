@@ -113,7 +113,7 @@
 
 
 
-: ffi.# immediate description: "Create a strucure compatable with the ffi interface."
+: ffi.# immediate description: "Create a structure compatible with the ffi interface."
                   signature: "ffi# type field -> default ... ;"
     word variable! struct_name
     false variable! is_hidden
