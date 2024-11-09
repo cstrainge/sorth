@@ -138,32 +138,24 @@ jobs:
       - name: List files in dist directory
         run: ls dist
 
-      # Gather some information from git.
+      # Add the build artifacts to the action.
       - name: Get Git Commit ID
-        run: echo "GIT_COMMIT_ID=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+        run: echo "COMMIT_ID=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
-      - name: Get Git Tag
-        run: echo "GIT_TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
-
-      - name: Print Environment Variables
-        run: printenv
-
-      # Zip up the artifacts for this build.
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4.4.3
         with:
-          name: 'sorth-${{ matrix.target }}-build-${{ env.GIT_COMMIT_ID }}'
+          name: 'sorth-${{ matrix.target }}-build-${{ env.COMMIT_ID }}'
           path: "dist/*"
           retention-days: 5
 
-      # Create a release zip for this build and if it is a tagged build create a draft release.
+      # Zip up the build.
       - name: Archive Release
         uses: thedoctor0/zip-release@0.7.1
         with:
           type: 'zip'
-          filename: "sorth-${{ matrix.target }}-${{ env.GIT_TAG }}"
+          filename: 'sorth-${{ matrix.target }}'
           directory: 'dist'
-          tags: true
 
       # Make sure to upload the build.
       - name: List files again.
@@ -175,8 +167,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.SORTH_PERSONAL_ACCESS_TOKEN }}
         with:
-          file: "dist/sorth-${{ matrix.target }}-${{ env.GIT_TAG }}.zip"
+          file: "dist/sorth-${{ matrix.target }}.zip"
           draft: true
           tags: true
           overwrite: true
-          default_release_name: "Release ${{ env.GIT_TAG }}"
