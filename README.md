@@ -10,7 +10,7 @@ The second reason why this version deviates from most Forth implementations is t
 
 The knock on effects of these decisions is that this version of Forth may be slower than other compiled versions.  The intention of this is for this version to act more as a scripting language rather than as a compiler/executable generator with optional REPL.
 
-On Windows make sure you have `vcpkg` installed and run:
+On Windows make sure you have `vcpkg` installed, (it helps if you are running from within a Dev Studio command prompt,) and run:
 
 ```
 mkdir build ; cd build
