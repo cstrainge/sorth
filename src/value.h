@@ -57,11 +57,11 @@ namespace sorth
     extern thread_local uint64_t value_print_indent;
 
 
-    Value deep_copy_value(InterpreterPtr& interpreter, Value& value);
-    Value deep_copy_data_object(InterpreterPtr& interpreter, Value& value);
-    Value deep_copy_array(InterpreterPtr& interpreter, Value& value);
-    Value deep_copy_byte_buffer(InterpreterPtr& interpreter, Value& value);
-    Value deep_copy_hash_table(InterpreterPtr& interpreter, Value& value);
+    Value deep_copy_value(InterpreterPtr& interpreter, const Value& value);
+    Value deep_copy_data_object(InterpreterPtr& interpreter, const Value& value);
+    Value deep_copy_array(InterpreterPtr& interpreter, const Value& value);
+    Value deep_copy_byte_buffer(InterpreterPtr& interpreter, const Value& value);
+    Value deep_copy_hash_table(InterpreterPtr& interpreter, const Value& value);
 
 
 }

@@ -217,7 +217,7 @@ namespace sorth
     }
 
 
-    Value deep_copy_value(InterpreterPtr& interpreter, Value& value)
+    Value deep_copy_value(InterpreterPtr& interpreter, const Value& value)
     {
         if (   std::holds_alternative<int64_t>(value)
             || std::holds_alternative<double>(value)
@@ -260,7 +260,7 @@ namespace sorth
 
 
 
-    Value deep_copy_data_object(InterpreterPtr& interpreter, Value& value)
+    Value deep_copy_data_object(InterpreterPtr& interpreter, const Value& value)
     {
         auto original = std::get<DataObjectPtr>(value);
         auto new_object = std::make_shared<DataObject>();
@@ -277,7 +277,7 @@ namespace sorth
     }
 
 
-    Value deep_copy_array(InterpreterPtr& interpreter, Value& value)
+    Value deep_copy_array(InterpreterPtr& interpreter, const Value& value)
     {
         auto original = std::get<ArrayPtr>(value);
         auto new_object = std::make_shared<Array>(original->size());
@@ -291,7 +291,7 @@ namespace sorth
     }
 
 
-    Value deep_copy_byte_buffer(InterpreterPtr& interpreter, Value& value)
+    Value deep_copy_byte_buffer(InterpreterPtr& interpreter, const Value& value)
     {
         auto original = std::get<ByteBufferPtr>(value);
         auto new_object = std::make_shared<ByteBuffer>(original->size());
@@ -302,7 +302,7 @@ namespace sorth
     }
 
 
-    Value deep_copy_hash_table(InterpreterPtr& interpreter, Value& value)
+    Value deep_copy_hash_table(InterpreterPtr& interpreter, const Value& value)
     {
         auto original = std::get<HashTablePtr>(value);
         auto new_object = std::make_shared<HashTable>();
