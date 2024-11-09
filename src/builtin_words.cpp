@@ -2079,13 +2079,13 @@ namespace sorth
     }
 
 
-    void word_print_sorth_version(InterpreterPtr& interpreter)
+    void word_get_sorth_version(InterpreterPtr& interpreter)
     {
         interpreter->push(std::string(VERSION));
     }
 
 
-    void word_print_compiler(InterpreterPtr& interpreter)
+    void word_get_compiler_version(InterpreterPtr& interpreter)
     {
         interpreter->push(std::string(MESSAGE));
     }
@@ -2798,13 +2798,13 @@ namespace sorth
             "Print out the current word dictionary.",
             " -- ");
 
-        ADD_NATIVE_WORD(interpreter, "sorth.version", word_print_sorth_version,
+        ADD_NATIVE_WORD(interpreter, "sorth.version", word_get_sorth_version,
             "Get the current version of the interpreter.",
             " -- version_string");
 
 
-        ADD_NATIVE_WORD(interpreter, "sorth.compiler", word_print_compiler,
-            "Get the compiler that built the interpreter.",
+        ADD_NATIVE_WORD(interpreter, "sorth.compiler", word_get_compiler_version,
+            "Get name and version of the compiler that built the interpreter.",
             " -- compiler_info");
 
 
