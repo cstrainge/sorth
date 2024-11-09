@@ -36,8 +36,11 @@ add_custom_target(create_dist_dir ALL
 
 
 
-# Get the compiler version:
-set(CXXFLAGS "-DMESSAGE=\"Compiled with ${CMAKE_CXX_COMPILER_VERSION}\"")
+# Get the compiler name and version.  Also, remove the .exe extension if it exists.
+get_filename_component(COMPILER_NAME ${CMAKE_CXX_COMPILER} NAME)
+string(REGEX REPLACE "\\.exe$" "" COMPILER_NAME_SIMPLE "${COMPILER_NAME}")
+
+set(CXXFLAGS "-DMESSAGE=\"${COMPILER_NAME_SIMPLE} ${CMAKE_CXX_COMPILER_VERSION}\"")
 
 
 
