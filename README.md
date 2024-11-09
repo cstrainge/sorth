@@ -1,4 +1,4 @@
-![Logo](strange-forth\assets\strange-forth-logo.png)
+![Logo](./strange-forth/assets/strange-forth-logo.png)
 
 # Strange Forth
 
