@@ -1,7 +1,8 @@
+![Logo](strange-forth\assets\strange-forth-logo.png)
 
 # Strange Forth
 
-## Geting started
+## Getting started
 
 A simple implementation of the language Forth.  This is a interpreted version of Forth.  This version is aware of the standard ANS Forth however we don't adhere to it very closely.  We've taken liberties to follow some idioms from newer languages where the author finds it enhances readability.  It's acknowledged that this is an entirely subjective standard.
 
@@ -9,10 +10,18 @@ The second reason why this version deviates from most Forth implementations is t
 
 The knock on effects of these decisions is that this version of Forth may be slower than other compiled versions.  The intention of this is for this version to act more as a scripting language rather than as a compiler/executable generator with optional REPL.
 
-Compile with:
+On Windows make sure you have `vcpkg` installed and run:
 
 ```
-make default
+mkdir build ; cd build
+cmake -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\vcpkg\scripts\buildsystems\vcpkg.cmake --preset=cibuild .. -G Ninja
+```
+
+On Linux and MacOS make sure you have `libffi-dev` installed and then you can run:
+
+```
+mkdir build ; cd build
+cmake .. -G Ninja
 ```
 
 You will end up with a runnable binary in the build directory off of the project root.
@@ -20,7 +29,7 @@ You will end up with a runnable binary in the build directory off of the project
 You can give the binary a quick spin running with the tests script, ex:
 
 ```
-.\build\sorth tests.f
+./sorth ../tests.f
 ```
 
 For more details with getting started and playing with the language please see the [Wiki](https://github.com/cstrainge/sorth/wiki)
@@ -30,8 +39,11 @@ For more details with getting started and playing with the language please see t
 
 There is still a lot to do with the language... Non exhaustively some things that would really help the usefulness of the language...
 
- - [x] The language needs a module system and a C interface where we can load external code.  Currently the only way to extend the language is through scripts and by editing the interpreter itself.  So interop with ohter languages is a must.
- - Working on Windows, but segfaults in Linux and MacOS.
+ - [x] The language has the start of a FFI.  So better interop with other languages is a must.
  - [ ] Continue to build out the io words.  For example, currently we can not create IPC servers with the language.
- - [ ] Refactor the fancy repl.  It works as a first cut byt there are way too many corner cases it doesn't handle.
+ - [ ] Take a stability pass on the REPL.  There are known bugs with single/multi-line editing modes.
+ - [ ] Also, take a stability pass on the language server.  We've introduced threads to the language so we should use that support within the LSP implementation.
  - [ ] In that light, we need to identify and eliminate bugs.  We need to elevate the test script to a full testing system and integrate it with our CI processes.
+ - [ ] Take a pass through the existing words.  Make sure that they make sense with each other.  Fill out APIs and make sure what we have is nicely ergonomic.
+ - [ ] Perhaps look at adding a module system?  We have includes, but everything ends up in the global namespace.  But perhaps that's better for a language like Forth?
+ - [ ] Look into maybe implementing some kind of packaging/downloading system to allow the easy sharing of code?
