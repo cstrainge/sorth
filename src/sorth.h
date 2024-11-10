@@ -84,7 +84,6 @@
 #include "interpreter.h"
 #include "builtin_words.h"
 #include "terminal_words.h"
-#include "sorth_ext_internal.h"
 #include "sorth_ffi.h"
 
 
