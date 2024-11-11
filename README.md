@@ -29,10 +29,37 @@ You will end up with a runnable binary in the build directory off of the project
 You can give the binary a quick spin running with the tests script, ex:
 
 ```
-./sorth ../tests.f
+../dist/sorth ../tests.f
 ```
 
 For more details with getting started and playing with the language please see the [Wiki](https://github.com/cstrainge/sorth/wiki)
+
+
+## Experimental Implementations
+
+There are two experimental versions of the language being worked on.
+
+ - [C# Version](https://github.com/cstrainge/sorth.net)  There is a version written in C# that jit
+   compiles the code using .net's IL code generation facilities.  One future experiment would be to
+   build a way to access any arbitrary .net struct or class and it's members.  The syntax for this
+   is still being decided on.  This version supports threads, but not the WIP FFI.  I feel the
+   approach to extensibility should be specific to this implementation.
+ - [Rust Version](https://github.com/cstrainge/rsorth)  The Rust based version is meant to take
+   advantage of it's memory safety grantees.  One potential avenue for exploration would be to
+   separate out the interpreter code and define a public API.  Then it could be published on
+   Crates.io for potential embedding within other programs.  How to properly distribute the standard
+   library in this case so that it's useable by client programs is TBD.  Perhaps as a feature that
+   includes the code in the binary?
+
+Neither version is up to full feature parity with the C++ version.  It's also being decided if the
+Rust version will eventually replace the C++ version.
+
+I feel this illustrates one of the benefits of the language being byte-code based.  It was quite
+easy to create the other versions of the interpreter.  It was also equally easy to introduce a IL
+based JIT backend for the C# version.
+
+Due to the nature of Forth, we expose many internal details of the interpreter to user code.  It is
+in this way that user code can define major language features, unmodified across implementations.
 
 
 ## Future plans.
