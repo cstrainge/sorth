@@ -433,19 +433,28 @@
 
 : 3drop description: "Drop the top three items from the stack."
         signature: "a b -- "
-    drop
-    drop
-    drop
+    3 x-drop
 ;
 
 
 
 : 4drop description: "Drop the top two items from the stack."
         signature: "a b -- "
-    drop
-    drop
-    drop
-    drop
+    4 x-drop
+;
+
+
+
+: x-drop description: "Drop the top n items from the stack."
+        signature: "count -- "
+    variable! count
+
+    begin
+        count @  0  >
+    while
+        drop
+        count --!
+    repeat
 ;
 
 
