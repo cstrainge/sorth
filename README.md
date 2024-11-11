@@ -14,7 +14,7 @@ On Windows make sure you have `vcpkg` installed, (it helps if you are running fr
 
 ```
 mkdir build ; cd build
-cmake -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\vcpkg\scripts\buildsystems\vcpkg.cmake --preset=cibuild .. -G Ninja
+cmake -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\vcpkg\scripts\buildsystems\vcpkg.cmake --preset=default .. -G Ninja
 ```
 
 On Linux and MacOS make sure you have `libffi-dev` installed and then you can run:
