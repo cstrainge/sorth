@@ -176,7 +176,7 @@
 ;
 
 : repeat description: "The end of a begin/while/repeat block."
-    "repeate" sentinel_word
+    "repeat" sentinel_word
 ;
 
 

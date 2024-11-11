@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
         sorth::register_user_words(interpreter);
         sorth::register_ffi_words(interpreter);
 
-        // Load the standard library to agument the built-in words.
+        // Load the standard library to augment the built-in words.
         auto std_lib = interpreter->find_file("std.f");
         interpreter->process_source(std_lib);
 
