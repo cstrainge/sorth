@@ -463,7 +463,7 @@
 
 
 ( Make sure we have the regular printing words. )
-: .  description: "Print a value with a space."
+: .  description: "Print a value to the terminal."
      signature: "value -- "
     term.!
 ;
