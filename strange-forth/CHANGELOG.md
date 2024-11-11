@@ -2,6 +2,16 @@
 
 Latest updates to the published version of this package.
 
+### 0.1.18
+
+Many changes an enhancements, including:
+
+* The start of a ffi.
+* Moved to CMake, including using VCPKG on Windows for the libffi dependency.
+* Many updates to the user docs.
+* Many useful helper words have been added.
+
+
 ### 0.1.17
 
 Updated language server for the changes and fixes introduced in v0.1.16.
