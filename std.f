@@ -1846,52 +1846,49 @@
 
 
 
-[undefined?] show_word
-[if]
-    : show_word description: "Show details for a defined word."
-                signature: "show_word <word_name>"
-        variable! name
+: show_word description: "Show details for a defined word."
+            signature: "show_word <word_name>"
+    variable! name
 
-        try
-            words.get{} { name @ }@
+    try
+        words.get{} { name @ }@
 
-                dup sorth.word.handler_index@
-            swap dup sorth.word.name@
-            swap dup sorth.word.location@
-                    dup sorth.location.path@
-                swap dup sorth.location.line@
-                    swap sorth.location.column@
-            3 pick dup sorth.word.description@
-            swap dup sorth.word.signature@
-            swap 7 push-to
-            "*
-            Word:        {} -> {}
-            Defined:     {}:{}:{}
+            dup sorth.word.handler_index@
+        swap dup sorth.word.name@
+        swap dup sorth.word.location@
+                dup sorth.location.path@
+            swap dup sorth.location.line@
+                swap sorth.location.column@
+        3 pick dup sorth.word.description@
+        swap dup sorth.word.signature@
+        swap 7 push-to
+        "*
+        Word:        {} -> {}
+        Defined:     {}:{}:{}
 
-            Description: {}
-            Signature:   {}*"
-            string.format .cr
+        Description: {}
+        Signature:   {}*"
+        string.format .cr
 
-            dup sorth.word.is_immediate@
-            if
-                "\n             The word is immediate." .
-            then
+        dup sorth.word.is_immediate@
+        if
+            "\n             The word is immediate." .
+        then
 
-            sorth.word.is_scripted@
-            if
-                "\n             The word is written in Forth." .
-            else
-                "\n             The word is a native word." .
-            then
+        sorth.word.is_scripted@
+        if
+            "\n             The word is written in Forth." .
+        else
+            "\n             The word is a native word." .
+        then
 
-            cr
-        catch
-            ( Drop the error message and report to the user that we couldn't find the word. )
-            drop
-            name @ "The word {} is not defined." string.format .cr
-        endcatch
-    ;
-[then]
+        cr
+    catch
+        ( Drop the error message and report to the user that we couldn't find the word. )
+        drop
+        name @ "The word {} is not defined." string.format .cr
+    endcatch
+;
 
 
 
