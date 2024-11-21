@@ -16,7 +16,10 @@
 
     "cSpell.words":
     [
+        "alloca",
         "backsp",
+        "CGSCC",
+        "cgsccam",
         "cibuild",
         "crst",
         "dequoted",
@@ -28,7 +31,11 @@
         "Forths",
         "libatomic",
         "libc",
+        "LLJIT",
+        "nonnull",
         "npos",
+        "preds",
+        "preheader",
         "readline",
         "sftmp",
         "sorth",
@@ -37,8 +44,11 @@
         "thedoctor",
         "uinteger",
         "unmark",
+        "Unqual",
         "userprofile",
-        "xresloader"
+        "Valgrind",
+        "xresloader",
+        "zeroinitializer"
     ],
 
     "files.exclude":
