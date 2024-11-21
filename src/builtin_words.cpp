@@ -1080,6 +1080,7 @@ namespace sorth
         interpreter->constructor().stack.pop();
         WordFunction handler;
 
+        #if !defined(SORTH_JIT_DISABLED)
         if (interpreter->get_execution_mode() == ExecutionMode::jit)
         {
             handler = jit_bytecode(interpreter,
@@ -1088,6 +1089,7 @@ namespace sorth
                                    construction.code);
         }
         else
+        #endif
         {
             auto script_word = ScriptWord(construction.name,
                                           construction.code,
