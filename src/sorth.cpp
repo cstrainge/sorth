@@ -125,6 +125,27 @@ namespace
     }
 
 
+    // Get the execution mode that the interpreter should run in.  This can be either the JIT mode
+    // or the interpret mode.  The JIT mode is enabled by setting the SORTH_EXE_MODE environment
+    // variable to "jit".
+    sorth::ExecutionMode get_execution_mode()
+    {
+        #ifndef SORTH_JIT_DISABLED
+            auto env_mode = std::getenv("SORTH_EXE_MODE");
+
+            if (env_mode != nullptr)
+            {
+                if (std::string(env_mode) == "jit")
+                {
+                    return sorth::ExecutionMode::jit;
+                }
+            }
+        #endif
+
+        return sorth::ExecutionMode::byte_code;
+    }
+
+
 }
 
 
@@ -139,7 +160,7 @@ int main(int argc, char* argv[])
     {
         // Create the interpreter and set up the search path to be able to find the standard
         // library.
-        auto interpreter = sorth::create_interpreter();
+        auto interpreter = sorth::create_interpreter(get_execution_mode());
 
         interpreter->add_search_path(get_executable_directory());
 

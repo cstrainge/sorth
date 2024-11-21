@@ -35,6 +35,21 @@ You can give the binary a quick spin running with the tests script, ex:
 For more details with getting started and playing with the language please see the [Wiki](https://github.com/cstrainge/sorth/wiki)
 
 
+## JIT Support
+
+If LLVM is available on your system the CMake script will attempt to build Strange Forth with JIT support enabled.
+
+Note that this has only been tested against LLVM version 19 and expects that LLVM was compiled with shared libraries enabled.
+
+When compiled with JIT support, it is disabled by default.  So, to enable the JIT engine set the environment variable `SORTH_EXE_MODE=jit`.  When you run the REPL you should see the line in the startup banner:
+
+```
+Execution Mode: jit
+```
+
+That indicates that all user functions are JIT compiled, including code you enter into the REPL.
+
+
 ## Experimental Implementations
 
 There are two experimental versions of the language being worked on.

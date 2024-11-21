@@ -26,6 +26,8 @@ namespace sorth
                 std::shared_ptr<Interpreter> parent_interpreter;
 
             private:
+                ExecutionMode execution_mode;
+
                 PathList search_paths;
 
                 bool is_interpreter_quitting;
@@ -50,9 +52,12 @@ namespace sorth
                 ConstructorStack code_constructors;
 
             public:
-                InterpreterImpl();
+                InterpreterImpl(ExecutionMode mode);
                 InterpreterImpl(InterpreterImpl& interpreter);
                 virtual ~InterpreterImpl() override;
+
+            public:
+                virtual ExecutionMode get_execution_mode() const override;
 
             public:
                 virtual void mark_context() override;
@@ -71,6 +76,7 @@ namespace sorth
 
             public:
                 virtual Location get_current_location() const override;
+                virtual void set_location(const internal::Location& location) override;
 
                 virtual bool& showing_run_code() override;
                 virtual bool& showing_bytecode() override;
@@ -79,6 +85,11 @@ namespace sorth
                 virtual void clear_halt_flag() override;
 
                 virtual const CallStack& get_call_stack() const override;
+
+                virtual void call_stack_push(const std::string& name,
+                                             const Location& location) override;
+                virtual void call_stack_push(const WordHandlerInfo& handler_info) override;
+                virtual void call_stack_pop() override;
 
                 virtual std::tuple<bool, Word> find_word(const std::string& word) override;
                 virtual WordHandlerInfo& get_handler_info(size_t index) override;
@@ -129,6 +140,11 @@ namespace sorth
                 virtual const Dictionary& get_dictionary() const override;
 
             public:
+                virtual void define_variable(const std::string& name) override;
+                virtual void define_constant(const std::string& name, const Value& value) override;
+                virtual Value read_variable(size_t index) override;
+                virtual void write_variable(size_t index, Value value) override;
+
                 virtual void add_word(const std::string& word,
                                       WordFunction handler,
                                       const Location& location,
@@ -153,16 +169,12 @@ namespace sorth
                 virtual std::filesystem::path find_file(std::filesystem::path& path) override;
                 virtual std::filesystem::path find_file(const std::string& path) override;
                 virtual std::filesystem::path find_file(const char* path) override;
-
-            private:
-                void call_stack_push(const std::string& name, const Location& location);
-                void call_stack_push(const WordHandlerInfo& handler_info);
-                void call_stack_pop();
         };
 
 
-        InterpreterImpl::InterpreterImpl()
-        : parent_interpreter(),
+        InterpreterImpl::InterpreterImpl(ExecutionMode mode)
+        : execution_mode(mode),
+          parent_interpreter(),
           is_interpreter_quitting(false),
           exit_code(EXIT_SUCCESS),
           is_showing_bytecode(false),
@@ -172,7 +184,8 @@ namespace sorth
 
 
         InterpreterImpl::InterpreterImpl(InterpreterImpl& interpreter)
-        : parent_interpreter(std::static_pointer_cast<Interpreter>(interpreter.shared_from_this())),
+        : execution_mode(interpreter.execution_mode),
+          parent_interpreter(std::static_pointer_cast<Interpreter>(interpreter.shared_from_this())),
           search_paths(interpreter.search_paths),
           is_interpreter_quitting(false),
           exit_code(0),
@@ -191,6 +204,12 @@ namespace sorth
 
         InterpreterImpl::~InterpreterImpl()
         {
+        }
+
+
+        ExecutionMode InterpreterImpl::get_execution_mode() const
+        {
+            return execution_mode;
         }
 
 
@@ -229,7 +248,24 @@ namespace sorth
                           << code << std::endl;
             }
 
-            execute_code(name, code);
+            auto this_ptr = shared_from_this();
+
+            #ifndef SORTH_JIT_DISABLED
+                if (execution_mode == ExecutionMode::jit)
+                {
+                    auto handler = jit_bytecode(this_ptr,
+                                                name,
+                                                CodeGenType::script_body,
+                                                code);
+                    handler(this_ptr);
+                }
+                else
+                {
+                    execute_code(name, code);
+                }
+            #else
+                execute_code(name, code);
+            #endif
 
             code_constructors.pop();
         }
@@ -293,6 +329,11 @@ namespace sorth
         Location InterpreterImpl::get_current_location() const
         {
             return current_location;
+        }
+
+        void InterpreterImpl::set_location(const internal::Location& location)
+        {
+            current_location = location;
         }
 
         bool& InterpreterImpl::showing_run_code()
@@ -572,14 +613,7 @@ namespace sorth
                         case OperationCode::Id::def_variable:
                             {
                                 auto name = as_string(shared_from_this(), operation.value);
-                                auto index = variables.insert({});
-                                auto handler = [index](auto This) { This->push((int64_t)index); };
-
-                                ADD_NATIVE_WORD(this,
-                                                name,
-                                                handler,
-                                                "Access the variable " + name + ".",
-                                                " -- variable_index");
+                                define_variable(name);
                             }
                             break;
 
@@ -588,21 +622,14 @@ namespace sorth
                                 auto name = as_string(shared_from_this(), operation.value);
                                 auto value = pop();
 
-                                ADD_NATIVE_WORD(this,
-                                                name,
-                                                [value](InterpreterPtr& This)
-                                                {
-                                                    This->push(deep_copy_value(This, value));
-                                                },
-                                                "Constant value " + name + ".",
-                                                " -- value");
+                                define_constant(name, value);
                             }
                             break;
 
                         case OperationCode::Id::read_variable:
                             {
                                 auto index = as_numeric<int64_t>(shared_from_this(), pop());
-                                push(variables[index]);
+                                push(read_variable(index));
                             }
                             break;
 
@@ -611,7 +638,7 @@ namespace sorth
                                 auto index = as_numeric<int64_t>(shared_from_this(), pop());
                                 auto value = pop();
 
-                                variables[index] = value;
+                                write_variable(index, value);
                             }
                             break;
 
@@ -1004,6 +1031,47 @@ namespace sorth
         }
 
 
+        void InterpreterImpl::define_variable(const std::string& name)
+        {
+            auto index = variables.insert({});
+            auto handler = [index](auto This)
+                {
+                    This->push((int64_t)index);
+                };
+
+            ADD_NATIVE_WORD(this,
+                            name,
+                            handler,
+                            "Access the variable " + name + ".",
+                            " -- variable_index");
+        }
+
+
+        void InterpreterImpl::define_constant(const std::string& name, const Value& value)
+        {
+            ADD_NATIVE_WORD(this,
+                            name,
+                            [value](InterpreterPtr& This)
+                            {
+                                This->push(deep_copy_value(This, value));
+                            },
+                            "Constant value " + name + ".",
+                            " -- value");
+        }
+
+
+        Value InterpreterImpl::read_variable(size_t index)
+        {
+            return variables[index];
+        }
+
+
+        void InterpreterImpl::write_variable(size_t index, Value value)
+        {
+            variables[index] = value;
+        }
+
+
         void InterpreterImpl::add_word(const std::string& word,
                                        WordFunction handler,
                                        const Location& location,
@@ -1169,9 +1237,9 @@ namespace sorth
     }
 
 
-    InterpreterPtr create_interpreter()
+    InterpreterPtr create_interpreter(ExecutionMode mode)
     {
-        return std::make_shared<InterpreterImpl>();
+        return std::make_shared<InterpreterImpl>(mode);
     }
 
 

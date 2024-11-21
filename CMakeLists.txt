@@ -1,6 +1,9 @@
+
 cmake_minimum_required(VERSION 3.15)
 
 project(sorth)
+
+# cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -G Ninja
 
 
 
@@ -10,6 +13,20 @@ if(WIN32)
 else()
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(FFI REQUIRED libffi)
+endif()
+
+
+
+# Find and configure our llvm dependencies if available.
+message(STATUS "Checking for LLVM...")
+find_package(LLVM CONFIG QUIET)
+
+if (LLVM_FOUND)
+    message(STATUS "  LLVM found, enabling JIT functionality.")
+    set(SORTH_JIT_DISABLED 0)
+else()
+    message(WARNING "  LLVM not found, JIT functionality will be disabled.")
+    set(SORTH_JIT_DISABLED 1)
 endif()
 
 
@@ -61,8 +78,17 @@ endif()
 
 
 
-# Include directories.
+# Iclude the soruce directory for the .h files.
 include_directories(${SRC_DIR})
+
+# Include the llvm directories and defnitions if we found llvm.
+if (NOT SORTH_JIT_DISABLED)
+    include_directories(${LLVM_INCLUDE_DIRS})
+    add_definitions(${LLVM_DEFINITIONS})
+    set(LLVM_LIBS LLVM)
+else()
+    add_definitions(-DSORTH_JIT_DISABLED=1)
+endif()
 
 
 
@@ -75,8 +101,7 @@ add_executable(${PROJECT_NAME} ${SRCS})
 target_compile_options(${PROJECT_NAME} PRIVATE ${CXXFLAGS})
 
 
-
-# Add lib ffi to the target.
+# Add lib ffi and llvm to the target.
 if(WIN32)
     target_link_libraries(${PROJECT_NAME} PRIVATE unofficial::libffi::libffi)
 else()
@@ -84,6 +109,10 @@ else()
     target_link_libraries(${PROJECT_NAME} PRIVATE ${FFI_LIBRARIES})
 endif()
 
+# Add the llvm libraries if we found llvm.
+if (NOT SORTH_JIT_DISABLED)
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${LLVM_LIBS})
+endif()
 
 
 # Output directory.
@@ -146,11 +175,3 @@ add_custom_target(copy_stdlib ALL
 add_dependencies(copy_stdlib create_dist_dir)
 add_dependencies(${PROJECT_NAME} copy_stdlib TestLib)
 
-
-
-# Strip target for release builds
-#if(NOT WIN32)
-#    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-#        COMMAND strip -s $<TARGET_FILE:${PROJECT_NAME}>
-#        COMMENT "Stripping binary.")
-#endif()

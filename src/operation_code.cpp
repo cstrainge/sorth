@@ -39,11 +39,15 @@ namespace sorth::internal
 
     std::ostream& operator <<(std::ostream& stream, const OperationCode& op)
     {
-        auto doesnt_have_parameter = [](OperationCode::Id id)
+        auto doesnt_have_parameter = [](OperationCode::Id id, const Value& value)
             {
+                if (id == OperationCode::Id::jump_target)
+                {
+                    return is_string(value) ? false : true;
+                }
+
                 return    (id == OperationCode::Id::read_variable)
                        || (id == OperationCode::Id::write_variable)
-                       || (id == OperationCode::Id::jump_target)
                        || (id == OperationCode::Id::unmark_loop_exit)
                        || (id == OperationCode::Id::unmark_catch)
                        || (id == OperationCode::Id::mark_context)
@@ -51,11 +55,21 @@ namespace sorth::internal
                        || (id == OperationCode::Id::jump_loop_exit);
             };
 
+
+
         stream << op.id;
 
-        if (!doesnt_have_parameter(op.id))
+        if (!doesnt_have_parameter(op.id, op.value))
         {
-            stream << "  " << op.value;
+            if (   (op.id == OperationCode::Id::push_constant_value)
+                && (std::holds_alternative<std::string>(op.value)))
+            {
+                stream << "  " << stringify(std::get<std::string>(op.value));
+            }
+            else
+            {
+                stream << "  " << op.value;
+            }
         }
 
         return stream;
@@ -64,10 +78,37 @@ namespace sorth::internal
 
     std::ostream& operator <<(std::ostream& stream, const ByteCode& code)
     {
+        auto is_jump_with_value = [](OperationCode::Id id)
+            {
+                return    (id == OperationCode::Id::jump)
+                       || (id == OperationCode::Id::jump_if_zero)
+                       || (id == OperationCode::Id::jump_if_not_zero)
+                       || (id == OperationCode::Id::mark_loop_exit)
+                       || (id == OperationCode::Id::mark_catch);
+            };
+
         for (size_t i = 0; i < code.size(); ++i)
         {
             const auto& op = code[i];
-            stream << std::setw(6) << i << "  " << op << std::endl;
+            stream << std::setw(6) << i << "  ";
+
+            if (!is_jump_with_value(op.id))
+            {
+                stream << op << std::endl;
+            }
+            else
+            {
+                stream << op.id;
+
+                if (std::holds_alternative<int64_t>(op.value))
+                {
+                    stream << "  " << (i + std::get<int64_t>(op.value)) << std::endl;
+                }
+                else
+                {
+                    stream << "  " << op.value << std::endl;
+                }
+            }
         }
 
         return stream;

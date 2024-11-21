@@ -781,7 +781,6 @@ namespace sorth
                        || (code.id == OperationCode::Id::mark_loop_exit)
                        || (code.id == OperationCode::Id::mark_catch);
             };
-
         auto& top_code = interpreter->constructor().stack.top().code;
 
         std::list<size_t> jump_indicies;
@@ -1079,23 +1078,36 @@ namespace sorth
     {
         auto construction = interpreter->constructor().stack.top();
         interpreter->constructor().stack.pop();
+        WordFunction handler;
 
-        auto new_word = ScriptWord(construction.name,
-                                   construction.code,
-                                   construction.location,
-                                   construction.is_context_managed);
-
-        if (interpreter->showing_bytecode())
+        if (interpreter->get_execution_mode() == ExecutionMode::jit)
         {
-            std::cout << "--------[" << construction.name << "]-------------" << std::endl;
-            auto inverse_list = interpreter->get_inverse_lookup_list();
-            new_word.show(std::cout, interpreter, inverse_list);
+            handler = jit_bytecode(interpreter,
+                                   construction.name,
+                                   CodeGenType::word,
+                                   construction.code);
+        }
+        else
+        {
+            auto script_word = ScriptWord(construction.name,
+                                          construction.code,
+                                          construction.location,
+                                          construction.is_context_managed);
+
+            if (interpreter->showing_bytecode())
+            {
+                std::cout << "--------[" << construction.name << "]-------------" << std::endl;
+                auto inverse_list = interpreter->get_inverse_lookup_list();
+                script_word.show(std::cout, interpreter, inverse_list);
+            }
+
+            handler = script_word;
         }
 
-        bool is_scripted = true;
+        const bool is_scripted = true;
 
         interpreter->add_word(construction.name,
-                              new_word,
+                              handler,
                               construction.location,
                               construction.is_immediate,
                               construction.is_hidden,
@@ -2005,11 +2017,12 @@ namespace sorth
 
     void word_unique_str(InterpreterPtr& interpreter)
     {
-        static int32_t index = 0;
+        static std::atomic<int64_t> index = 0;
 
         std::stringstream stream;
-        stream << "unique-" << std::setw(4) << std::setfill('0') << std::hex << index;
-        ++index;
+        auto current = index.fetch_add(1, std::memory_order_relaxed);
+
+        stream << "unique-" << std::setw(4) << std::setfill('0') << std::hex << current;
 
         interpreter->push(stream.str());
     }
@@ -2105,6 +2118,11 @@ namespace sorth
 
     void word_show_word_bytecode(InterpreterPtr& interpreter)
     {
+        if (interpreter->get_execution_mode() == ExecutionMode::jit)
+        {
+            throw_error(*interpreter, "Showing byte-code for jited words is unsupported.");
+        }
+
         std::string name;
         auto value = interpreter->pop();
 
@@ -2145,6 +2163,27 @@ namespace sorth
         else
         {
             std::cerr << "Word, " << name << ", was not written in Forth." << std::endl;
+        }
+    }
+
+
+    void word_sorth_execution_mode(InterpreterPtr& interpreter)
+    {
+        auto mode = interpreter->get_execution_mode();
+
+        switch (mode)
+        {
+            case ExecutionMode::byte_code:
+                interpreter->push("byte-code");
+                break;
+
+            case ExecutionMode::jit:
+                interpreter->push("jit");
+                break;
+
+            default:
+                interpreter->push("unknown");
+                break;
         }
     }
 
@@ -2797,6 +2836,10 @@ namespace sorth
         ADD_NATIVE_WORD(interpreter, "show_bytecode", word_show_word_bytecode,
             "Show detailed information about a word.",
             "word -- ");
+
+        ADD_NATIVE_WORD(interpreter, "sorth.execution-mode", word_sorth_execution_mode,
+            "Get the current execution mode of the interpreter, either 'jit' or 'byte-code'.",
+            " -- mode");
 
         PathPtr path = std::make_shared<std::filesystem::path>(__FILE__);
         register_word_info_struct(Location(path, __LINE__, 1), interpreter);

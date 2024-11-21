@@ -85,6 +85,7 @@
 #include "builtin_words.h"
 #include "terminal_words.h"
 #include "sorth_ffi.h"
+#include "jit.h"
 
 
 

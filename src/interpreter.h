@@ -6,6 +6,18 @@ namespace sorth
 {
 
 
+    // What mode are we running scripts in?
+    enum class ExecutionMode
+    {
+        // Run the script in the interpreter.
+        byte_code,
+
+        // JIT compile the script and run it.
+        jit
+    };
+
+
+
     struct SubThreadInfo
     {
         internal::Word word;
@@ -29,6 +41,9 @@ namespace sorth
             }
 
         public:
+            virtual ExecutionMode get_execution_mode() const = 0;
+
+        public:
             virtual void mark_context() = 0;
             virtual void release_context() = 0;
 
@@ -43,6 +58,7 @@ namespace sorth
 
         public:
             virtual internal::Location get_current_location() const = 0;
+            virtual void set_location(const internal::Location& location) = 0;
 
             virtual bool& showing_run_code() = 0;
             virtual bool& showing_bytecode() = 0;
@@ -51,6 +67,11 @@ namespace sorth
             virtual void clear_halt_flag() = 0;
 
             virtual const internal::CallStack& get_call_stack() const = 0;
+
+            virtual void call_stack_push(const std::string& name,
+                                         const internal::Location& location) = 0;
+            virtual void call_stack_push(const internal::WordHandlerInfo& handler_info) = 0;
+            virtual void call_stack_pop() = 0;
 
             virtual std::tuple<bool, internal::Word> find_word(const std::string& word) = 0;
             virtual internal::WordHandlerInfo& get_handler_info(size_t index) = 0;
@@ -93,6 +114,11 @@ namespace sorth
             virtual const internal::Dictionary& get_dictionary() const = 0;
 
         public:
+            virtual void define_variable(const std::string& name) = 0;
+            virtual void define_constant(const std::string& name, const Value& value) = 0;
+            virtual Value read_variable(size_t index) = 0;
+            virtual void write_variable(size_t index, Value value) = 0;
+
             virtual void add_word(const std::string& word,
                                   internal::WordFunction handler,
                                   const internal::Location& location,
@@ -121,7 +147,7 @@ namespace sorth
     using InterpreterPtr = std::shared_ptr<Interpreter>;
 
 
-    InterpreterPtr create_interpreter();
+    InterpreterPtr create_interpreter(ExecutionMode mode);
     InterpreterPtr clone_interpreter(InterpreterPtr& interpreter);
 
 

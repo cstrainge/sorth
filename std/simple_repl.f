@@ -31,11 +31,16 @@ false variable! repl.is_quitting?
 : repl description: "Sorth's REPL: read, evaluate, and print loop."
        signature: " -- "
 
-    ( Print the welcome banner. )
+    ( Print the welcome banner along with information about the interpreter. )
     sorth.version
+    sorth.execution-mode
+    sorth.compiler
     "*
        Strange Forth REPL.
+
        Version: {}
+       Execution Mode: {}
+       Compiled with: {}
 
        Enter quit, q, or exit to quit the REPL.
        Enter .w to show defined words.
