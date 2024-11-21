@@ -33,6 +33,7 @@ namespace sorth::internal
 
             // Function type info pointers for the JITed code helper functions.
             llvm::Function* handle_set_location_fn = nullptr;
+            llvm::Function* handle_manage_context_fn = nullptr;
 
             llvm::Function* handle_define_variable_fn = nullptr;
             llvm::Function* handle_define_constant_fn = nullptr;
@@ -99,6 +100,12 @@ namespace sorth::internal
                             jit->getExecutionSession().intern("handle_set_location"),
                             llvm::orc::ExecutorSymbolDef(
                                          llvm::orc::ExecutorAddr((uint64_t)&handle_set_location),
+                                         llvm::JITSymbolFlags::Exported)
+                        },
+                        {
+                            jit->getExecutionSession().intern("handle_manage_context"),
+                            llvm::orc::ExecutorSymbolDef(
+                                         llvm::orc::ExecutorAddr((uint64_t)&handle_manage_context),
                                          llvm::JITSymbolFlags::Exported)
                         },
                         {
@@ -235,6 +242,15 @@ namespace sorth::internal
                                                                 llvm::Function::ExternalLinkage,
                                                                 "handle_set_location",
                                                                 module.get());
+
+                // Register the handle_manage_context function.
+                auto handle_manage_context_type = llvm::FunctionType::get(void_type,
+                                                                          { ptr_type, bool_type },
+                                                                          false);
+                handle_manage_context_fn = llvm::Function::Create(handle_manage_context_type,
+                                                                  llvm::Function::ExternalLinkage,
+                                                                  "handle_manage_context",
+                                                                  module.get());
 
                 // Register the handle_define_variable function.
                 auto handle_define_variable_type = llvm::FunctionType::get(int64_type,
@@ -954,11 +970,21 @@ namespace sorth::internal
 
                         case OperationCode::Id::mark_context:
                             {
+                                // Call the handle_manage_context function to mark the context in
+                                // the interpreter.
+                                auto bool_const = llvm::ConstantInt::get(bool_type, true);
+                                builder.CreateCall(handle_manage_context_fn,
+                                                   { interpreter_ptr, bool_const });
                             }
                             break;
 
                         case OperationCode::Id::release_context:
                             {
+                                // Call the handle_manage_context function to release the context in
+                                // the interpreter.
+                                auto bool_const = llvm::ConstantInt::get(bool_type, false);
+                                builder.CreateCall(handle_manage_context_fn,
+                                                   { interpreter_ptr, bool_const });
                             }
                             break;
 
@@ -1203,6 +1229,24 @@ namespace sorth::internal
                 auto& location = location_array[index];
 
                 interpreter->set_location(location);
+            }
+
+            // Handle the context management for the JITed code.  If passed a true value, mark the
+            // context, otherwise release it.
+            static void handle_manage_context(void* interpreter_ptr, bool is_marking)
+            {
+                auto& interpreter = *static_cast<InterpreterPtr*>(interpreter_ptr);
+
+                // TODO: Add error checking to make sure that these calls are balanced.
+
+                if (is_marking)
+                {
+                    interpreter->mark_context();
+                }
+                else
+                {
+                    interpreter->release_context();
+                }
             }
 
             // Handle defining a new variable in the interpreter for the JITed code.
