@@ -21,12 +21,26 @@ endif()
 message(STATUS "Checking for LLVM...")
 find_package(LLVM CONFIG QUIET)
 
+set(SORTH_JIT_DISABLED 1) # Default to disabled
+
 if (LLVM_FOUND)
-    message(STATUS "  LLVM found, enabling JIT functionality.")
-    set(SORTH_JIT_DISABLED 0)
+    message(STATUS "  Checking LLVM version with llvm-config.")
+
+    # Extract the LLVM version and check if it's version 19.
+    execute_process(COMMAND "llvm-config" --version
+                    OUTPUT_VARIABLE LLVM_VERSION_STRING
+                    OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+    string(REGEX MATCH "^[0-9]+" LLVM_VERSION_MAJOR "${LLVM_VERSION_STRING}")
+
+    if (LLVM_VERSION_MAJOR EQUAL 19)
+        message(STATUS "  LLVM version 19 detected, enabling JIT functionality.")
+        set(SORTH_JIT_DISABLED 0)
+    else()
+        message(STATUS "  LLVM version ${LLVM_VERSION_STRING} detected, not 19. JIT functionality will be disabled.")
+    endif()
 else()
-    message(WARNING "  LLVM not found, JIT functionality will be disabled.")
-    set(SORTH_JIT_DISABLED 1)
+    message(STATUS "  LLVM not found, JIT functionality will be disabled.")
 endif()
 
 
