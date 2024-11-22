@@ -567,9 +567,6 @@ namespace sorth::internal
                 auto char_type = llvm::Type::getInt1Ty(*context.get());
                 auto char_ptr_type = llvm::PointerType::getUnqual(char_type);
 
-                auto int8_type = llvm::Type::getInt8Ty(*context.get());
-                auto body_bytes = llvm::ArrayType::get(int8_type, sizeof(Location));
-                auto location_type = llvm::StructType::create({body_bytes}, "Location");
 
                 // Keep track of the basic blocks we create for the jump targets.
                 auto blocks = std::unordered_map<size_t, llvm::BasicBlock*>();
@@ -606,6 +603,13 @@ namespace sorth::internal
                         || (code[i].id == OperationCode::Id::jump_loop_start)
                         || (code[i].id == OperationCode::Id::jump_loop_exit))
                     {
+                        // These instructions are the ones that can start a new block.  In the case
+                        // of a jump target it is an explicit start of a block.  The jump
+                        // instruction is also the implicit end of a block.  For  the other
+                        // instructions it is an implicit start of a block.  Usually for exception
+                        // checking these instructions can call a function that can potentially
+                        // raise an exception.  So we create a new block for each of these
+                        // instructions.
                         std::stringstream stream;
 
                         stream << "block_" << block_index;
@@ -616,6 +620,9 @@ namespace sorth::internal
                     else if (   (code[i].id == OperationCode::Id::jump_if_zero)
                              || (code[i].id == OperationCode::Id::jump_if_not_zero))
                     {
+                        // These instructions have two jumps.  One jump for the pop error check and
+                        // one for the actual jump.  So we create two blocks for each of these jump
+                        // instructions.
                         std::stringstream stream;
 
                         stream << "block_" << block_index;
