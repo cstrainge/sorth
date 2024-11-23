@@ -33,14 +33,14 @@ false variable! repl.is_quitting?
 
     ( Print the welcome banner along with information about the interpreter. )
     sorth.version
-    sorth.execution-mode
     sorth.compiler
+    sorth.execution-mode
     "*
        Strange Forth REPL.
 
        Version: {}
-       Execution Mode: {}
        Compiled with: {}
+       Execution Mode: {}
 
        Enter quit, q, or exit to quit the REPL.
        Enter .w to show defined words.
