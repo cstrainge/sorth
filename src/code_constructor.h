@@ -26,6 +26,10 @@ namespace sorth::internal
 
     struct CodeConstructor
     {
+        #if !defined(SORTH_JIT_DISABLED)
+            std::map<std::string, Construction> word_jit_cache;
+        #endif
+
         InterpreterPtr interpreter;
 
         ConstructionStack stack;

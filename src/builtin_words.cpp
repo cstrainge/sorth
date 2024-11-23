@@ -1076,26 +1076,57 @@ namespace sorth
 
     void word_end_word(InterpreterPtr& interpreter)
     {
+        // Pop the current construction off of the stack.
         auto construction = interpreter->constructor().stack.top();
         interpreter->constructor().stack.pop();
+
+        // The word handler we will be registering with the interpreter.  It will be either a
+        // byte-code handler or a JITed handler based on support and the mode we're in.
         WordFunction handler;
 
+        // The word is considered scripted, as it is word written in Forth.
+        const bool is_scripted = true;
+
+
+        // Check to see if we are built for JIT compilation or not, and if so, check to see if we
+        // are in JIT mode or not.
         #if !defined(SORTH_JIT_DISABLED)
         if (interpreter->get_execution_mode() == ExecutionMode::jit)
         {
-            handler = jit_bytecode(interpreter,
-                                   construction.name,
-                                   CodeGenType::word,
-                                   construction.code);
+            // If the word is not immediate, then we can cache the construction to be JIT compiled
+            // when the whole script is compiled.
+            if (!construction.is_immediate)
+            {
+                // Add the construction to the JIT cache.
+                interpreter->constructor().word_jit_cache[construction.name] = construction;
+
+                // Create a script word handler for the word for now.  This will be replaced with
+                // the JITed handler when the script is compiled.
+                //
+                // However in the mean time, immediate words may need these words, byte-code or not.
+                auto script_word = ScriptWord(construction.name,
+                                              construction.code,
+                                              construction.location,
+                                              construction.is_context_managed);
+                handler = script_word;
+            }
+            else
+            {
+                // Otherwise we need to JIT compile the word now in it's own module.
+                handler = jit_immediate_word(interpreter, construction);
+            }
         }
         else
         #endif
         {
+            // We are byte-code interpreting, so we need to create a script word handler.  In this
+            // case it doesn't matter if the word is immediate or not.
             auto script_word = ScriptWord(construction.name,
                                           construction.code,
                                           construction.location,
                                           construction.is_context_managed);
 
+            // Pretty print the bytecode if we are in debug mode.
             if (interpreter->showing_bytecode())
             {
                 std::cout << "--------[" << construction.name << "]-------------" << std::endl;
@@ -1106,8 +1137,7 @@ namespace sorth
             handler = script_word;
         }
 
-        const bool is_scripted = true;
-
+        // Register the word either byte-code or JITed with the interpreter.
         interpreter->add_word(construction.name,
                               handler,
                               construction.location,

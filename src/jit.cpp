@@ -25,6 +25,18 @@ namespace sorth::internal
     namespace
     {
 
+
+        // What type of code generation are we doing?
+        enum class CodeGenType
+        {
+            // We are generating a word.
+            word,
+
+            // We are generating the top level of a script.
+            script_body
+        };
+
+
         // The JIT engine, we hold the llvm context here.
         struct JitEngine
         {
@@ -389,64 +401,128 @@ namespace sorth::internal
             }
 
             // JIT compile the given byte-code block into a native function handler.
+            WordFunction jit_bytecode(InterpreterPtr& interpreter, const Construction& construction)
+            {
+                // Make sure we have a name for the word that's usable for the JIT engine.
+                auto filtered_name = filter_word_name(construction.name);
+
+                // Create the context for this compilation.
+                auto [ module, context ] = create_jit_module_context(filtered_name);
+
+                // Jit compile the word and then finalize it's module.
+                auto [ locations, constants ] = jit_compile(interpreter,
+                                                            module,
+                                                            context,
+                                                            filtered_name,
+                                                            construction.code,
+                                                            CodeGenType::word);
+
+                finalize_module(std::move(module), std::move(context));
+
+                // Finally return the new word handler function.
+                return create_word_function(filtered_name,
+                                            std::move(locations),
+                                            std::move(constants),
+                                            CodeGenType::word);
+            }
+
+            // JIT compile the given byte-code block into the script's top level function handler.
+            // As well as all of the script's non-immediate words that have been cached during the
+            // byte-code compilation phase.
             WordFunction jit_bytecode(InterpreterPtr& interpreter,
                                       const std::string& name,
-                                      CodeGenType type,
-                                      const ByteCode& code)
+                                      const ByteCode& code,
+                                      const std::map<std::string, Construction>& word_jit_cache)
             {
-                // If the code is empty, just return a null handler instead of trying to JIT compile
-                // it.
-                if (code.empty())
+                struct GeneratedWord
                 {
-                    return null_handler;
+                    std::string name;
+                    std::vector<Location> locations;
+                    std::vector<Value> constants;
+                };
+
+                std::map<std::string, GeneratedWord> generated_words;
+
+                // Create the context for this compilation.
+                auto [ module, context ] = create_jit_module_context(name);
+
+                // JIT compile the scripts words.
+                for (const auto& [ word_name, construction ] : word_jit_cache)
+                {
+                    auto filtered_name = filter_word_name(word_name);
+
+                    auto [ locations, constants ] = jit_compile(interpreter,
+                                                                module,
+                                                                context,
+                                                                filtered_name,
+                                                                construction.code,
+                                                                CodeGenType::word);
+
+                    generated_words.insert(
+                        {
+                            filtered_name,
+                            {
+                                .name = construction.name,
+                                .locations = std::move(locations),
+                                .constants = std::move(constants)
+                            }
+                        });
                 }
 
-                // Filter the name to make it acceptable for use as an llvm function name.
-                auto filtered_name = filter_word_name(name);
+                // JIT compile the script's top level function handler.
+                auto script_name = filter_word_name(name);
 
+                auto [ locations, constants ] = jit_compile(interpreter,
+                                                            module,
+                                                            context,
+                                                            script_name,
+                                                            code,
+                                                            CodeGenType::script_body);
+
+                // Finalize and optimize the module.
+                finalize_module(std::move(module), std::move(context));
+
+                // Now we can extract and register all of the generated words.
+                for (auto& [ word_name, generated_word ] : generated_words)
+                {
+                    auto handler = create_word_function(word_name,
+                                                        std::move(generated_word.locations),
+                                                        std::move(generated_word.constants),
+                                                        CodeGenType::word);
+
+                    interpreter->replace_word(generated_word.name, handler);
+                }
+
+                // Return the script's top level function handler.
+                return create_word_function(script_name,
+                                            std::move(locations),
+                                            std::move(constants),
+                                            CodeGenType::script_body);
+            }
+
+            // Create the LLVM module, context, and builder for JITing code.
+            std::tuple<std::unique_ptr<llvm::Module>,
+                       std::unique_ptr<llvm::LLVMContext>>
+                            create_jit_module_context(const std::string& name)
+            {
                 // Create the llvm module that will hold the JITed code.  Then register our helper
                 // functions with it.
                 auto context = std::make_unique<llvm::LLVMContext>();
-                auto module = std::make_unique<llvm::Module>("sorth" + filtered_name,
+                auto module = std::make_unique<llvm::Module>("sorth_module_" + name,
                                                              *context.get());
                 register_jit_helpers(module, context);
 
-                llvm::IRBuilder<> builder(*context.get());
+                return { std::move(module), std::move(context) };
+            }
 
+            void finalize_module(std::unique_ptr<llvm::Module>&& module,
+                                 std::unique_ptr<llvm::LLVMContext>&& context)
+            {
+                // Uncomment to print out the LLVM IR for the JITed function module but before being
+                // optimized.
+                // module->print(llvm::outs(), nullptr);
 
-                // Gather up our basic types, and then create the function type for the JITed code.
-                auto void_type = llvm::Type::getVoidTy(*context.get());
-                auto ptr_type = llvm::PointerType::getUnqual(void_type);
-
-                auto function_type = llvm::FunctionType::get(void_type,
-                                                             { ptr_type, ptr_type, ptr_type },
-                                                             false);
-
-                // Now, create the function that will hold the JITed code.
-                auto function = llvm::Function::Create(function_type,
-                                                       llvm::Function::ExternalLinkage,
-                                                       filtered_name,
-                                                       module.get());
-
-                // Keep track of source locations found in the byte-code so that we can later keep
-                // track of where exceptions occurred.
-                std::vector<Location> locations;
-
-                // Keep track of constant values that are to complex to be inlined in the generated
-                // code.
-                std::vector<Value> constants;
-
-                // Generate the body of the JITed function.
-                generate_function_body(interpreter,
-                                       module,
-                                       builder,
-                                       function,
-                                       context,
-                                       filtered_name,
-                                       locations,
-                                       constants,
-                                       code);
-
+                // Make sure that the generated module is viable.
                 std::string error_str;
                 llvm::raw_string_ostream error_stream(error_str);
 
@@ -472,10 +548,11 @@ namespace sorth::internal
                 llvm::ModulePassManager mpm =
                             pass_builder.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O3);
 
-                // Run the optimization passes on the module
+                // Now, run the optimization passes on the module.
                 mpm.run(*module, module_am);
 
-                // Uncomment to print out the LLVM IR for the JITed function module.
+                // Uncomment to print out the LLVM IR for the JITed function module after being
+                // optimized.
                 // module->print(llvm::outs(), nullptr);
 
                 // Commit our module to the JIT engine and let it get compiled.
@@ -494,13 +571,23 @@ namespace sorth::internal
 
                     throw_error(error_message);
                 }
+            }
+
+            // Create a function handler for the JITed code.
+            WordFunction create_word_function(const std::string& name,
+                                              std::vector<Location>&& locations_,
+                                              std::vector<Value>&& constants_,
+                                              CodeGenType type)
+            {
+                auto locations = std::move(locations_);
+                auto constants = std::move(constants_);
 
                 // Get our generated function from the jit engine.
-                auto symbol = jit->lookup(filtered_name);
+                auto symbol = jit->lookup(name);
 
                 if (!symbol)
                 {
-                    throw_error("Failed to find JITed function symbol " + filtered_name + ".");
+                    throw_error("Failed to find JITed function symbol " + name + ".");
                 }
 
                 auto compiled_function = symbol->toPtr<void (*)(void*, // interpreter
@@ -547,6 +634,54 @@ namespace sorth::internal
                 return handler_wrapper;
             }
 
+            // JIT compile the given byte-code block into a native function handler.
+            std::tuple<std::vector<Location>,
+                       std::vector<Value>> jit_compile(InterpreterPtr& interpreter,
+                                                       std::unique_ptr<llvm::Module>& module,
+                                                       std::unique_ptr<llvm::LLVMContext>& context,
+                                                       const std::string& name,
+                                                       const ByteCode& code,
+                                                       CodeGenType type)
+            {
+                // Create the instruction builder for the JITed code.
+                llvm::IRBuilder<> builder(*context.get());
+
+                // Gather up our basic types, and then create the function type for the JITed code.
+                auto void_type = llvm::Type::getVoidTy(*context.get());
+                auto ptr_type = llvm::PointerType::getUnqual(void_type);
+
+                auto function_type = llvm::FunctionType::get(void_type,
+                                                             { ptr_type, ptr_type, ptr_type },
+                                                             false);
+
+                // Now, create the function that will hold the JITed code.
+                auto function = llvm::Function::Create(function_type,
+                                                       llvm::Function::ExternalLinkage,
+                                                       name,
+                                                       module.get());
+
+                // Keep track of source locations found in the byte-code so that we can later keep
+                // track of where exceptions occurred.
+                std::vector<Location> locations;
+
+                // Keep track of constant values that are to complex to be inlined in the generated
+                // code.
+                std::vector<Value> constants;
+
+                // Generate the body of the JITed function.
+                generate_function_body(interpreter,
+                                       module,
+                                       builder,
+                                       function,
+                                       context,
+                                       name,
+                                       locations,
+                                       constants,
+                                       code);
+
+                return { std::move(locations), std::move(constants) };
+            }
+
             // Generate the body of the JITed function.  We do this by walking the byte-code block
             // and generating the appropriate llvm instructions for each operation.
             void generate_function_body(InterpreterPtr& interpreter,
@@ -586,6 +721,7 @@ namespace sorth::internal
                 std::vector<std::pair<size_t, size_t>> loop_markers;
                 std::vector<size_t> catch_markers;
 
+                // Keep track of any jump targets that are the target of a catch block.
                 std::set<size_t> catch_target_markers;
 
 
@@ -837,10 +973,10 @@ namespace sorth::internal
                                 }
                                 else
                                 {
-                                    auto name_constant =
-                                        llvm::ConstantDataArray::getString(*context.get(),
-                                                                           name,
-                                                                           true);
+                                    auto name_constant = define_string_constant(name,
+                                                                                builder,
+                                                                                module,
+                                                                                context);
                                     builder.CreateCall(handle_word_index_name_fn,
                                                        { interpreter_ptr, name_constant });
                                 }
@@ -1517,16 +1653,31 @@ namespace sorth::internal
     }
 
 
-    // Lock the JIT engine and JIT compile the given byte-code block.
-    WordFunction jit_bytecode(InterpreterPtr& Interpreter,
-                              std::string& name,
-                              CodeGenType type,
-                              const ByteCode& code)
+    // Lock the JIT engine and JIT compile the given immediate word.
+    WordFunction jit_immediate_word(InterpreterPtr& Interpreter,
+                                    const Construction& construction)
     {
         std::lock_guard<std::mutex> lock(jit_lock);
 
-        return jit_engine.jit_bytecode(Interpreter, name, type, code);
+        return jit_engine.jit_bytecode(Interpreter, construction);
 
+    }
+
+
+    // JIt compile the given byte-code block into the script's top level function handler.  While
+    // doing that we'll also JIT compile all of the script's non-immediate words that have been
+    // cached during the byte-code compilation phase.
+    //
+    // We return the handler for the top level script function, all words are registered in the
+    // interpreter's dictionary automaticaly.
+    WordFunction jit_module(InterpreterPtr& Interpreter,
+                            const std::string& name,
+                            const ByteCode& code,
+                            const std::map<std::string, Construction>& word_jit_cache)
+    {
+        std::lock_guard<std::mutex> lock(jit_lock);
+
+        return jit_engine.jit_bytecode(Interpreter, name, code, word_jit_cache);
     }
 
 }

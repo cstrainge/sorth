@@ -133,6 +133,8 @@ namespace sorth
                                   bool is_immediate, const std::string& description = "",
                                   const std::string& signature = "") = 0;
 
+            virtual void replace_word(const std::string& word, internal::WordFunction handler) = 0;
+
         public:
             virtual void add_search_path(const std::filesystem::path& path) = 0;
             virtual void add_search_path(const std::string& path) = 0;

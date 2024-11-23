@@ -159,6 +159,8 @@ namespace sorth
                                       bool is_immediate, const std::string& description,
                                       const std::string& signature) override;
 
+                virtual void replace_word(const std::string& word, WordFunction handler) override;
+
             public:
                 virtual void add_search_path(const std::filesystem::path& path) override;
                 virtual void add_search_path(const std::string& path) override;
@@ -231,43 +233,70 @@ namespace sorth
 
         void InterpreterImpl::process_source(SourceBuffer& buffer)
         {
-            code_constructors.push({});
-
-            code_constructors.top().interpreter = shared_from_this();
-            code_constructors.top().stack.push({});
-            code_constructors.top().input_tokens = tokenize(buffer);
-            code_constructors.top().compile_token_list();
-
-            auto code = code_constructors.top().stack.top().code;
-
-            auto name = buffer.current_location().get_path()->filename().string();
-
-            if (is_showing_bytecode)
-            {
-                std::cout << "--------[" << name << "]-------------" << std::endl
-                          << code << std::endl;
-            }
-
+            // Get a shared pointer to ourselves.
             auto this_ptr = shared_from_this();
 
-            #ifndef SORTH_JIT_DISABLED
-                if (execution_mode == ExecutionMode::jit)
-                {
-                    auto handler = jit_bytecode(this_ptr,
-                                                name,
-                                                CodeGenType::script_body,
-                                                code);
-                    handler(this_ptr);
-                }
-                else
-                {
-                    execute_code(name, code);
-                }
-            #else
-                execute_code(name, code);
-            #endif
+            // Create a new code construction context for the script we about to process.
+            code_constructors.push({});
 
-            code_constructors.pop();
+            try
+            {
+                // Now byte-code compile the script.  If we are also JITing the script, then we
+                // will cache the non-immediate words for JIT compilation later as a whole module to
+                // allow for greater optimization.
+                code_constructors.top().interpreter = this_ptr;
+                code_constructors.top().stack.push({});
+                code_constructors.top().input_tokens = tokenize(buffer);
+                code_constructors.top().compile_token_list();
+
+                // Now that the script has been compiled, get the byte-code for the script's top
+                // level code.
+                auto code = code_constructors.top().stack.top().code;
+
+                // Get the name of the script we are processing.
+                auto name = buffer.current_location().get_path()->filename().string();
+
+                // Pretty print the bytecode if we are in debug mode.
+                if (is_showing_bytecode)
+                {
+                    std::cout << "--------[" << name << "]-------------" << std::endl
+                            << code << std::endl;
+                }
+
+                #ifndef SORTH_JIT_DISABLED
+                    if (execution_mode == ExecutionMode::jit)
+                    {
+                        // JIT compile the script's top level function handler and all of the
+                        // script's non-immediate words that have been cached during the byte-code
+                        // compilation phase.
+                        auto handler = jit_module(this_ptr,
+                                                  name,
+                                                  code,
+                                                  code_constructors.top().word_jit_cache);
+
+                        // Now that the script has been JITed, we can execute it.  We don't need to
+                        // save the handler as this is a one time deal.
+                        handler(this_ptr);
+                    }
+                    else
+                    {
+                        // Execute the byte-code generated for the script's top level code.
+                        execute_code(name, code);
+                    }
+                #else
+                    // Execute the byte-code generated for the script's top level code.
+                    execute_code(name, code);
+                #endif
+
+                // We are done with this code construction context, so pop it from the stack.
+                code_constructors.pop();
+            }
+            catch (...)
+            {
+                // If we have an exception, then we need to clean up the code construction context.
+                code_constructors.pop();
+                throw;
+            }
         }
 
 
@@ -1126,6 +1155,19 @@ namespace sorth
                      false,
                      description,
                      signature);
+        }
+
+
+        void InterpreterImpl::replace_word(const std::string& word, WordFunction handler)
+        {
+            auto [ found, word_entry ] = dictionary.find(word);
+
+            if (!found)
+            {
+                throw_error(*this, "Word " + word + " was not found for replacement.");
+            }
+
+            word_handlers[word_entry.handler_index].function = handler;
         }
 
 
