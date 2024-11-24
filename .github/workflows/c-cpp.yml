@@ -81,6 +81,7 @@ jobs:
         if: ${{ runner.os != 'Windows' }}
         run: |
           if [ $(uname) = "Linux" ]; then
+            sudo apt-get update
             sudo apt-get install -y llvm-19-dev
           elif [ $(uname) = "Darwin" ]; then
             brew install llvm@19
