@@ -1222,7 +1222,7 @@ false variable! repl.is_quitting?
 
        Version: {}
        Compiled with: {}
-       Execution Mode: {}
+       Execution mode: {}
 
        Enter quit, q, or exit to quit the REPL.
        Enter .w to show defined words.
