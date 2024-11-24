@@ -76,6 +76,16 @@ jobs:
             brew install libffi
           fi
 
+      # Install llvm for Linux and macOS
+      - name: Install llvm (Linux/macOS)
+        if: ${{ runner.os != 'Windows' }}
+        run: |
+          if [ $(uname) = "Linux" ]; then
+            sudo apt-get install -y llvm-19-dev
+          elif [ $(uname) = "Darwin" ]; then
+            brew install llvm@19
+          fi
+
       # Install cross-compilation tools
       - name: Install cross-compilation tools
         uses: taiki-e/setup-cross-toolchain-action@v1
