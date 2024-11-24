@@ -18,12 +18,20 @@ namespace sorth
 
 
 
+    // Data structure that keeps track of interpreter sub-threads.
     struct SubThreadInfo
     {
+        // The word that the thread is executing.
         internal::Word word;
+
+        // The thread that is executing the word.
         std::shared_ptr<std::thread> word_thread;
+
+        // Has the thread been marked for deletion?
         bool thead_deleted;
 
+
+        // The thread's input and output queues.
         BlockingValueQueue inputs;
         BlockingValueQueue outputs;
     };
@@ -174,7 +182,8 @@ namespace sorth
 
     inline bool is_numeric(const Value& value)
     {
-        return    std::holds_alternative<bool>(value)
+        return    std::holds_alternative<None>(value)
+               || std::holds_alternative<bool>(value)
                || std::holds_alternative<int64_t>(value)
                || std::holds_alternative<double>(value);
     }
@@ -190,6 +199,11 @@ namespace sorth
     template <typename variant>
     inline variant as_numeric(InterpreterPtr interpreter, const Value& value)
     {
+        if (std::holds_alternative<None>(value))
+        {
+            return 0;
+        }
+
         if (std::holds_alternative<bool>(value))
         {
             return (variant)std::get<bool>(value);

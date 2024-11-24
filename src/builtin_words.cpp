@@ -2072,6 +2072,12 @@ namespace sorth
     }
 
 
+    void word_none(InterpreterPtr& interpreter)
+    {
+        interpreter->push(None());
+    }
+
+
     void word_true(InterpreterPtr& interpreter)
     {
         interpreter->push(true);
@@ -2824,6 +2830,10 @@ namespace sorth
         ADD_NATIVE_WORD(interpreter, "exit_failure", word_exit_failure,
             "Constant value for a process fail exit code.",
             " -- failure");
+
+        ADD_NATIVE_WORD(interpreter, "none", word_none,
+            "Push the value none onto the data stack.",
+            " -- none");
 
         ADD_NATIVE_WORD(interpreter, "true", word_true,
             "Push the value true onto the data stack.",

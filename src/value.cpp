@@ -26,6 +26,16 @@ namespace sorth
 
 
     template <>
+    inline void value_print_if<None>(std::ostream& stream, const Value& variant_value)
+    {
+        if (std::holds_alternative<None>(variant_value))
+        {
+            stream << "none";
+        }
+    }
+
+
+    template <>
     inline void value_print_if<bool>(std::ostream& stream, const Value& variant_value)
     {
         if (const bool* value = std::get_if<bool>(&variant_value))
@@ -37,6 +47,7 @@ namespace sorth
 
     std::ostream& operator <<(std::ostream& stream, const Value& value)
     {
+        value_print_if<None>(stream, value);
         value_print_if<int64_t>(stream, value);
         value_print_if<double>(stream, value);
         value_print_if<bool>(stream, value);
@@ -56,6 +67,11 @@ namespace sorth
 
     size_t hash_value(const Value& key)
     {
+        if (std::holds_alternative<None>(key))
+        {
+            return std::hash<int64_t>()(0);
+        }
+
         if (std::holds_alternative<int64_t>(key))
         {
             return std::hash<int64_t>()(std::get<int64_t>(key));
@@ -163,6 +179,11 @@ namespace sorth
             return false;
         }
 
+        if (std::holds_alternative<None>(rhs))
+        {
+            return true;
+        }
+
         if (std::holds_alternative<int64_t>(rhs))
         {
             return std::get<int64_t>(rhs) == std::get<int64_t>(lhs);
@@ -219,6 +240,11 @@ namespace sorth
 
     Value deep_copy_value(InterpreterPtr& interpreter, const Value& value)
     {
+        if (std::holds_alternative<None>(value))
+        {
+            return None();
+        }
+
         if (   std::holds_alternative<int64_t>(value)
             || std::holds_alternative<double>(value)
             || std::holds_alternative<bool>(value)

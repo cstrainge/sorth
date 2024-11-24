@@ -28,7 +28,13 @@ namespace sorth
     using HashTablePtr = std::shared_ptr<HashTable>;
 
 
-    using Value = std::variant<int64_t,
+    struct None
+    {
+    };
+
+
+    using Value = std::variant<None,
+                               int64_t,
                                double,
                                bool,
                                std::string,
