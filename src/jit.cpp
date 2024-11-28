@@ -24,6 +24,7 @@ namespace sorth::internal
 {
     namespace
     {
+
         #if defined(IS_MACOS)
             const std::string platform_prefix = "_";
         #else
