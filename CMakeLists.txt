@@ -13,25 +13,34 @@ if(WIN32)
 else()
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(FFI REQUIRED libffi)
+
+    message(STATUS "FFI: ${FFI_INCLUDE_DIRS}")
+    include_directories(${FFI_INCLUDE_DIRS})
 endif()
 
 
 
 # Find and configure our llvm dependencies if available.
-message(STATUS "Checking for LLVM...")
-find_package(LLVM CONFIG QUIET)
+if(APPLE)
+    if (EXISTS "/usr/local/opt/llvm/lib/cmake/llvm")
+        # Intel Macs
+        set(LLVM_DIR "/usr/local/opt/llvm/lib/cmake/llvm")
+    elseif (EXISTS "/opt/homebrew/opt/llvm/lib/cmake/llvm")
+        # Apple Silicon Macs
+        set(LLVM_DIR "/opt/homebrew/opt/llvm/lib/cmake/llvm")
+    endif()
+
+    message(STATUS "Checking for LLVM in ${LLVM_DIR}...")
+    find_package(LLVM CONFIG QUIET)
+else()
+    message(STATUS "Checking for LLVM...")
+    find_package(LLVM CONFIG QUIET)
+endif()
 
 set(SORTH_JIT_DISABLED 1) # Default to disabled
 
 if (LLVM_FOUND)
-    message(STATUS "  Checking LLVM version with llvm-config.")
-
-    # Extract the LLVM version and check if it's version 19.
-    execute_process(COMMAND "llvm-config" --version
-                    OUTPUT_VARIABLE LLVM_VERSION_STRING
-                    OUTPUT_STRIP_TRAILING_WHITESPACE)
-
-    string(REGEX MATCH "^[0-9]+" LLVM_VERSION_MAJOR "${LLVM_VERSION_STRING}")
+    message(STATUS "  Checking LLVM version...")
 
     if (LLVM_VERSION_MAJOR EQUAL 19)
         message(STATUS "  LLVM version 19 detected, enabling JIT functionality.")
