@@ -177,7 +177,7 @@ endif()
 
 execute_process(COMMAND git rev-parse HEAD OUTPUT_VARIABLE COMMIT)
 string(SUBSTRING ${COMMIT} 0 8 COMMIT)
-set(VERSION "${TAG}-v${COMMIT}-${DATE}")
+set(VERSION "${TAG}-${COMMIT}-${DATE}")
 
 
 
