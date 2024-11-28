@@ -5,7 +5,6 @@
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/ExecutionEngine/Orc/ExecutionUtils.h>
 #include <llvm/ExecutionEngine/Orc/LLJIT.h>
-#include <llvm/ExecutionEngine/Orc/MangleAndInterner.h>
 #include <llvm/ExecutionEngine/Orc/ThreadSafeModule.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
@@ -25,6 +24,11 @@ namespace sorth::internal
 {
     namespace
     {
+        #if defined(IS_MACOS)
+            const std::string platform_prefix = "_";
+        #else
+            const std::string platform_prefix = "";
+        #endif
 
 
         // What type of code generation are we doing?
@@ -107,110 +111,114 @@ namespace sorth::internal
             // Map the helper function pointers to their symbols in the JIT engine.
             void register_jit_helper_ptrs()
             {
-                // Properly mangle symbols for the platform's ABI.
-                llvm::orc::MangleAndInterner mangler(jit->getExecutionSession(),
-                                                     jit->getDataLayout());
+                // Properly mangle symbols for the platform's ABI, on macOS this means we need a
+                // leading underscore.
+                auto mangle = [this](const std::string& name) -> llvm::orc::SymbolStringPtr
+                    {
+                        return jit->getExecutionSession().intern(platform_prefix + name);
+                    };
 
+                // Create the symbol map for the helper functions.
                 llvm::orc::SymbolMap symbol_map =
                     {
                         {
-                            mangler("handle_set_location"),
+                            mangle("handle_set_location"),
                             llvm::orc::ExecutorSymbolDef(
                                          llvm::orc::ExecutorAddr((uint64_t)&handle_set_location),
                                          llvm::JITSymbolFlags::Exported)
                         },
                         {
-                            mangler("handle_manage_context"),
+                            mangle("handle_manage_context"),
                             llvm::orc::ExecutorSymbolDef(
                                          llvm::orc::ExecutorAddr((uint64_t)&handle_manage_context),
                                          llvm::JITSymbolFlags::Exported)
                         },
                         {
-                            mangler("handle_define_variable"),
+                            mangle("handle_define_variable"),
                             llvm::orc::ExecutorSymbolDef(
                                          llvm::orc::ExecutorAddr((uint64_t)&handle_define_variable),
                                          llvm::JITSymbolFlags::Exported)
                         },
                         {
-                            mangler("handle_define_constant"),
+                            mangle("handle_define_constant"),
                             llvm::orc::ExecutorSymbolDef(
                                          llvm::orc::ExecutorAddr((uint64_t)&handle_define_constant),
                                          llvm::JITSymbolFlags::Exported)
                         },
                         {
-                            mangler("handle_read_variable"),
+                            mangle("handle_read_variable"),
                             llvm::orc::ExecutorSymbolDef(
                                            llvm::orc::ExecutorAddr((uint64_t)&handle_read_variable),
                                            llvm::JITSymbolFlags::Exported)
                         },
                         {
-                            mangler("handle_write_variable"),
+                            mangle("handle_write_variable"),
                             llvm::orc::ExecutorSymbolDef(
                                           llvm::orc::ExecutorAddr((uint64_t)&handle_write_variable),
                                           llvm::JITSymbolFlags::Exported)
                         },
                         {
-                            mangler("handle_pop_bool"),
+                            mangle("handle_pop_bool"),
                             llvm::orc::ExecutorSymbolDef(
                                                 llvm::orc::ExecutorAddr((uint64_t)&handle_pop_bool),
                                                 llvm::JITSymbolFlags::Exported)
                         },
                         {
-                            mangler("handle_push_last_exception"),
+                            mangle("handle_push_last_exception"),
                             llvm::orc::ExecutorSymbolDef(
                                      llvm::orc::ExecutorAddr((uint64_t)&handle_push_last_exception),
                                      llvm::JITSymbolFlags::Exported)
                         },
                         {
-                            mangler("handle_push_bool"),
+                            mangle("handle_push_bool"),
                             llvm::orc::ExecutorSymbolDef(
                                                llvm::orc::ExecutorAddr((uint64_t)&handle_push_bool),
                                                llvm::JITSymbolFlags::Exported)
                         },
                         {
-                            mangler("handle_push_int"),
+                            mangle("handle_push_int"),
                             llvm::orc::ExecutorSymbolDef(
                                                 llvm::orc::ExecutorAddr((uint64_t)&handle_push_int),
                                                 llvm::JITSymbolFlags::Exported)
                         },
                         {
-                            mangler("handle_push_double"),
+                            mangle("handle_push_double"),
                             llvm::orc::ExecutorSymbolDef(
                                             llvm::orc::ExecutorAddr((uint64_t)&handle_push_double),
                                             llvm::JITSymbolFlags::Exported)
                         },
                         {
-                            mangler("handle_push_string"),
+                            mangle("handle_push_string"),
                             llvm::orc::ExecutorSymbolDef(
                                             llvm::orc::ExecutorAddr((uint64_t)&handle_push_string),
                                             llvm::JITSymbolFlags::Exported)
                         },
                         {
-                            mangler("handle_push_value"),
+                            mangle("handle_push_value"),
                             llvm::orc::ExecutorSymbolDef(
                                             llvm::orc::ExecutorAddr((uint64_t)&handle_push_value),
                                             llvm::JITSymbolFlags::Exported)
                         },
                         {
-                            mangler("handle_word_execute_name"),
+                            mangle("handle_word_execute_name"),
                             llvm::orc::ExecutorSymbolDef(
                                        llvm::orc::ExecutorAddr((uint64_t)&handle_word_execute_name),
                                        llvm::JITSymbolFlags::Exported)
                         },
                         {
-                            mangler("handle_word_execute_index"),
+                            mangle("handle_word_execute_index"),
                             llvm::orc::ExecutorSymbolDef(
                                       llvm::orc::ExecutorAddr((uint64_t)&handle_word_execute_index),
                                       llvm::JITSymbolFlags::Exported)
                         },
                         {
-                            mangler("handle_word_index_name"),
+                            mangle("handle_word_index_name"),
                             llvm::orc::ExecutorSymbolDef(
                                          llvm::orc::ExecutorAddr((uint64_t)&handle_word_index_name),
                                          llvm::JITSymbolFlags::Exported)
                         },
                         {
-                            mangler("handle_word_exists_name"),
+                            mangle("handle_word_exists_name"),
                             llvm::orc::ExecutorSymbolDef(
                                         llvm::orc::ExecutorAddr((uint64_t)&handle_word_exists_name),
                                         llvm::JITSymbolFlags::Exported)
