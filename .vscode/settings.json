@@ -22,7 +22,9 @@
         "cgsccam",
         "cibuild",
         "crst",
+        "DBUILD",
         "dequoted",
+        "DLLVM",
         "doesnt",
         "DSORTH",
         "endcase",
@@ -34,6 +36,7 @@
         "libatomic",
         "libc",
         "LLJIT",
+        "llvmorg",
         "nocapture",
         "nonnull",
         "npos",
@@ -71,7 +74,7 @@
         "**/*.vsix": true
     },
 
-    "cSpell.enableFiletypes":
+    "cSpell.enabledFiletypes":
     [
         "forth",
         "strangeforth"
