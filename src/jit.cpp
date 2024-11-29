@@ -22,6 +22,7 @@
 
 namespace sorth::internal
 {
+
     namespace
     {
 
