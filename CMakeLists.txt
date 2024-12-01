@@ -101,14 +101,30 @@ endif()
 
 
 
-# Iclude the soruce directory for the .h files.
+# Include the source directory for the .h files.
 include_directories(${SRC_DIR})
 
-# Include the llvm directories and defnitions if we found llvm.
+# Include the llvm directories and definitions if we found llvm.
 if (NOT SORTH_JIT_DISABLED)
     include_directories(${LLVM_INCLUDE_DIRS})
     add_definitions(${LLVM_DEFINITIONS})
-    set(LLVM_LIBS LLVM)
+    if(WIN32)
+        set(LLVM_COMPONENTS
+            Target
+            TargetParser
+            X86TargetMCA
+            X86CodeGen
+            X86AsmParser
+            OrcJIT
+            ExecutionEngine
+            Support
+            Passes
+            Core)
+
+        llvm_map_components_to_libnames(LLVM_LIBS ${LLVM_COMPONENTS})
+    else()
+        set(LLVM_LIBS LLVM)
+    endif()
 else()
     add_definitions(-DSORTH_JIT_DISABLED=1)
 endif()
