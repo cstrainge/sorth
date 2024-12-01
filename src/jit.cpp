@@ -22,6 +22,7 @@
 
 namespace sorth::internal
 {
+
     namespace
     {
 
@@ -709,12 +710,10 @@ namespace sorth::internal
                                         const ByteCode& code)
             {
                 // Gather some types we'll need.
-                auto void_type = llvm::Type::getVoidTy(*context.get());
                 auto bool_type = llvm::Type::getInt1Ty(*context.get());
                 auto int64_type = llvm::Type::getInt64Ty(*context.get());
                 auto double_type = llvm::Type::getDoubleTy(*context.get());
                 auto char_type = llvm::Type::getInt1Ty(*context.get());
-                auto char_ptr_type = llvm::PointerType::getUnqual(char_type);
 
 
                 // Keep track of the basic blocks we create for the jump targets.
