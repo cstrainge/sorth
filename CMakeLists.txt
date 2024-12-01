@@ -42,11 +42,11 @@ set(SORTH_JIT_DISABLED 1) # Default to disabled
 if (LLVM_FOUND)
     message(STATUS "  Checking LLVM version...")
 
-    if (LLVM_VERSION_MAJOR EQUAL 19)
-        message(STATUS "  LLVM version 19 detected, enabling JIT functionality.")
+    if(LLVM_VERSION_MAJOR EQUAL 19 OR LLVM_VERSION_MAJOR EQUAL 20)
+        message(STATUS "  LLVM version ${LLVM_VERSION_MAJOR} detected, enabling JIT functionality.")
         set(SORTH_JIT_DISABLED 0)
     else()
-        message(STATUS "  LLVM version ${LLVM_VERSION_STRING} detected, not 19. JIT functionality will be disabled.")
+        message(STATUS "  LLVM version ${LLVM_VERSION_MAJOR} detected, not 19. JIT functionality will be disabled.")
     endif()
 else()
     message(STATUS "  LLVM not found, JIT functionality will be disabled.")
@@ -108,23 +108,23 @@ include_directories(${SRC_DIR})
 if (NOT SORTH_JIT_DISABLED)
     include_directories(${LLVM_INCLUDE_DIRS})
     add_definitions(${LLVM_DEFINITIONS})
-    if(WIN32)
-        set(LLVM_COMPONENTS
-            Target
-            TargetParser
-            X86TargetMCA
-            X86CodeGen
-            X86AsmParser
-            OrcJIT
-            ExecutionEngine
-            Support
-            Passes
-            Core)
+    set(LLVM_COMPONENTS
+        Target
+        TargetParser
+        X86TargetMCA
+        X86CodeGen
+        X86AsmParser
+        OrcJIT
+        ExecutionEngine
+        Support
+        Passes
+        Core
+        X86
+        X86AsmParser
+        X86CodeGen
+        Analysis)
 
-        llvm_map_components_to_libnames(LLVM_LIBS ${LLVM_COMPONENTS})
-    else()
-        set(LLVM_LIBS LLVM)
-    endif()
+    llvm_map_components_to_libnames(LLVM_LIBS ${LLVM_COMPONENTS})
 else()
     add_definitions(-DSORTH_JIT_DISABLED=1)
 endif()
