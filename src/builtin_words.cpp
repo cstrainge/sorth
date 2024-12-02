@@ -2189,7 +2189,7 @@ namespace sorth
 
         if (optional_ir.has_value())
         {
-            std::cout << optional_ir.value() << std::endl;
+            std::cout << optional_ir.value();
         }
         else
         {
