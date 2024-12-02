@@ -122,7 +122,9 @@ if (NOT SORTH_JIT_DISABLED)
         X86
         X86AsmParser
         X86CodeGen
-        Analysis)
+        Analysis
+        MC
+        MCParser)
 
     llvm_map_components_to_libnames(LLVM_LIBS ${LLVM_COMPONENTS})
 else()

@@ -5,13 +5,24 @@
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/ExecutionEngine/Orc/ExecutionUtils.h>
 #include <llvm/ExecutionEngine/Orc/LLJIT.h>
+#include <llvm/ExecutionEngine/Orc/RTDyldObjectLinkingLayer.h>
 #include <llvm/ExecutionEngine/Orc/ThreadSafeModule.h>
+#include <llvm/ExecutionEngine/SectionMemoryManager.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Verifier.h>
+#include <llvm/MC/MCAsmInfo.h>
+#include <llvm/MC/MCContext.h>
+#include <llvm/MC/MCDisassembler/MCDisassembler.h>
+#include <llvm/MC/MCInst.h>
+#include <llvm/MC/MCInstrInfo.h>
+#include <llvm/MC/MCInstPrinter.h>
+#include <llvm/MC/MCRegisterInfo.h>
+#include <llvm/MC/TargetRegistry.h>
 #include <llvm/Support/TargetSelect.h>
+#include <llvm/MC/MCSubtargetInfo.h>
 #include <llvm/Passes/PassBuilder.h>
 #include <llvm/Transforms/Scalar/GVN.h>
 #include <llvm/Transforms/Utils.h>
@@ -25,6 +36,34 @@ namespace sorth::internal
 
     namespace
     {
+
+        class TrackingMemoryManager : public llvm::SectionMemoryManager
+        {
+            public:
+                static std::unordered_map<std::string, std::tuple<uint64_t, size_t>> FunctionSizes;
+
+            public:
+                virtual void notifyObjectLoaded(llvm::RuntimeDyld& rt_dyld,
+                                                const llvm::object::ObjectFile& obj) override
+                {
+                    SectionMemoryManager::notifyObjectLoaded(rt_dyld, obj);
+
+                    for (auto& symbol : obj.symbols())
+                    {
+                        auto name = symbol.getName().get().str();
+                        auto address = rt_dyld.getSymbolLocalAddress(name);
+                        auto size = symbol.getCommonSize();
+
+                        if ((address) && (size > 0))
+                        {
+                            FunctionSizes.insert({ name, { (uint64_t)address, size } });
+                        }
+                    }
+                }
+        };
+
+        std::unordered_map<std::string, std::tuple<uint64_t, size_t>>
+                                                               TrackingMemoryManager::FunctionSizes;
 
         #if defined(IS_MACOS)
             const std::string platform_prefix = "_";
@@ -89,8 +128,24 @@ namespace sorth::internal
                 llvm::InitializeNativeTarget();
                 llvm::InitializeNativeTargetAsmPrinter();
                 llvm::InitializeNativeTargetAsmParser();
+                llvm::InitializeNativeTargetDisassembler();
 
-                auto jit_result = llvm::orc::LLJITBuilder().create();
+                auto jit_result =
+                    llvm::orc::LLJITBuilder()
+                        .setObjectLinkingLayerCreator([=](llvm::orc::ExecutionSession& es,
+                                                          const llvm::Triple& triple)
+                                          -> llvm::Expected<std::unique_ptr<llvm::orc::ObjectLayer>>
+                        {
+                            auto layer = new llvm::orc::RTDyldObjectLinkingLayer(
+                                    es,
+                                    [=]() -> std::unique_ptr<llvm::RuntimeDyld::MemoryManager>
+                                    {
+                                        return std::make_unique<TrackingMemoryManager>();
+                                    });
+
+                            return std::unique_ptr<llvm::orc::ObjectLayer>(layer);
+                        })
+                        .create();
 
                 if (!jit_result)
                 {
@@ -435,6 +490,8 @@ namespace sorth::internal
                 // JIT compile and optimize the module, returning the IR for the word.
                 auto ir_map = finalize_module(std::move(module), std::move(context));
 
+                TrackingMemoryManager::FunctionSizes.clear();
+
                 // Finally return the new word handler function.
                 return create_word_function(filtered_name,
                                             std::move(ir_map[filtered_name]),
@@ -511,12 +568,100 @@ namespace sorth::internal
                     interpreter->replace_word(generated_word.name, handler);
                 }
 
+                TrackingMemoryManager::FunctionSizes.clear();
+
                 // Return the script's top level function handler.
                 return create_word_function(script_name,
                                             std::move(""),
+                                            //std::move(""),
                                             std::move(locations),
                                             std::move(constants),
                                             CodeGenType::script_body);
+            }
+
+            std::string disassemble(uint64_t address, size_t size)
+            {
+                auto triple = jit->getTargetTriple();
+                std::string triple_name = triple.str();
+                std::string error;
+
+                auto target = llvm::TargetRegistry::lookupTarget(triple_name, error);
+                if (!target)
+                {
+                    throw_error("Error finding target: " + error);
+                }
+
+                std::unique_ptr<const llvm::MCRegisterInfo> mri(target->createMCRegInfo(triple_name));
+
+                if (!mri)
+                {
+                    throw_error("Error creating MCRegisterInfo.");
+                }
+
+                llvm::MCTargetOptions options;
+                std::unique_ptr<const llvm::MCAsmInfo> asm_info(target->createMCAsmInfo(*mri,
+                                                                                        triple_name,
+                                                                                        options));
+
+                if (!asm_info)
+                {
+                    throw_error("Error creating MCAsmInfo for target" + triple_name + ".");
+                }
+
+
+                std::unique_ptr<const llvm::MCSubtargetInfo> sti(
+                                         target->createMCSubtargetInfo(triple_name, "generic", ""));
+
+                if (!sti)
+                {
+                    throw_error("Error creating MCSubtargetInfo for target" + triple_name + ".");
+                }
+
+                llvm::MCContext mc_context(triple, asm_info.get(), mri.get(), sti.get());
+                std::unique_ptr<llvm::MCDisassembler> disassembler(
+                                                    target->createMCDisassembler(*sti, mc_context));
+
+                if (!disassembler)
+                {
+                    throw_error("Error creating MCDisassembler for target" + triple_name + ".");
+                }
+
+                std::unique_ptr<const llvm::MCRegisterInfo> reginfo(target->createMCRegInfo(triple_name));
+                std::unique_ptr<const llvm::MCInstrInfo> mcii(target->createMCInstrInfo());
+
+                std::unique_ptr<llvm::MCInstPrinter> inst_printer(
+                                     target->createMCInstPrinter(triple, 0, *asm_info, *mcii, *reginfo));
+
+                llvm::ArrayRef<uint8_t> code((uint8_t*)address, size);
+                uint64_t index = address;
+
+                std::string disassembly;
+                llvm::raw_string_ostream stream(disassembly);
+
+                while (index < address + size)
+                {
+                    llvm::MCInst inst;
+                    uint64_t inst_size;
+
+                    if (disassembler->getInstruction(inst,
+                                                     inst_size,
+                                                     code.slice(index - address),
+                                                     index,
+                                                     llvm::nulls()))
+                    {
+                        stream << llvm::format("0x%016llx: ", index);
+                        inst_printer->printInst(&inst, index, "", *sti, stream);
+                        stream << "\n";
+                        index += inst_size;
+                    }
+                    else
+                    {
+                        stream << llvm::format("0x%016llx:", index) << " <unknown>\n";
+                        ++index;
+                    }
+                }
+
+                return disassembly;
             }
 
             // Create the LLVM module, context, and builder for JITing code.
@@ -675,6 +820,9 @@ namespace sorth::internal
                 WordFunction handler = WordFunction::Handler(handler_wrapper);
 
                 handler.set_ir(function_ir);
+
+                auto [ address, size ] = TrackingMemoryManager::FunctionSizes[name];
+                handler.set_asm_code(disassemble(address, size));
 
                 return handler;
             }

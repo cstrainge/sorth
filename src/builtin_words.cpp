@@ -2198,6 +2198,49 @@ namespace sorth
     }
 
 
+    void word_show_machine_code(InterpreterPtr& interpreter)
+    {
+        std::string name;
+        auto value = interpreter->pop();
+
+        if (is_string(value))
+        {
+            name = as_string(interpreter, value);
+        }
+        else if (is_numeric(value))
+        {
+            auto index = as_numeric<int64_t>(interpreter, value);
+            auto info = interpreter->get_handler_info(index);
+
+            name = info.name;
+        }
+        else
+        {
+            throw_error(interpreter->get_current_location(), "Expected a word name or index.");
+        }
+
+        auto [ found, word ] = interpreter->find_word(name);
+
+        if (!found)
+        {
+            std::cerr << "Word " << name << " has not been defined." << std::endl;
+            return;
+        }
+
+        auto& handler_info = interpreter->get_handler_info(word.handler_index);
+        auto optional_asm_code = handler_info.function.get_asm_code();
+
+        if (optional_asm_code.has_value())
+        {
+            std::cout << optional_asm_code.value();
+        }
+        else
+        {
+            std::cerr << "Word " << name << " doesn't contain generated machine code." << std::endl;
+        }
+    }
+
+
     void word_sorth_execution_mode(InterpreterPtr& interpreter)
     {
         auto mode = interpreter->get_execution_mode();
@@ -2874,6 +2917,10 @@ namespace sorth
 
         ADD_NATIVE_WORD(interpreter, "show-ir", word_show_ir,
             "Show the generated LLVM IR for the word.",
+            "word -- ");
+
+        ADD_NATIVE_WORD(interpreter, "show-asm", word_show_machine_code,
+            "Show the generated machine code for the word.",
             "word -- ");
 
         ADD_NATIVE_WORD(interpreter, "sorth.execution-mode", word_sorth_execution_mode,

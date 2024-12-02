@@ -1854,6 +1854,14 @@
 
 
 
+: show-asm immediate description: "For words written in Forth, show it's generated assembly."
+                     signature: "show-asm <word_name>"
+    word token.text@ op.push_constant_value
+    ` show-asm op.execute
+;
+
+
+
 : show_word description: "Show details for a defined word."
             signature: "show_word <word_name>"
     variable! name
