@@ -125,7 +125,11 @@ jobs:
 
       - name: Debug Dir (windows)
         if: ${{ runner.os == 'Windows' }}
-        run: dir C:\ProgramData\chocolatey\lib\llvm\lib\cmake\llvm
+        run: dir C:\ProgramData\chocolatey\lib\llvm\
+
+      - name: Debug Dir (windows)
+        if: ${{ runner.os == 'Windows' }}
+        run: dir C:\ProgramData\chocolatey\lib\llvm\lib
 
       # targets and version debug
       - name: targets and version debug
