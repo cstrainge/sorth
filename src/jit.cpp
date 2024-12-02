@@ -432,10 +432,12 @@ namespace sorth::internal
                                                             construction.code,
                                                             CodeGenType::word);
 
-                finalize_module(std::move(module), std::move(context));
+                // JIT compile and optimize the module, returning the IR for the word.
+                auto ir_map = finalize_module(std::move(module), std::move(context));
 
                 // Finally return the new word handler function.
                 return create_word_function(filtered_name,
+                                            std::move(ir_map[filtered_name]),
                                             std::move(locations),
                                             std::move(constants),
                                             CodeGenType::word);
@@ -495,12 +497,13 @@ namespace sorth::internal
                                                             CodeGenType::script_body);
 
                 // Finalize and optimize the module.
-                finalize_module(std::move(module), std::move(context));
+                auto ir_map = finalize_module(std::move(module), std::move(context));
 
                 // Now we can extract and register all of the generated words.
                 for (auto& [ word_name, generated_word ] : generated_words)
                 {
                     auto handler = create_word_function(word_name,
+                                                        std::move(ir_map[word_name]),
                                                         std::move(generated_word.locations),
                                                         std::move(generated_word.constants),
                                                         CodeGenType::word);
@@ -510,6 +513,7 @@ namespace sorth::internal
 
                 // Return the script's top level function handler.
                 return create_word_function(script_name,
+                                            std::move(""),
                                             std::move(locations),
                                             std::move(constants),
                                             CodeGenType::script_body);
@@ -530,9 +534,14 @@ namespace sorth::internal
                 return { std::move(module), std::move(context) };
             }
 
-            void finalize_module(std::unique_ptr<llvm::Module>&& module,
-                                 std::unique_ptr<llvm::LLVMContext>&& context)
+            std::unordered_map<std::string,
+                               std::string>
+                finalize_module(std::unique_ptr<llvm::Module>&& module,
+                                std::unique_ptr<llvm::LLVMContext>&& context)
             {
+                // Capture the optimized IR for all the module's functions.
+                std::unordered_map<std::string, std::string> ir_map;
+
                 // Uncomment to print out the LLVM IR for the JITed function module but before being
                 // optimized.
                 // module->print(llvm::outs(), nullptr);
@@ -570,6 +579,20 @@ namespace sorth::internal
                 // optimized.
                 // module->print(llvm::outs(), nullptr);
 
+                // Capture Optimized IR for Each Function...
+                for (auto &function : module->functions())
+                {
+                    if (!function.isDeclaration())
+                    {
+                        std::string func_ir;
+                        llvm::raw_string_ostream rso(func_ir);
+                        function.print(rso);
+                        rso.flush();
+
+                        ir_map[function.getName().str()] = func_ir;
+                    }
+                }
+
                 // Commit our module to the JIT engine and let it get compiled.
                 auto error = jit->addIRModule(llvm::orc::ThreadSafeModule(std::move(module),
                                                                           std::move(context)));
@@ -586,10 +609,13 @@ namespace sorth::internal
 
                     throw_error(error_message);
                 }
+
+                return ir_map;
             }
 
             // Create a function handler for the JITed code.
             WordFunction create_word_function(const std::string& name,
+                                              std::string&& function_ir,
                                               std::vector<Location>&& locations_,
                                               std::vector<Value>&& constants_,
                                               CodeGenType type)
@@ -646,7 +672,11 @@ namespace sorth::internal
                         }
                     };
 
-                return handler_wrapper;
+                WordFunction handler = WordFunction::Handler(handler_wrapper);
+
+                handler.set_ir(function_ir);
+
+                return handler;
             }
 
             // JIT compile the given byte-code block into a native function handler.

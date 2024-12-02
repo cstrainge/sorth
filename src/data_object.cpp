@@ -102,11 +102,11 @@ namespace sorth
         const bool is_scripted = false;
 
         interpreter->add_word(definition_ptr->name + ".new",
-            [=](auto interpreter)
+            internal::WordFunction::Handler([=](auto interpreter)
             {
                 auto new_object = make_data_object(interpreter, definition_ptr);
                 interpreter->push(new_object);
-            },
+            }),
             location,
             is_immediate,
             is_hidden,
@@ -132,10 +132,10 @@ namespace sorth
         for (int64_t i = 0; i < (int64_t)definition_ptr->fieldNames.size(); ++i)
         {
             interpreter->add_word(definition_ptr->name + "." + definition_ptr->fieldNames[i],
-                [i](auto interpreter)
+                internal::WordFunction::Handler([i](auto interpreter)
                 {
                     interpreter->push(i);
-                },
+                }),
                 location,
                 is_immediate,
                 is_hidden,
@@ -185,7 +185,7 @@ namespace sorth
 
                 interpreter->add_word(
                     definition_ptr->name + "." + definition_ptr->fieldNames[i] + "!",
-                    field_writer,
+                    internal::WordFunction::Handler(field_writer),
                     location,
                     is_immediate,
                     is_hidden,
@@ -195,7 +195,7 @@ namespace sorth
 
                 interpreter->add_word(
                     definition_ptr->name + "." + definition_ptr->fieldNames[i] + "@",
-                    field_reader,
+                    internal::WordFunction::Handler(field_reader),
                     location,
                     is_immediate,
                     is_hidden,
@@ -205,7 +205,7 @@ namespace sorth
 
                 interpreter->add_word(
                     definition_ptr->name + "." + definition_ptr->fieldNames[i] + "!!",
-                    var_field_writer,
+                    internal::WordFunction::Handler(var_field_writer),
                     location,
                     is_immediate,
                     is_hidden,
@@ -216,7 +216,7 @@ namespace sorth
 
                 interpreter->add_word(
                     definition_ptr->name + "." + definition_ptr->fieldNames[i] + "@@",
-                    var_field_reader,
+                    internal::WordFunction::Handler(var_field_reader),
                     location,
                     is_immediate,
                     is_hidden,

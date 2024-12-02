@@ -162,10 +162,24 @@ namespace sorth
 
 
     #define ADD_NATIVE_WORD(INTERPRETER, NAME, HANDLER, DESCRIPTION, SIGNATURE) \
-        INTERPRETER->add_word(NAME, HANDLER, __FILE__, __LINE__, 1, false, DESCRIPTION, SIGNATURE)
+        INTERPRETER->add_word(NAME, \
+                              sorth::internal::WordFunction::Handler(HANDLER), \
+                              __FILE__, \
+                              __LINE__, \
+                              1, \
+                              false, \
+                              DESCRIPTION, \
+                              SIGNATURE)
 
     #define ADD_IMMEDIATE_WORD(INTERPRETER, NAME, HANDLER, DESCRIPTION, SIGNATURE) \
-        INTERPRETER->add_word(NAME, HANDLER, __FILE__, __LINE__, 1, true, DESCRIPTION, SIGNATURE)
+        INTERPRETER->add_word(NAME, \
+                              sorth::internal::WordFunction::Handler(HANDLER), \
+                              __FILE__, \
+                              __LINE__, \
+                              1, \
+                              true, \
+                              DESCRIPTION, \
+                              SIGNATURE)
 
 
     // Value interrogation and conversion functions.  Because the value itself is a variant, it's

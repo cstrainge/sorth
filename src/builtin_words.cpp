@@ -79,54 +79,9 @@ namespace sorth
                 }
 
             public:
-                void show(std::ostream& stream, InterpreterPtr& interpreter,
-                          const std::vector<std::string>& inverse_list)
+                const ByteCode& get_code() const
                 {
-                    for (size_t i = 0; i < code.size(); ++i)
-                    {
-                        stream << std::setw(6) << i << "  ";
-
-                        if (   (code[i].id == OperationCode::Id::execute)
-                            && (is_numeric(code[i].value)))
-                        {
-                            auto index = as_numeric<int64_t>(interpreter, code[i].value);
-
-                            stream << code[i].id << "  ";
-
-                            if (inverse_list[index] != "")
-                            {
-                                stream << inverse_list[index] << ", (" << index << ")";
-                            }
-                            else
-                            {
-                                stream << index;
-                            }
-
-                            stream << std::endl;
-                        }
-                        else if (   (code[i].id == OperationCode::Id::push_constant_value)
-                                 && (is_string(code[i].value)))
-                        {
-                            auto string = as_string(interpreter, code[i].value);
-
-                            stream << code[i].id << "  " << stringify(string) << std::endl;
-                        }
-                        else if (  (   (code[i].id == OperationCode::Id::mark_loop_exit)
-                                    || (code[i].id == OperationCode::Id::mark_catch)
-                                    || (code[i].id == OperationCode::Id::jump)
-                                    || (code[i].id == OperationCode::Id::jump_if_zero)
-                                    || (code[i].id == OperationCode::Id::jump_if_not_zero))
-                                 && (is_numeric(code[i].value)))
-                        {
-                            auto offset = as_numeric<int64_t>(interpreter, code[i].value);
-
-                            stream << code[i].id << "  " << i + offset << std::endl;
-                        }
-                        else
-                        {
-                            stream << code[i] << std::endl;
-                        }
-                    }
+                    return code;
                 }
         };
 
@@ -1109,11 +1064,13 @@ namespace sorth
                                               construction.location,
                                               construction.is_context_managed);
                 handler = script_word;
+                handler.set_byte_code(std::move(construction.code));
             }
             else
             {
                 // Otherwise we need to JIT compile the word now in it's own module.
                 handler = jit_immediate_word(interpreter, construction);
+                handler.set_byte_code(std::move(construction.code));
             }
         }
         else
@@ -1130,11 +1087,12 @@ namespace sorth
             if (interpreter->showing_bytecode())
             {
                 std::cout << "--------[" << construction.name << "]-------------" << std::endl;
-                auto inverse_list = interpreter->get_inverse_lookup_list();
-                script_word.show(std::cout, interpreter, inverse_list);
+
+                pretty_print_bytecode(interpreter, construction.code, std::cout);
             }
 
             handler = script_word;
+            handler.set_byte_code(std::move(construction.code));
         }
 
         // Register the word either byte-code or JITed with the interpreter.
@@ -2156,11 +2114,6 @@ namespace sorth
 
     void word_show_word_bytecode(InterpreterPtr& interpreter)
     {
-        if (interpreter->get_execution_mode() == ExecutionMode::jit)
-        {
-            throw_error(*interpreter, "Showing byte-code for jited words is unsupported.");
-        }
-
         std::string name;
         auto value = interpreter->pop();
 
@@ -2184,23 +2137,63 @@ namespace sorth
 
         if (!found)
         {
-            std::cerr << "Word, " << name << ", has not been defined." << std::endl;
+            std::cerr << "Word " << name << " has not been defined." << std::endl;
             return;
         }
 
         auto& handler_info = interpreter->get_handler_info(word.handler_index);
+        auto optional_code = handler_info.function.get_byte_code();
 
-        if (word.is_scripted)
+        if (optional_code.has_value())
         {
-            auto& handler = handler_info.function;
-            auto script_handler = handler.target<ScriptWord>();
-            auto inverse_list = interpreter->get_inverse_lookup_list();
-
-            script_handler->show(std::cout, interpreter, inverse_list);
+            pretty_print_bytecode(interpreter, optional_code.value(), std::cout);
         }
         else
         {
-            std::cerr << "Word, " << name << ", was not written in Forth." << std::endl;
+            std::cerr << "Word " << name << " doesn't contain byte-code." << std::endl;
+        }
+    }
+
+
+    void word_show_ir(InterpreterPtr& interpreter)
+    {
+        std::string name;
+        auto value = interpreter->pop();
+
+        if (is_string(value))
+        {
+            name = as_string(interpreter, value);
+        }
+        else if (is_numeric(value))
+        {
+            auto index = as_numeric<int64_t>(interpreter, value);
+            auto info = interpreter->get_handler_info(index);
+
+            name = info.name;
+        }
+        else
+        {
+            throw_error(interpreter->get_current_location(), "Expected a word name or index.");
+        }
+
+        auto [ found, word ] = interpreter->find_word(name);
+
+        if (!found)
+        {
+            std::cerr << "Word " << name << " has not been defined." << std::endl;
+            return;
+        }
+
+        auto& handler_info = interpreter->get_handler_info(word.handler_index);
+        auto optional_ir = handler_info.function.get_ir();
+
+        if (optional_ir.has_value())
+        {
+            std::cout << optional_ir.value() << std::endl;
+        }
+        else
+        {
+            std::cerr << "Word " << name << " doesn't contain IR." << std::endl;
         }
     }
 
@@ -2875,8 +2868,12 @@ namespace sorth
         //    "If set to true show bytecode as it's executed.",
         //    "bool -- ");
 
-        ADD_NATIVE_WORD(interpreter, "show_bytecode", word_show_word_bytecode,
+        ADD_NATIVE_WORD(interpreter, "show-bytecode", word_show_word_bytecode,
             "Show detailed information about a word.",
+            "word -- ");
+
+        ADD_NATIVE_WORD(interpreter, "show-ir", word_show_ir,
+            "Show the generated LLVM IR for the word.",
             "word -- ");
 
         ADD_NATIVE_WORD(interpreter, "sorth.execution-mode", word_sorth_execution_mode,

@@ -73,6 +73,7 @@
 #include "tokenize.h"
 #include "contextual_list.h"
 #include "value.h"
+#include "word_function.h"
 #include "dictionary.h"
 #include "operation_code.h"
 #include "array.h"

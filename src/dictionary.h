@@ -6,7 +6,8 @@ namespace sorth::internal
 {
 
 
-    using WordFunction = std::function<void(InterpreterPtr&)>;
+    //using WordFunction = std::function<void(InterpreterPtr&)>;
+
 
     struct WordHandlerInfo
     {

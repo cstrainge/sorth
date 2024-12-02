@@ -1167,6 +1167,14 @@ namespace sorth
                 throw_error(*this, "Word " + word + " was not found for replacement.");
             }
 
+            auto code_ref = word_handlers[word_entry.handler_index].function.get_byte_code();
+
+            if (code_ref.has_value())
+            {
+                const auto& byte_code = code_ref.value();
+                handler.set_byte_code(byte_code);
+            }
+
             word_handlers[word_entry.handler_index].function = handler;
         }
 
