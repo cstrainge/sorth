@@ -125,7 +125,7 @@ jobs:
       # Configure CMake (Windows)
       - name: Configure CMake (Windows)
         if: ${{ runner.os == 'Windows' }}
-        run: cmake -DCMAKE_MAKE_PROGRAM=C:\ProgramData\chocolatey\bin\ninja.exe -DLLVM_DIR=C:/Program Files/LLVM/cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ --preset=cibuild .. -G Ninja
+        run: cmake -DCMAKE_MAKE_PROGRAM=C:\ProgramData\chocolatey\bin\ninja.exe -DLLVM_DIR=C:/Program Files/LLVM/cmake/lib/cmake/llvm -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ --preset=cibuild .. -G Ninja
         working-directory: build
 
       # Configure CMake (Linux/macOS)
