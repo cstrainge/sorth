@@ -21,9 +21,10 @@
 #include <llvm/MC/MCInstPrinter.h>
 #include <llvm/MC/MCRegisterInfo.h>
 #include <llvm/MC/TargetRegistry.h>
-#include <llvm/Support/TargetSelect.h>
 #include <llvm/MC/MCSubtargetInfo.h>
+#include <llvm/Object/SymbolicFile.h>
 #include <llvm/Passes/PassBuilder.h>
+#include <llvm/Support/TargetSelect.h>
 #include <llvm/Transforms/Scalar/GVN.h>
 #include <llvm/Transforms/Utils.h>
 
@@ -37,6 +38,9 @@ namespace sorth::internal
     namespace
     {
 
+        // We override the default memory manager for the JIT engine so that we can track the size
+        // of the functions that are JITed.  This is so that we can later disassemble the JITed
+        // code.
         class TrackingMemoryManager : public llvm::SectionMemoryManager
         {
             public:
@@ -48,23 +52,118 @@ namespace sorth::internal
                 {
                     SectionMemoryManager::notifyObjectLoaded(rt_dyld, obj);
 
+                    // Gather information about the functions in the object file.
                     for (auto& symbol : obj.symbols())
                     {
-                        auto name = symbol.getName().get().str();
-                        auto address = rt_dyld.getSymbolLocalAddress(name);
-                        auto size = symbol.getCommonSize();
+                        auto expected_type = symbol.getType();
 
-                        if ((address) && (size > 0))
+                        // If the symbol is a function, then we'll gather information about it.
+                        if (   (expected_type)
+                            && (expected_type.get() == llvm::object::SymbolRef::ST_Function))
                         {
-                            FunctionSizes.insert({ name, { (uint64_t)address, size } });
+                            // Gether information about the function.
+                            auto name = symbol.getName().get().str();
+                            auto address = rt_dyld.getSymbolLocalAddress(name);
+                            auto size = symbol.getCommonSize();
+
+                            // The method getCommonSize can't always return a size for functions.
+                            // If it returns 0, then we'll try to calculate the size by looking at
+                            // the next symbol in the same section.  Not a 100% reliable method, but
+                            // it's better than nothing.
+                            if (size == 0)
+                            {
+                                size = try_calculate_size(obj, symbol);
+                            }
+
+                            // Save the function's address and size. If we could find them.
+                            if ((address) && (size > 0))
+                            {
+                                FunctionSizes.insert({ name, { (uint64_t)address, size } });
+                            }
                         }
                     }
                 }
+
+            private:
+                // If we're on a platform that doesn't provide the size of a function in the symbol
+                // table, we can try to calculate it by looking at the next symbol in the same
+                // section.
+                size_t try_calculate_size(const llvm::object::ObjectFile& obj,
+                                        const llvm::object::SymbolRef& symbol)
+                {
+                    // Get the section and address of the symbol.
+                    auto expected_section = symbol.getSection();
+                    if (!expected_section)
+                    {
+                        return 0;
+                    }
+
+                    auto section = expected_section.get();
+
+                    // Get the address of the symbol.
+                    auto expected_address = symbol.getAddress();
+                    if (!expected_address)
+                    {
+                        return 0;
+                    }
+
+                    uint64_t address = expected_address.get();
+
+                    // Try to find the next symbol in the same section.
+                    uint64_t next_symbol_address = ~0;
+
+                    for (const auto& next_symbol : obj.symbols())
+                    {
+                        // Get the section of the next symbol.
+                        auto expected_next_section = next_symbol.getSection();
+
+                        // Is the symbol in the same section as ours?
+                        if (   (expected_next_section)
+                            && (expected_next_section.get() == section))
+                        {
+                            // The symbol is in the same section, so get it's address.
+                            auto expected_next_address = next_symbol.getAddress();
+
+                            if (   (expected_next_address)
+                                && (expected_next_address.get() > address))
+                            {
+                                // Now, check if this symbol is closer to our symbol than the last
+                                // one we found.
+                                auto try_next_address = expected_next_address.get();
+
+                                if (   (try_next_address > address)
+                                    && (try_next_address < next_symbol_address))
+                                {
+                                    // This symbol is closer to ours than the last one we found.
+                                    // So use it as the next symbol address until we find a closer
+                                    // one.
+                                    next_symbol_address = try_next_address;
+                                }
+                            }
+                        }
+                    }
+
+                    // If we found a next symbol address, then we can calculate the size of our
+                    // symbol.
+                    if (next_symbol_address != ~0)
+                    {
+                        return next_symbol_address - address;
+                    }
+
+                    // If we didn't find a next symbol in the same section, then we can calculate
+                    // the size of our symbol by subtracting it's address from the end of the
+                    // section.
+                    return section->getSize() - (address - section->getAddress());
+                }
         };
 
+        // Keep track of the size of the functions that are JITed.
         std::unordered_map<std::string, std::tuple<uint64_t, size_t>>
                                                                TrackingMemoryManager::FunctionSizes;
 
+
+        // On macOS symbols must be prefixed by an underscore.  We'll use this constant to handle
+        // that later on in the code.
         #if defined(IS_MACOS)
             const std::string platform_prefix = "_";
         #else
@@ -130,12 +229,16 @@ namespace sorth::internal
                 llvm::InitializeNativeTargetAsmParser();
                 llvm::InitializeNativeTargetDisassembler();
 
+                // Construct the LLVM JIT engine, using the object linking layer creator to create
+                // and use our custom memory manager.
                 auto jit_result =
                     llvm::orc::LLJITBuilder()
                         .setObjectLinkingLayerCreator([=](llvm::orc::ExecutionSession& es,
                                                           const llvm::Triple& triple)
                                           -> llvm::Expected<std::unique_ptr<llvm::orc::ObjectLayer>>
                         {
+                            // Create a standard object linking layer with our custom memory
+                            // manager, instead of the default one.
                             auto layer = new llvm::orc::RTDyldObjectLinkingLayer(
                                     es,
                                     [=]() -> std::unique_ptr<llvm::RuntimeDyld::MemoryManager>
@@ -143,6 +246,7 @@ namespace sorth::internal
                                         return std::make_unique<TrackingMemoryManager>();
                                     });
 
+                            // Return our new object linking layer.
                             return std::unique_ptr<llvm::orc::ObjectLayer>(layer);
                         })
                         .create();
@@ -581,8 +685,14 @@ namespace sorth::internal
 
             std::string disassemble(uint64_t address, size_t size)
             {
+                // Gether up the information needed for the disassembly engine to know how to work
+                // for our runtime-target.
+
+                // Start off by getting the target triple from the JIT engine.
                 auto triple = jit->getTargetTriple();
                 std::string triple_name = triple.str();
+
+                // Make sure we can get the target information for the JIT engine.
                 std::string error;
 
                 auto target = llvm::TargetRegistry::lookupTarget(triple_name, error);
@@ -591,76 +701,95 @@ namespace sorth::internal
                     throw_error("Error finding target: " + error);
                 }
 
-                std::unique_ptr<const llvm::MCRegisterInfo> mri(target->createMCRegInfo(triple_name));
-
-                if (!mri)
+                // Get the register information for this target.
+                std::unique_ptr<const llvm::MCRegisterInfo>
+                                                     reg_info(target->createMCRegInfo(triple_name));
+                if (!reg_info)
                 {
                     throw_error("Error creating MCRegisterInfo.");
                 }
 
+                // Get the target options for this target.
                 llvm::MCTargetOptions options;
-                std::unique_ptr<const llvm::MCAsmInfo> asm_info(target->createMCAsmInfo(*mri,
+                std::unique_ptr<const llvm::MCAsmInfo> asm_info(target->createMCAsmInfo(*reg_info,
                                                                                         triple_name,
                                                                                         options));
-
                 if (!asm_info)
                 {
                     throw_error("Error creating MCAsmInfo for target" + triple_name + ".");
                 }
 
-
+                // Get the sub-target information for this target.
                 std::unique_ptr<const llvm::MCSubtargetInfo> sti(
                                          target->createMCSubtargetInfo(triple_name, "generic", ""));
-
                 if (!sti)
                 {
                     throw_error("Error creating MCSubtargetInfo for target" + triple_name + ".");
                 }
 
-                llvm::MCContext mc_context(triple, asm_info.get(), mri.get(), sti.get());
+                // Create the MC context for this target.
+                llvm::MCContext mc_context(triple, asm_info.get(), reg_info.get(), sti.get());
                 std::unique_ptr<llvm::MCDisassembler> disassembler(
                                                     target->createMCDisassembler(*sti, mc_context));
-
                 if (!disassembler)
                 {
                     throw_error("Error creating MCDisassembler for target" + triple_name + ".");
                 }
 
-                std::unique_ptr<const llvm::MCRegisterInfo> reginfo(target->createMCRegInfo(triple_name));
-                std::unique_ptr<const llvm::MCInstrInfo> mcii(target->createMCInstrInfo());
+                // Get the instruction information for this target.
+                std::unique_ptr<const llvm::MCInstrInfo> instr_info(target->createMCInstrInfo());
 
+                // Create an instruction printer for this target.
                 std::unique_ptr<llvm::MCInstPrinter> inst_printer(
-                                     target->createMCInstPrinter(triple, 0, *asm_info, *mcii, *reginfo));
+                                                            target->createMCInstPrinter(triple,
+                                                                                        0,
+                                                                                        *asm_info,
+                                                                                        *instr_info,
+                                                                                        *reg_info));
 
+                // Create a temporay non-owning array reference for the code.
                 llvm::ArrayRef<uint8_t> code((uint8_t*)address, size);
                 uint64_t index = address;
 
+                // Create a buffer and a llvm string stream to hold the disassembly.
                 std::string disassembly;
                 llvm::raw_string_ostream stream(disassembly);
 
+                // Go through the array of code and disassemble each instruction in it, advancing
+                // the index by the size of the found instruction.
                 while (index < address + size)
                 {
+                    // The next instruction and it's size.
                     llvm::MCInst inst;
                     uint64_t inst_size;
 
+                    // Try to disassemble the next instruction.
                     if (disassembler->getInstruction(inst,
                                                      inst_size,
                                                      code.slice(index - address),
                                                      index,
                                                      llvm::nulls()))
                     {
+                        // We found a valid instruction, so print it out.
                         stream << llvm::format("0x%016llx: ", index);
                         inst_printer->printInst(&inst, index, "", *sti, stream);
                         stream << "\n";
+
+                        // Advance the index by the size of the instruction, with the size retrieved
+                        // from the getInstruction call.
                         index += inst_size;
                     }
                     else
                     {
+                        // If we couldn't disassemble the instruction, then just print out the
+                        // address and that we couldn't disassemble it.  Then try to realign the
+                        // index by one byte to try to find valid instructions again.
                         stream << llvm::format("0x%016llx:", index) << " <unknown>\n";
                         ++index;
                     }
                 }
 
+                // All done.
                 return disassembly;
             }
 
@@ -817,13 +946,23 @@ namespace sorth::internal
                         }
                     };
 
+                // Create a new handler object for our generated word.
                 WordFunction handler = WordFunction::Handler(handler_wrapper);
 
+                // Set the IR for the function.
                 handler.set_ir(function_ir);
 
+                // Set the generated disassembly for the function.  If we were able to properly get
+                // it's address and size.
                 auto [ address, size ] = TrackingMemoryManager::FunctionSizes[name];
-                handler.set_asm_code(disassemble(address, size));
 
+                if ((address) && (size > 0))
+                {
+                    // We have a proper address and size, so disassemble the function.
+                    handler.set_asm_code(disassemble(address, size));
+                }
+
+                // Return the new function handler.
                 return handler;
             }
 
