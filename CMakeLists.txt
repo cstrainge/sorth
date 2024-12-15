@@ -157,20 +157,18 @@ endif()
 
 
 
-if(WIN32)
-    set(SRCS ${SRCS} "${SRC_DIR}/sorth.rc")
-endif()
-
-
-
 # Define target.
 add_executable(${PROJECT_NAME} ${SRCS})
 
 
 
+# Add a precompiled header to the target.
+target_precompile_headers(${PROJECT_NAME} PRIVATE "${SRC_DIR}/sorth.h")
+
+
+
 # Set compiler flags.
 target_compile_options(${PROJECT_NAME} PRIVATE ${CXXFLAGS})
-
 
 
 # Add lib ffi and llvm to the target.
@@ -233,6 +231,20 @@ set(VERSION "${TAG}-${COMMIT}-${DATE}")
 
 # Define preprocessor macro for version
 target_compile_definitions(${PROJECT_NAME} PRIVATE VERSION="${VERSION}")
+
+
+
+# Enable link-time optimization if we're in release mode and it's supported.
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+    include(CheckIPOSupported)
+    check_ipo_supported(RESULT ipo_supported OUTPUT ipo_output)
+    if(ipo_supported)
+        message(STATUS "IPO/LTO is supported: enabling for Release build.")
+        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+    else()
+        message(status "IPO/LTO not supported: ${ipo_output}")
+    endif()
+endif()
 
 
 
