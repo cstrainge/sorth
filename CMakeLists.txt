@@ -3,8 +3,6 @@ cmake_minimum_required(VERSION 3.15)
 
 project(sorth)
 
-# cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -G Ninja
-
 
 
 # Find lib ffi.
@@ -62,7 +60,31 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Define source files and directories.
 set(SRC_DIR "src")
-file(GLOB SRCS "${SRC_DIR}/*.cpp")
+file(GLOB SRCS "${SRC_DIR}/*.cpp"
+               "${SRC_DIR}/lang/*.cpp"
+               "${SRC_DIR}/lang/code/*.cpp"
+               "${SRC_DIR}/lang/source/*.cpp"
+               "${SRC_DIR}/run-time/*.cpp"
+               "${SRC_DIR}/run-time/data-structures/*.cpp"
+               "${SRC_DIR}/run-time/interpreter/*.cpp"
+               "${SRC_DIR}/run-time/built-ins/*.cpp"
+               "${SRC_DIR}/run-time/built-ins/core-words/*.cpp")
+
+
+
+# Include the source directories for the .h files.
+include_directories("${SRC_DIR}")
+include_directories("${SRC_DIR}/lang")
+include_directories("${SRC_DIR}/lang/code")
+include_directories("${SRC_DIR}/lang/source")
+include_directories("${SRC_DIR}/run-time")
+include_directories("${SRC_DIR}/run-time/built-ins")
+include_directories("${SRC_DIR}/run-time/data-structures")
+include_directories("${SRC_DIR}/run-time/interpreter")
+include_directories("${SRC_DIR}/run-time/built-ins")
+include_directories("${SRC_DIR}/run-time/built-ins/core-words")
+
+
 
 set(BUILD_DIR "${CMAKE_BINARY_DIR}")
 set(DIST_DIR "${CMAKE_SOURCE_DIR}/dist")
