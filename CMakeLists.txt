@@ -126,6 +126,8 @@ endif()
 # Include the source directory for the .h files.
 include_directories(${SRC_DIR})
 
+
+
 # Include the llvm directories and definitions if we found llvm.
 if (NOT SORTH_JIT_DISABLED)
     include_directories(${LLVM_INCLUDE_DIRS})
@@ -156,8 +158,7 @@ endif()
 
 
 if(WIN32)
-set(SRCS ${SRCS} "${SRC_DIR}/sorth.rc")
-else()
+    set(SRCS ${SRCS} "${SRC_DIR}/sorth.rc")
 endif()
 
 
@@ -171,6 +172,7 @@ add_executable(${PROJECT_NAME} ${SRCS})
 target_compile_options(${PROJECT_NAME} PRIVATE ${CXXFLAGS})
 
 
+
 # Add lib ffi and llvm to the target.
 if(WIN32)
     target_link_libraries(${PROJECT_NAME} PRIVATE unofficial::libffi::libffi)
@@ -179,10 +181,13 @@ else()
     target_link_libraries(${PROJECT_NAME} PRIVATE ${FFI_LIBRARIES})
 endif()
 
+
+
 # Add the llvm libraries if we found llvm.
 if (NOT SORTH_JIT_DISABLED)
     target_link_libraries(${PROJECT_NAME} PRIVATE ${LLVM_LIBS})
 endif()
+
 
 
 # Output directory.
@@ -191,13 +196,11 @@ set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${DIST
 
 
 # Build the library that the tests depend on.
-add_library(TestLib SHARED
-    ${CMAKE_SOURCE_DIR}/tests/test_ffi_lib.cpp)
+add_library(TestLib SHARED ${CMAKE_SOURCE_DIR}/tests/test_ffi_lib.cpp)
 
-set_target_properties(TestLib PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${DIST_DIR}
-    LIBRARY_OUTPUT_DIRECTORY ${DIST_DIR}
-    ARCHIVE_OUTPUT_DIRECTORY ${DIST_DIR})
+set_target_properties(TestLib PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${DIST_DIR}
+                                         LIBRARY_OUTPUT_DIRECTORY ${DIST_DIR}
+                                         ARCHIVE_OUTPUT_DIRECTORY ${DIST_DIR})
 
 
 
@@ -244,4 +247,3 @@ add_custom_target(copy_stdlib ALL
 # Ensure the dist dir exists and copy_stdlib runs before the main target.
 add_dependencies(copy_stdlib create_dist_dir)
 add_dependencies(${PROJECT_NAME} copy_stdlib TestLib)
-
