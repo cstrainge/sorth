@@ -155,6 +155,13 @@ endif()
 
 
 
+if(WIN32)
+set(SRCS ${SRCS} "${SRC_DIR}/sorth.rc")
+else()
+endif()
+
+
+
 # Define target.
 add_executable(${PROJECT_NAME} ${SRCS})
 
