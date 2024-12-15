@@ -233,7 +233,7 @@ namespace sorth
             return (variant)std::get<double>(value);
         }
 
-        internal::throw_error(*interpreter, "Expected numeric or boolean value.");
+        internal::throw_error(interpreter, "Expected numeric or boolean value.");
     }
 
 
@@ -269,7 +269,7 @@ namespace sorth
             return std::get<std::string>(value);
         }
 
-        internal::throw_error(*interpreter, "No string conversion for value.");
+        internal::throw_error(interpreter, "No string conversion for value.");
     }
 
 
@@ -277,7 +277,7 @@ namespace sorth
     {
         if (!std::holds_alternative<ByteBufferPtr>(value))
         {
-            internal::throw_error(*interpreter, "Expected a byte buffer.");
+            internal::throw_error(interpreter, "Expected a byte buffer.");
         }
 
         return std::get<ByteBufferPtr>(value);
@@ -288,7 +288,7 @@ namespace sorth
     {
         if (!std::holds_alternative<DataObjectPtr>(value))
         {
-            internal::throw_error(*interpreter, "Expected a data object.");
+            internal::throw_error(interpreter, "Expected a data object.");
         }
 
         return std::get<DataObjectPtr>(value);
@@ -299,7 +299,7 @@ namespace sorth
     {
         if (!std::holds_alternative<HashTablePtr>(value))
         {
-            internal::throw_error(*interpreter, "Expected a hash table.");
+            internal::throw_error(interpreter, "Expected a hash table.");
         }
 
         return std::get<HashTablePtr>(value);
@@ -309,7 +309,7 @@ namespace sorth
     inline ArrayPtr as_array(InterpreterPtr& interpreter, const Value& value)
     {
         internal::throw_error_if(!std::holds_alternative<ArrayPtr>(value),
-                                 *interpreter,
+                                 interpreter,
                                  "Expected an array object.");
 
         return std::get<ArrayPtr>(value);

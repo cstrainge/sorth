@@ -1928,7 +1928,7 @@ namespace sorth::internal
 
                     if (!found)
                     {
-                        throw_error(*interpreter, "Word '" + std::string(name) + "' not found.");
+                        throw_error(interpreter, "Word " + std::string(name) + " not found.");
                     }
 
                     interpreter->push((int64_t)word.handler_index);

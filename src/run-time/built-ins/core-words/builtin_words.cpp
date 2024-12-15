@@ -97,7 +97,7 @@ namespace sorth
                 stream << type << " index, " << index << ", is out of bounds of the size " << size
                        << ".";
 
-                throw_error(*interpreter, stream.str());
+                throw_error(interpreter, stream.str());
             }
         }
 
@@ -113,7 +113,7 @@ namespace sorth
                        << buffer->position() << " would exceed the buffer size, "
                        << buffer->size() << ".";
 
-                throw_error(*interpreter, stream.str());
+                throw_error(interpreter, stream.str());
             }
         }
 
@@ -267,7 +267,7 @@ namespace sorth
 
             if ((current_token + 1) >= input_tokens.size())
             {
-                throw_error(*interpreter, "Trying to read past end of token stream.");
+                throw_error(interpreter, "Trying to read past end of token stream.");
             }
 
             ++current_token;
@@ -378,7 +378,7 @@ namespace sorth
 
         if (!std::holds_alternative<std::thread::id>(value))
         {
-            throw_error(*interpreter, "Value not a thread id.");
+            throw_error(interpreter, "Value not a thread id.");
         }
 
         return std::get<std::thread::id>(value);
@@ -411,7 +411,7 @@ namespace sorth
 
         if (!found)
         {
-            throw_error(*interpreter, "Could not start thread, word " + name + " not found.");
+            throw_error(interpreter, "Could not start thread, word " + name + " not found.");
         }
 
         auto id = interpreter->execute_word_threaded(word);
@@ -713,7 +713,7 @@ namespace sorth
         auto top = interpreter->pop();
 
         throw_error_if(!std::holds_alternative<ByteCode>(top),
-                       *interpreter,
+                       interpreter,
                        "Expected a byte code block.");
 
         interpreter->constructor().stack.push({ .code = std::get<ByteCode>(top) });
@@ -863,7 +863,7 @@ namespace sorth
         }
         else
         {
-            throw_error(*interpreter, "Value not a token.");
+            throw_error(interpreter, "Value not a token.");
         }
     }
 
@@ -878,7 +878,7 @@ namespace sorth
         }
         else
         {
-            throw_error(*interpreter, "Value not a token.");
+            throw_error(interpreter, "Value not a token.");
         }
     }
 
@@ -888,7 +888,7 @@ namespace sorth
         auto& current_token = interpreter->constructor().current_token;
         auto& input_tokens = interpreter->constructor().input_tokens;
 
-        throw_error_if(current_token >= input_tokens.size(), *interpreter,
+        throw_error_if(current_token >= input_tokens.size(), interpreter,
                        "word trying to read past the end of the token list.");
 
         interpreter->push(input_tokens[++current_token]);
@@ -958,7 +958,7 @@ namespace sorth
         }
         else
         {
-            throw_error(*interpreter, "Unexpected value type for execute.");
+            throw_error(interpreter, "Unexpected value type for execute.");
         }
     }
 
@@ -1003,7 +1003,7 @@ namespace sorth
 
     void word_throw(InterpreterPtr& interpreter)
     {
-        throw_error(*interpreter,
+        throw_error(interpreter,
             as_string(interpreter, interpreter->pop()));
     }
 
@@ -1132,13 +1132,13 @@ namespace sorth
 
         ++current_token;
 
-        throw_error_if(current_token >= input_tokens.size(), *interpreter,
+        throw_error_if(current_token >= input_tokens.size(), interpreter,
             "Unexpected end to token stream.");
 
         auto& token = input_tokens[current_token];
 
         throw_error_if(token.type != Token::Type::string,
-                       *interpreter,
+                       interpreter,
                        "Expected the description to be a string.");
 
         interpreter->constructor().stack.top().description = token.text;
@@ -1152,13 +1152,13 @@ namespace sorth
 
         ++current_token;
 
-        throw_error_if(current_token >= input_tokens.size(), *interpreter,
+        throw_error_if(current_token >= input_tokens.size(), interpreter,
                        "Unexpected end to token stream.");
 
         auto& token = input_tokens[current_token];
 
         throw_error_if(token.type != Token::Type::string,
-                       *interpreter,
+                       interpreter,
                        "Expected the signature to be a string.");
 
         interpreter->constructor().stack.top().signature = token.text;
@@ -1295,7 +1295,7 @@ namespace sorth
 
         if ((position < 0) || (position >= string.size()))
         {
-            throw_error(*interpreter, "String index out of range.");
+            throw_error(interpreter, "String index out of range.");
         }
 
         std::string new_str(1, string[position]);
@@ -1370,7 +1370,7 @@ namespace sorth
         auto var = interpreter->pop();
 
         throw_error_if(!std::holds_alternative<DataObjectPtr>(var),
-                       *interpreter, "Expected data object.");
+                       interpreter, "Expected data object.");
 
         auto object = std::get<DataObjectPtr>(var);
 
@@ -1386,7 +1386,7 @@ namespace sorth
         auto var = interpreter->pop();
 
         throw_error_if(!std::holds_alternative<DataObjectPtr>(var),
-                       *interpreter, "Expected data object.");
+                       interpreter, "Expected data object.");
 
         auto object = std::get<DataObjectPtr>(var);
 
@@ -1403,7 +1403,7 @@ namespace sorth
         auto var = interpreter->pop();
 
         throw_error_if(!std::holds_alternative<DataObjectPtr>(var),
-                       *interpreter, "Expected data object.");
+                       interpreter, "Expected data object.");
 
         auto object = std::get<DataObjectPtr>(var);
         auto word_index = as_numeric<int64_t>(interpreter, interpreter->pop());
@@ -1427,7 +1427,7 @@ namespace sorth
         auto var = interpreter->pop();
 
         throw_error_if(!std::holds_alternative<DataObjectPtr>(var),
-                       *interpreter, "Expected data object.");
+                       interpreter, "Expected data object.");
 
         auto object = std::get<DataObjectPtr>(var);
         auto field_name = as_string(interpreter, interpreter->pop());
@@ -1452,14 +1452,14 @@ namespace sorth
         auto var = interpreter->pop();
 
         throw_error_if(!std::holds_alternative<DataObjectPtr>(var),
-                       *interpreter, "Expected data object.");
+                       interpreter, "Expected data object.");
 
         auto a = std::get<DataObjectPtr>(var);
 
         var = interpreter->pop();
 
         throw_error_if(!std::holds_alternative<DataObjectPtr>(var),
-                       *interpreter, "Expected data object.");
+                       interpreter, "Expected data object.");
 
         auto b = std::get<DataObjectPtr>(var);
 
@@ -1718,7 +1718,7 @@ namespace sorth
 
             stream << "Value, " << key << ", does not exist in the table.";
 
-            throw_error(*interpreter, stream.str());
+            throw_error(interpreter, stream.str());
         }
 
         interpreter->push(value);

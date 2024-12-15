@@ -33,10 +33,10 @@ namespace sorth::internal
 
 
     [[noreturn]]
-    void throw_error(const Interpreter& interpreter, const std::string& message)
+    void throw_error(const InterpreterPtr& interpreter, const std::string& message)
     {
-        auto current_location = interpreter.get_current_location();
-        auto call_stack = interpreter.get_call_stack();
+        auto current_location = interpreter->get_current_location();
+        auto call_stack = interpreter->get_call_stack();
 
         std::stringstream stream;
 
@@ -54,7 +54,7 @@ namespace sorth::internal
     }
 
 
-    void throw_error_if(bool condition, const Interpreter& interpreter,
+    void throw_error_if(bool condition, const InterpreterPtr& interpreter,
                         const std::string& message)
     {
         if (condition)
@@ -69,7 +69,7 @@ namespace sorth::internal
 
 
         [[noreturn]]
-        void throw_windows_error(const Interpreter& interpreter,
+        void throw_windows_error(const InterpreterPtr& interpreter,
                                  const std::string& message,
                                  DWORD code)
         {
@@ -95,7 +95,7 @@ namespace sorth::internal
 
 
 
-        void throw_windows_error_if(bool condition, const Interpreter& interpreter,
+        void throw_windows_error_if(bool condition, const InterpreterPtr& interpreter,
                                     const std::string& message,
                                     DWORD code)
         {

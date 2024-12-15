@@ -36,7 +36,7 @@ namespace sorth
 
             if (handle == INVALID_HANDLE_VALUE)
             {
-                throw_windows_error(*interpreter, "Could not open file: ", GetLastError());
+                throw_windows_error(interpreter, "Could not open file: ", GetLastError());
             }
 
             return handle;
@@ -57,7 +57,7 @@ namespace sorth
                 return buffer;
             }
 
-            throw_windows_error(*interpreter, "File read byte failed: ", GetLastError());
+            throw_windows_error(interpreter, "File read byte failed: ", GetLastError());
         }
 
 
@@ -86,7 +86,7 @@ namespace sorth
 
             if (!result)
             {
-                throw_windows_error(*interpreter, "File write failed: ", GetLastError());
+                throw_windows_error(interpreter, "File write failed: ", GetLastError());
             }
         }
 
@@ -113,14 +113,14 @@ namespace sorth
             auto result = GetTempPathA(MAX_PATH + 1, temp_path);
 
             throw_windows_error_if(result == 0,
-                                   *interpreter,
+                                   interpreter,
                                    "Failed to get temp path: ",
                                    GetLastError());
 
             result = GetTempFileNameA(temp_path, "sftmp", 0, full_temp_path);
 
             throw_windows_error_if(result == 0,
-                                   *interpreter,
+                                   interpreter,
                                    "Failed to get generate temporary file name: ",
                                    GetLastError());
 
@@ -150,7 +150,7 @@ namespace sorth
 
             if (!CloseHandle(handle))
             {
-                throw_windows_error(*interpreter, "Could not close handle: ", GetLastError());
+                throw_windows_error(interpreter, "Could not close handle: ", GetLastError());
             }
         }
 
@@ -165,7 +165,7 @@ namespace sorth
             if (result == FALSE)
             {
                 std::string message = "Failed to delete file, " + path + ": ";
-                throw_windows_error(*interpreter, message, GetLastError());
+                throw_windows_error(interpreter, message, GetLastError());
             }
         }
 
@@ -193,7 +193,7 @@ namespace sorth
 
             if (pipe == INVALID_HANDLE_VALUE)
             {
-                throw_windows_error(*interpreter, "Could not open pipe: ", GetLastError());
+                throw_windows_error(interpreter, "Could not open pipe: ", GetLastError());
             }
 
             interpreter->push((int64_t)pipe);
@@ -212,7 +212,7 @@ namespace sorth
 
             if (!GetFileSizeEx(handle, &file_size))
             {
-                throw_windows_error(*interpreter, "Get file size failed: ", GetLastError());
+                throw_windows_error(interpreter, "Get file size failed: ", GetLastError());
             }
 
             interpreter->push((int64_t)file_size.QuadPart);
@@ -274,7 +274,7 @@ namespace sorth
             }
             else
             {
-                throw_windows_error(*interpreter, "File EOF check failed: ", GetLastError());
+                throw_windows_error(interpreter, "File EOF check failed: ", GetLastError());
             }
 
             interpreter->push(is_eof);
@@ -285,7 +285,7 @@ namespace sorth
 
         void word_file_read(InterpreterPtr& interpreter)
         {
-            throw_error(*interpreter, "This word is currently unimplemented.");
+            throw_error(interpreter, "This word is currently unimplemented.");
         }
 
 
@@ -333,7 +333,7 @@ namespace sorth
 
                 if (!result)
                 {
-                    throw_windows_error(*interpreter, "Get file read failed: ", GetLastError());
+                    throw_windows_error(interpreter, "Get file read failed: ", GetLastError());
                 }
 
                 interpreter->push(std::string(buffer));

@@ -349,7 +349,7 @@ namespace sorth
         CodeConstructor& InterpreterImpl::constructor()
         {
             throw_error_if(code_constructors.size() == 0,
-                           *this,
+                           shared_from_this(),
                            "Code constructor is unavailable.");
             return code_constructors.top();
         }
@@ -403,7 +403,7 @@ namespace sorth
 
         WordHandlerInfo& InterpreterImpl::get_handler_info(size_t index)
         {
-            throw_error_if(index >= word_handlers.size(), *this,
+            throw_error_if(index >= word_handlers.size(), shared_from_this(),
                            "Handler index is out of range.");
 
             return word_handlers[index];
@@ -537,7 +537,7 @@ namespace sorth
         {
             auto [ found, word_entry ] = dictionary.find(word);
 
-            throw_error_if(!found, *this, "Word " + word + " was not found.");
+            throw_error_if(!found, shared_from_this(), "Word " + word + " was not found.");
 
             auto this_ptr = shared_from_this();
             word_handlers[word_entry.handler_index].function(this_ptr);
@@ -553,7 +553,7 @@ namespace sorth
         void InterpreterImpl::execute_word(const Location& location, const Word& word)
         {
             throw_error_if(word.handler_index >= word_handlers.size(),
-                           *this,
+                           shared_from_this(),
                            "Bad word handler index.");
 
             current_location = location;
@@ -592,7 +592,7 @@ namespace sorth
                     // Detect and report an error if we're not already in a cleanup context.
                     if ((throw_exception) && (contexts > 0))
                     {
-                        throw_error(*this, "Unbalanced context handling detected.");
+                        throw_error(shared_from_this(), "Unbalanced context handling detected.");
                     }
 
                     // Otherwise clear up the marker.
@@ -680,7 +680,7 @@ namespace sorth
 
                                     if (!found)
                                     {
-                                        throw_error(*this, "Word '" + name + "' not found.");
+                                        throw_error(shared_from_this(), "Word '" + name + "' not found.");
                                     }
 
                                     auto& word_handler = word_handlers[word.handler_index];
@@ -724,7 +724,7 @@ namespace sorth
                                 }
                                 else
                                 {
-                                    throw_error(*this, "Can not execute unexpected value type.");
+                                    throw_error(shared_from_this(), "Can not execute unexpected value type.");
                                 }
                             }
                             break;
@@ -736,7 +736,7 @@ namespace sorth
 
                                 if (!found)
                                 {
-                                    throw_error(*this, "Word '" + name + "' not found.");
+                                    throw_error(shared_from_this(), "Word '" + name + "' not found.");
                                 }
 
                                 push((int64_t)word.handler_index);
@@ -767,7 +767,7 @@ namespace sorth
                             break;
 
                         case OperationCode::Id::unmark_loop_exit:
-                            throw_error_if(loop_locations.empty(), *this,
+                            throw_error_if(loop_locations.empty(), shared_from_this(),
                                            "Clearing a loop exit without an enclosing loop.");
 
                             loop_locations.pop_back();
@@ -784,7 +784,7 @@ namespace sorth
                             break;
 
                         case OperationCode::Id::unmark_catch:
-                            throw_error_if(catch_locations.empty(), *this,
+                            throw_error_if(catch_locations.empty(), shared_from_this(),
                                            "Clearing a catch exit without an enclosing try/catch.");
                             catch_locations.pop_back();
                             break;
@@ -797,7 +797,7 @@ namespace sorth
                         case OperationCode::Id::release_context:
                             if (contexts == 0)
                             {
-                                throw_error(*this, "Unbalanced context release detected.");
+                                throw_error(shared_from_this(), "Unbalanced context release detected.");
                             }
 
                             release_context();
@@ -946,7 +946,7 @@ namespace sorth
         {
             if (stack.empty())
             {
-                throw_error(*this, "Stack underflow.");
+                throw_error(shared_from_this(), "Stack underflow.");
             }
 
             auto next = stack.front();
@@ -1164,7 +1164,7 @@ namespace sorth
 
             if (!found)
             {
-                throw_error(*this, "Word " + word + " was not found for replacement.");
+                throw_error(shared_from_this(), "Word " + word + " was not found for replacement.");
             }
 
             auto code_ref = word_handlers[word_entry.handler_index].function.get_byte_code();
@@ -1295,7 +1295,7 @@ namespace sorth
 
     InterpreterPtr clone_interpreter(InterpreterPtr& interpreter)
     {
-        InterpreterImpl* raw_ptr = reinterpret_cast<InterpreterImpl*>(&(*interpreter));
+        InterpreterImpl* raw_ptr = reinterpret_cast<InterpreterImpl*>(&(interpreter));
         return std::make_shared<InterpreterImpl>(*raw_ptr);
     }
 

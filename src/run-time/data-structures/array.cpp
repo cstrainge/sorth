@@ -90,7 +90,7 @@ namespace sorth
     {
         if (items.empty())
         {
-            internal::throw_error(*interpreter, "Popping from an empty array.");
+            internal::throw_error(interpreter, "Popping from an empty array.");
         }
 
         Value value = items[0];
@@ -104,7 +104,7 @@ namespace sorth
     {
         if (items.empty())
         {
-            internal::throw_error(*interpreter, "Popping from an empty array.");
+            internal::throw_error(interpreter, "Popping from an empty array.");
         }
 
         Value value = items[0];

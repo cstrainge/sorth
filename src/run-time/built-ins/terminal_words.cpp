@@ -44,7 +44,7 @@ namespace sorth
 
                     auto result = tcgetattr(STDIN_FILENO, &original_termios);
 
-                    throw_error_if(result == -1, *interpreter,
+                    throw_error_if(result == -1, interpreter,
                                    "Could not read terminal mode information, " +
                                    std::string(strerror(errno)) + ".");
 
@@ -56,7 +56,7 @@ namespace sorth
 
                     result = tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
 
-                    throw_error_if(result == -1, *interpreter,
+                    throw_error_if(result == -1, interpreter,
                                    "Could not set terminal mode, " +
                                    std::string(strerror(errno)) + ".");
 
@@ -66,7 +66,7 @@ namespace sorth
                 {
                     auto result = tcsetattr(STDIN_FILENO, TCSAFLUSH, &original_termios);
 
-                    throw_error_if(result == -1, *interpreter,
+                    throw_error_if(result == -1, interpreter,
                                    "Could not reset terminal mode, " +
                                    std::string(strerror(errno)) + ".");
 
@@ -81,7 +81,7 @@ namespace sorth
 
                 auto result = ioctl(STDOUT_FILENO, TIOCGWINSZ, &size);
 
-                throw_error_if(result == -1, *interpreter,
+                throw_error_if(result == -1, interpreter,
                     "Could not read terminal information, " +
                     std::string(strerror(errno)) + ".");
 
@@ -154,11 +154,11 @@ namespace sorth
                 if (requested_on && (!is_in_raw_mode))
                 {
                     result = GetConsoleMode(std_in_handle, &input_mode);
-                    throw_windows_error_if(!result, *interpreter, "Get console input mode: ",
+                    throw_windows_error_if(!result, interpreter, "Get console input mode: ",
                                             GetLastError());
 
                     result = GetConsoleMode(std_out_handle, &output_mode);
-                    throw_windows_error_if(!result, *interpreter, "Get console input mode: ",
+                    throw_windows_error_if(!result, interpreter, "Get console input mode: ",
                                             GetLastError());
 
 
@@ -174,11 +174,11 @@ namespace sorth
 
 
                     result = SetConsoleMode(std_in_handle, new_input_mode);
-                    throw_windows_error_if(!result, *interpreter, "Set console input mode: ",
+                    throw_windows_error_if(!result, interpreter, "Set console input mode: ",
                                             GetLastError());
 
                     result = SetConsoleMode(std_out_handle, new_output_mode);
-                    throw_windows_error_if(!result, *interpreter, "Set console output mode: ",
+                    throw_windows_error_if(!result, interpreter, "Set console output mode: ",
                                             GetLastError());
 
                     flush_events();
@@ -187,11 +187,11 @@ namespace sorth
                 else if ((!requested_on) && is_in_raw_mode)
                 {
                     result = SetConsoleMode(std_in_handle, input_mode);
-                    throw_windows_error_if(!result, *interpreter, "Set console input mode: ",
+                    throw_windows_error_if(!result, interpreter, "Set console input mode: ",
                                             GetLastError());
 
                     result = SetConsoleMode(std_out_handle, output_mode);
-                    throw_windows_error_if(!result, *interpreter, "Set console output mode: ",
+                    throw_windows_error_if(!result, interpreter, "Set console output mode: ",
                                             GetLastError());
 
                     flush_events();
@@ -213,7 +213,7 @@ namespace sorth
 
                 if (!result)
                 {
-                    throw_windows_error(*interpreter, "Could not get console information: ",
+                    throw_windows_error(interpreter, "Could not get console information: ",
                                         GetLastError());
                 }
 
@@ -232,7 +232,7 @@ namespace sorth
 
                 auto result = ReadConsoleA(std_in_handle, &buffer, 1, &num_read, nullptr);
 
-                throw_windows_error_if(!result, *interpreter, "Read console error: ",
+                throw_windows_error_if(!result, interpreter, "Read console error: ",
                                        GetLastError());
 
                 interpreter->push(std::string(1, buffer));
@@ -267,7 +267,7 @@ namespace sorth
         {
             auto str = as_string(interpreter, interpreter->pop());
 
-            throw_error_if(str.size() != 1, *interpreter,
+            throw_error_if(str.size() != 1, interpreter,
                            "Expected single character.");
 
             bool result =    (str[0] >= 32)

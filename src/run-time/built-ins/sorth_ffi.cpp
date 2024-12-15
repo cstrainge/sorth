@@ -665,7 +665,7 @@ namespace sorth
 
             if (found == type_map.end())
             {
-                throw_error(*interpreter, "FFI type " + name + " not found.");
+                throw_error(interpreter, "FFI type " + name + " not found.");
             }
 
             return found->second;
@@ -784,7 +784,7 @@ namespace sorth
 
                 if (handle == nullptr)
                 {
-                    throw_windows_error(*interpreter,
+                    throw_windows_error(interpreter,
                                         "Could not load libary " + lib_name + ": ",
                                         GetLastError());
                 }
@@ -793,7 +793,7 @@ namespace sorth
 
                 if (handle == nullptr)
                 {
-                    throw_error(*interpreter,
+                    throw_error(interpreter,
                                 std::string("Failed to load external library: ") + dlerror() + ".");
                 }
             #endif
@@ -820,7 +820,7 @@ namespace sorth
 
             if (found == library_map.end())
             {
-                throw_error(*interpreter, "Failed find open libary: " + lib_name + ".");
+                throw_error(interpreter, "Failed find open libary: " + lib_name + ".");
             }
 
             fn_handle fn_handle =
@@ -829,7 +829,7 @@ namespace sorth
 
                 if (fn_handle == nullptr)
                 {
-                    throw_windows_error(*interpreter, "Could not find function " + function_name +
+                    throw_windows_error(interpreter, "Could not find function " + function_name +
                                                       " in library " + lib_name + ": ",
                                         GetLastError());
                 }
@@ -838,7 +838,7 @@ namespace sorth
 
                 if (fn_handle == nullptr)
                 {
-                    throw_error(*interpreter, "Could not find function " + function_name +
+                    throw_error(interpreter, "Could not find function " + function_name +
                                               " in library " + lib_name + ".");
                 }
                 #endif
@@ -886,7 +886,7 @@ namespace sorth
                                      ret_conversion.type,
                                      types.data()) != FFI_OK)
                     {
-                        throw_error(*interpreter, "Could not bind to function " + fn_name + ".");
+                        throw_error(interpreter, "Could not bind to function " + fn_name + ".");
                     }
 
                     const size_t alignment = 8;
@@ -1136,7 +1136,7 @@ namespace sorth
 
         void word_ffi_array(InterpreterPtr& interpreter)
         {
-            throw_error(*interpreter, "FFI arrays are unimplemented.");
+            throw_error(interpreter, "FFI arrays are unimplemented.");
         }
 
     }

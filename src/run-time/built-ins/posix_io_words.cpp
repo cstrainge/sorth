@@ -55,7 +55,7 @@ namespace sorth
             while ((fd == -1) && (errno == EINTR));
 
             throw_error_if(fd == -1,
-                           *interpreter,
+                           interpreter,
                            "File could not be opened: " +
                            std::string(strerror(errno)) + ".");
 
@@ -64,7 +64,7 @@ namespace sorth
                 auto result = fchmod(fd, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 
                 throw_error_if(result != 0,
-                            *interpreter,
+                            interpreter,
                             "File permissions could not be set: " +
                             std::string(strerror(errno)) + ".");
             }
@@ -90,7 +90,7 @@ namespace sorth
                     default:        message = "Unexpected I/O error occurred."; break;
                 }
 
-                throw_error(*interpreter, message);
+                throw_error(interpreter, message);
             }
 
             return buffer.st_size;
@@ -118,7 +118,7 @@ namespace sorth
             while (result < total_size);
 
             throw_error_if(result == -1,
-                           *interpreter,
+                           interpreter,
                            "FD could not be written to " + std::string(strerror(errno)) + ".");
         }
 
@@ -149,7 +149,7 @@ namespace sorth
             while ((result == -1) && (errno == EINTR));
 
             throw_error_if(result == -1,
-                           *interpreter,
+                           interpreter,
                            "FD could not closed, " + std::string(strerror(errno)) + ".");
         }
 
@@ -162,7 +162,7 @@ namespace sorth
 
             auto fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
-            throw_error_if(fd == -1, *interpreter,
+            throw_error_if(fd == -1, interpreter,
                            "Could not open socket fd, " + std::string(strerror(errno)) + ".");
 
             memset(&address, 0, sizeof(struct sockaddr_un));
@@ -172,7 +172,7 @@ namespace sorth
 
             auto result = connect(fd, (struct sockaddr*)&address, sizeof(address));
 
-            throw_error_if(result == -1, *interpreter,
+            throw_error_if(result == -1, interpreter,
                            "Could connect to socket, " + std::string(strerror(errno)) + ".");
 
             interpreter->push((int64_t)fd);
@@ -199,7 +199,7 @@ namespace sorth
                     default:        message = "Unexpected I/O error occurred."; break;
                 }
 
-                throw_error(*interpreter, message);
+                throw_error(interpreter, message);
             }
 
             interpreter->push((int64_t)buffer.st_size);
@@ -234,7 +234,7 @@ namespace sorth
 
         void word_file_read(InterpreterPtr& interpreter)
         {
-            throw_error(*interpreter, "This word is currently unimplemented.");
+            throw_error(interpreter, "This word is currently unimplemented.");
         }
 
 
@@ -253,7 +253,7 @@ namespace sorth
             while ((result == -1) && (errno == EINTR));
 
             throw_error_if(result == -1,
-                           *interpreter,
+                           interpreter,
                            "FD could not be read from " + std::string(strerror(errno)) + ".");
 
             std::string new_string(1, next);
@@ -290,7 +290,7 @@ namespace sorth
             while ((result == -1) && (errno == EINTR));
 
             throw_error_if(result == -1,
-                           *interpreter,
+                           interpreter,
                            "FD could not be read from " + std::string(strerror(errno)) + ".");
 
             std::string new_string = buffer;
@@ -345,7 +345,7 @@ namespace sorth
             while ((result == -1) && (errno == EINTR));
 
             throw_error_if(result == -1,
-                           *interpreter,
+                           interpreter,
                            "FD could not be read from " + std::string(strerror(errno)) + ".");
 
             interpreter->push(line);

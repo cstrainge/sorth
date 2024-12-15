@@ -281,7 +281,7 @@ namespace sorth
             return std::get<std::thread::id>(value);
         }
 
-        throw_error(*interpreter, "Deep copy of unexpected type.");
+        throw_error(interpreter, "Deep copy of unexpected type.");
     }
 
 
