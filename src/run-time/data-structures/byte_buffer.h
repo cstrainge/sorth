@@ -106,11 +106,30 @@ namespace sorth
     };
 
 
-
     std::strong_ordering operator <=>(const ByteBuffer& rhs, const ByteBuffer& lhs);
 
     std::strong_ordering operator <=>(const ByteBufferPtr& rhs, const ByteBufferPtr& lhs);
 
+
+    inline bool operator ==(const ByteBuffer& rhs, const ByteBuffer& lhs)
+    {
+        return (rhs <=> lhs) == std::strong_ordering::equal;
+    }
+
+    inline bool operator !=(const ByteBuffer& rhs, const ByteBuffer& lhs)
+    {
+        return (rhs <=> lhs) != std::strong_ordering::equal;
+    }
+
+    inline bool operator ==(const ByteBufferPtr& rhs, const ByteBufferPtr& lhs)
+    {
+        return *rhs == *lhs;
+    }
+
+    inline bool operator !=(const ByteBufferPtr& rhs, const ByteBufferPtr& lhs)
+    {
+        return *rhs == *lhs;
+    }
 
 
     class SubBuffer : public Buffer

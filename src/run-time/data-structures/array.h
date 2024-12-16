@@ -45,15 +45,24 @@ namespace sorth
     std::strong_ordering operator <=>(const ArrayPtr& rhs, const ArrayPtr& lhs);
 
 
-    inline bool operator ==(const ArrayPtr& rhs, const ArrayPtr& lhs)
+    inline bool operator ==(const Array& rhs, const Array& lhs)
     {
-        return *rhs <=> *lhs == std::strong_ordering::equal;
+        return (rhs <=> lhs) == std::strong_ordering::equal;
     }
 
+    inline bool operator !=(const Array& rhs, const Array& lhs)
+    {
+        return (rhs <=> lhs) != std::strong_ordering::equal;
+    }
+
+    inline bool operator ==(const ArrayPtr& rhs, const ArrayPtr& lhs)
+    {
+        return *rhs == *lhs;
+    }
 
     inline bool operator !=(const ArrayPtr& rhs, const ArrayPtr& lhs)
     {
-        return *rhs <=> *lhs != std::strong_ordering::equal;
+        return *rhs != *lhs;
     }
 
 

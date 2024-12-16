@@ -42,7 +42,9 @@ namespace sorth::internal
 
 
     std::ostream& operator <<(std::ostream& stream, const Instruction::Id id);
+
     std::ostream& operator <<(std::ostream& stream, const Instruction& op);
+
     std::ostream& operator <<(std::ostream& stream, const ByteCode& code);
 
 

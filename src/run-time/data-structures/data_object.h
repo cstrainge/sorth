@@ -64,14 +64,24 @@ namespace sorth
     std::strong_ordering operator <=>(const DataObjectPtr& rhs, const DataObjectPtr& lhs);
 
 
+    inline bool operator ==(const DataObject& rhs, const DataObject& lhs)
+    {
+        return (rhs <=> lhs) == std::strong_ordering::equal;
+    }
+
+    inline bool operator !=(const DataObject& rhs, const DataObject& lhs)
+    {
+        return (rhs <=> lhs) != std::strong_ordering::equal;
+    }
+
     inline bool operator ==(const DataObjectPtr& rhs, const DataObjectPtr& lhs)
     {
-        return rhs <=> lhs == std::strong_ordering::equal;
+        return *rhs == *lhs;
     }
 
     inline bool operator !=(const DataObjectPtr& rhs, const DataObjectPtr& lhs)
     {
-        return rhs <=> lhs != std::strong_ordering::equal;
+        return *rhs == *lhs;
     }
 
 

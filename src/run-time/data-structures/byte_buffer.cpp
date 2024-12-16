@@ -76,18 +76,6 @@ namespace sorth
     }
 
 
-    bool operator ==(const ByteBufferPtr& rhs, const ByteBufferPtr& lhs)
-    {
-        if (rhs->size() != lhs->size())
-        {
-            return false;
-        }
-
-        return std::memcmp(rhs->data_ptr(), lhs->data_ptr(), rhs->size()) == 0;
-    }
-
-
-
     Buffer::Buffer()
     {
     }

@@ -42,15 +42,27 @@ namespace sorth
     std::strong_ordering operator <=>(const HashTablePtr& rhs, const HashTablePtr& lhs);
 
 
+    inline bool operator ==(const HashTable& rhs, const HashTable& lhs)
+    {
+        return (rhs <=> lhs) == std::strong_ordering::equal;
+    }
+
+
+    inline bool operator !=(const HashTable& rhs, const HashTable& lhs)
+    {
+        return (rhs <=> lhs) != std::strong_ordering::equal;
+    }
+
+
     inline bool operator ==(const HashTablePtr& rhs, const HashTablePtr& lhs)
     {
-        return *rhs <=> *lhs == std::strong_ordering::equal;
+        return *rhs == *lhs;
     }
 
 
     inline bool operator !=(const HashTablePtr& rhs, const HashTablePtr& lhs)
     {
-        return *rhs <=> *lhs != std::strong_ordering::equal;
+        return *rhs == *lhs;
     }
 
 

@@ -176,6 +176,7 @@ namespace sorth
 
     std::ostream& operator <<(std::ostream& stream, const Value& value) noexcept;
 
+
     std::strong_ordering operator <=>(const Value& rhs, const Value& lhs) noexcept;
 
 
