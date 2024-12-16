@@ -14,15 +14,15 @@ namespace sorth
     {
         stream << "{" << std::endl;
 
-        value_print_indent += 4;
+        Value::value_format_indent += 4;
 
         int index = 0;
 
         for (const auto& item : table->get_items())
         {
-            stream << std::string(value_print_indent, ' ');
+            stream << std::string(Value::value_format_indent, ' ');
 
-            if (std::holds_alternative<std::string>(item.first))
+            if (item.first.is_string())
             {
                 stream << stringify(item.first);
             }
@@ -33,7 +33,7 @@ namespace sorth
 
             stream << " -> ";
 
-            if (std::holds_alternative<std::string>(item.second))
+            if (item.second.is_string())
             {
                 stream << stringify(item.second);
             }
@@ -52,41 +52,44 @@ namespace sorth
             ++index;
         }
 
-        value_print_indent -= 4;
+        Value::value_format_indent -= 4;
 
-        stream << std::string(value_print_indent, ' ') << "}";
+        stream << std::string(Value::value_format_indent, ' ') << "}";
 
 
         return stream;
     }
 
 
-    bool operator ==(const HashTablePtr& rhs, const HashTablePtr& lhs)
+    std::strong_ordering operator <=>(const HashTable& rhs, const HashTable& lhs)
     {
-        auto& r_rhs = *rhs;
-        auto& r_lhs = *lhs;
-
-        if (r_rhs.size() != r_lhs.size())
+        if (rhs.items.size() != lhs.items.size())
         {
-            return false;
+            return rhs.items.size() <=> lhs.items.size();
         }
 
-        for (auto iter : r_rhs.items)
+        for (const auto& [ key, value ] : rhs.items)
         {
-            auto found_iter = r_lhs.items.find(iter.first);
+            auto iterator = lhs.items.find(key);
 
-            if (found_iter == r_lhs.items.end())
+            if (iterator == lhs.items.end())
             {
-                return false;
+                return std::strong_ordering::greater;
             }
 
-            if (iter.second != found_iter->second)
+            if (value != iterator->second)
             {
-                return false;
+                return value <=> iterator->second;
             }
         }
 
-        return true;
+        return std::strong_ordering::equal;
+    }
+
+
+    std::strong_ordering operator <=>(const HashTablePtr& rhs, const HashTablePtr& lhs)
+    {
+        return *rhs <=> *lhs;
     }
 
 
@@ -126,6 +129,20 @@ namespace sorth
         {
             items.insert({ key, value });
         }
+    }
+
+
+    size_t HashTable::hash() const noexcept
+    {
+        size_t hash_value = 0;
+
+        for (const auto& [ key, value ] : items)
+        {
+            hash_value ^= Value::hash_combine(hash_value, key.hash());
+            hash_value ^= Value::hash_combine(hash_value, value.hash());
+        }
+
+        return hash_value;
     }
 
 

@@ -12,14 +12,14 @@ namespace sorth
         {
             stream << "# " << data->definition->name << "\n";
 
-            value_print_indent += 4;
+            Value::value_format_indent += 4;
 
             for (size_t i = 0; i < data->fields.size(); ++i)
             {
-                stream << std::string(value_print_indent, ' ')
+                stream << std::string(Value::value_format_indent, ' ')
                        << data->definition->fieldNames[i] << " -> ";
 
-                if (std::holds_alternative<std::string>(data->fields[i]))
+                if (data->fields[i].is_string())
                 {
                     stream << stringify(data->fields[i]);
                 }
@@ -34,9 +34,9 @@ namespace sorth
                 }
             }
 
-            value_print_indent -= 4;
+            Value::value_format_indent -= 4;
 
-            stream << "\n" << std::string(value_print_indent, ' ') << ";";
+            stream << "\n" << std::string(Value::value_format_indent, ' ') << ";";
         }
         else
         {
@@ -47,22 +47,33 @@ namespace sorth
     }
 
 
-    bool operator ==(const DataObjectPtr& rhs, const DataObjectPtr& lhs)
+    std::strong_ordering operator <=>(const DataObject& rhs, const DataObject& lhs)
     {
-        if (rhs->definition->name != lhs->definition->name)
+        if (rhs.definition->name != lhs.definition->name)
         {
-            return false;
+            return rhs.definition->name <=> lhs.definition->name;
         }
 
-        for (size_t i = 0; i < rhs->fields.size(); ++i)
+        if (rhs.fields.size() != lhs.fields.size())
         {
-            if (rhs->fields[i] != lhs->fields[i])
+            return rhs.fields.size() <=> lhs.fields.size();
+        }
+
+        for (size_t i = 0; i < rhs.fields.size(); ++i)
+        {
+            if (rhs.fields[i] != lhs.fields[i])
             {
-                return false;
+                return rhs.fields[i] <=> lhs.fields[i];
             }
         }
 
-        return true;
+        return std::strong_ordering::equal;
+    }
+
+
+    std::strong_ordering operator <=>(const DataObjectPtr& rhs, const DataObjectPtr& lhs)
+    {
+        return *rhs <=> *lhs;
     }
 
 
@@ -81,7 +92,7 @@ namespace sorth
 
         for (int i = 0; i < fields->size(); ++i)
         {
-            definition_ptr->fieldNames[i] = as_string(interpreter, (*fields)[i]);
+            definition_ptr->fieldNames[i] = (*fields)[i].as_string(interpreter);
 
             if (defaults)
             {
@@ -104,7 +115,7 @@ namespace sorth
         interpreter->add_word(definition_ptr->name + ".new",
             internal::WordFunction::Handler([=](auto interpreter)
             {
-                auto new_object = make_data_object(interpreter, definition_ptr);
+                auto new_object = make_data_object(definition_ptr);
                 interpreter->push(new_object);
             }),
             location,
@@ -165,7 +176,7 @@ namespace sorth
                         interpreter->execute_word(swap);
 
                         auto variables = interpreter->get_variables();
-                        auto index = as_numeric<int64_t>(interpreter, interpreter->pop());
+                        auto index = interpreter->pop_as_integer();
                         interpreter->push(variables[index]);
 
                         interpreter->execute_word(struct_write);
@@ -177,7 +188,7 @@ namespace sorth
                         interpreter->execute_word(swap);
 
                         auto variables = interpreter->get_variables();
-                        auto index = as_numeric<int64_t>(interpreter, interpreter->pop());
+                        auto index = interpreter->pop_as_integer();
                         interpreter->push(variables[index]);
 
                         interpreter->execute_word(struct_read);
@@ -229,8 +240,7 @@ namespace sorth
     }
 
 
-    DataObjectPtr make_data_object(InterpreterPtr& interpreter,
-                                   const DataObjectDefinitionPtr& definition)
+    DataObjectPtr make_data_object(const DataObjectDefinitionPtr& definition)
     {
         auto new_data = std::make_shared<DataObject>();
 
@@ -239,10 +249,23 @@ namespace sorth
 
         for (int index = 0; index < definition->defaults.size(); ++index)
         {
-            new_data->fields[index] = deep_copy_value(interpreter, definition->defaults[index]);
+            new_data->fields[index] = definition->defaults[index].deep_copy();
         }
 
         return new_data;
+    }
+
+
+    size_t DataObject::hash() const noexcept
+    {
+        size_t hash_value = 0;
+
+        for (const auto& value : fields)
+        {
+            hash_value ^= Value::hash_combine(hash_value, value.hash());
+        }
+
+        return hash_value;
     }
 
 

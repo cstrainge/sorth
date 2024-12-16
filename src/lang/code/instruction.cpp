@@ -43,7 +43,7 @@ namespace sorth::internal
             {
                 if (id == Instruction::Id::jump_target)
                 {
-                    return is_string(value) ? false : true;
+                    return value.is_string() ? false : true;
                 }
 
                 return    (id == Instruction::Id::read_variable)
@@ -60,9 +60,9 @@ namespace sorth::internal
         if (!doesnt_have_parameter(op.id, op.value))
         {
             if (   (op.id == Instruction::Id::push_constant_value)
-                && (std::holds_alternative<std::string>(op.value)))
+                && (op.value.is_string()))
             {
-                stream << "  " << stringify(std::get<std::string>(op.value));
+                stream << "  " << stringify(op.value.as_string_with_conversion());
             }
             else
             {
@@ -96,16 +96,7 @@ namespace sorth::internal
             }
             else
             {
-                stream << op.id;
-
-                if (std::holds_alternative<int64_t>(op.value))
-                {
-                    stream << "  " << (i + std::get<int64_t>(op.value)) << std::endl;
-                }
-                else
-                {
-                    stream << "  " << op.value << std::endl;
-                }
+                stream << op.id << "  " << op.value << std::endl;
             }
         }
 

@@ -98,8 +98,24 @@ namespace sorth
     }
 
 
+    std::strong_ordering operator <=>(const ByteBuffer& rhs, const ByteBuffer& lhs)
+    {
+        if (rhs.size() != lhs.size())
+        {
+            return rhs.size() <=> lhs.size();
+        }
 
-    ByteBuffer::ByteBuffer(int64_t new_size)
+        return std::memcmp(rhs.data_ptr(), lhs.data_ptr(), rhs.size()) <=> 0;
+    }
+
+
+    std::strong_ordering operator <=>(const ByteBufferPtr& rhs, const ByteBufferPtr& lhs)
+    {
+        return *rhs <=> *lhs;
+    }
+
+
+    ByteBuffer::ByteBuffer(size_t new_size)
     : owned(true),
       bytes(new unsigned char[new_size]),
       byte_size(new_size),
@@ -109,7 +125,7 @@ namespace sorth
     }
 
 
-    ByteBuffer::ByteBuffer(void* raw_ptr, int64_t size)
+    ByteBuffer::ByteBuffer(void* raw_ptr, size_t size)
     : owned(false),
       bytes(reinterpret_cast<unsigned char*>(raw_ptr)),
       byte_size(size),
@@ -182,7 +198,7 @@ namespace sorth
     }
 
 
-    void ByteBuffer::resize(int64_t new_size)
+    void ByteBuffer::resize(size_t new_size)
     {
         if (owned == false)
         {
@@ -206,13 +222,13 @@ namespace sorth
     }
 
 
-    int64_t ByteBuffer::size() const
+    size_t ByteBuffer::size() const
     {
         return byte_size;
     }
 
 
-    int64_t ByteBuffer::position() const
+    size_t ByteBuffer::position() const
     {
         return current_position;
     }
@@ -224,13 +240,13 @@ namespace sorth
     }
 
 
-    void ByteBuffer::set_position(int64_t new_position)
+    void ByteBuffer::set_position(size_t new_position)
     {
         current_position = new_position;
     }
 
 
-    void ByteBuffer::increment_position(int64_t increment)
+    void ByteBuffer::increment_position(size_t increment)
     {
         auto new_position = current_position + increment;
 
@@ -261,7 +277,7 @@ namespace sorth
     }
 
 
-    void ByteBuffer::write_int(int64_t byte_size, int64_t value)
+    void ByteBuffer::write_int(size_t byte_size, int64_t value)
     {
         void* data_ptr = position_ptr();
         memcpy(data_ptr, &value, byte_size);
@@ -270,9 +286,9 @@ namespace sorth
     }
 
 
-    int64_t ByteBuffer::read_int(int64_t byte_size, bool is_signed)
+    int64_t ByteBuffer::read_int(size_t byte_size, bool is_signed)
     {
-        int64_t value = 0;
+        size_t value = 0;
         void* data_ptr = position_ptr();
         memcpy(&value, data_ptr, byte_size);
 
@@ -283,7 +299,7 @@ namespace sorth
 
             if ((value & sign_flag) != 0)
             {
-                uint64_t negative_bits = 0xffffffffffffffff << (64 - bit_size);
+                size_t negative_bits = 0xffffffffffffffff << (64 - bit_size);
                 value = value | negative_bits;
             }
         }
@@ -294,7 +310,7 @@ namespace sorth
     }
 
 
-    void ByteBuffer::write_float(int64_t byte_size, double value)
+    void ByteBuffer::write_float(size_t byte_size, double value)
     {
         void* data_ptr = position_ptr();
 
@@ -313,7 +329,7 @@ namespace sorth
     }
 
 
-    double ByteBuffer::read_float(int64_t byte_size)
+    double ByteBuffer::read_float(size_t byte_size)
     {
         double new_value = 0.0;
         void* data_ptr = position_ptr();
@@ -336,7 +352,7 @@ namespace sorth
     }
 
 
-    void ByteBuffer::write_string(const std::string& string, int64_t max_size)
+    void ByteBuffer::write_string(const std::string& string, size_t max_size)
     {
         void* data_ptr = position_ptr();
 
@@ -345,7 +361,7 @@ namespace sorth
     }
 
 
-    std::string ByteBuffer::read_string(int64_t max_size)
+    std::string ByteBuffer::read_string(size_t max_size)
     {
         std::string new_string;
         void* data_ptr = nullptr;
@@ -394,7 +410,7 @@ namespace sorth
 
 
 
-    SubBuffer::SubBuffer(Buffer& parent, int64_t base_position)
+    SubBuffer::SubBuffer(Buffer& parent, size_t base_position)
     : parent(parent),
       base_position(base_position)
     {
@@ -406,19 +422,19 @@ namespace sorth
     }
 
 
-    void SubBuffer::resize(int64_t new_size)
+    void SubBuffer::resize(size_t new_size)
     {
         parent.resize(new_size + base_position);
     }
 
 
-    int64_t SubBuffer::size() const
+    size_t SubBuffer::size() const
     {
         return parent.size() - base_position;
     }
 
 
-    int64_t SubBuffer::position() const
+    size_t SubBuffer::position() const
     {
         return current_position;
     }
@@ -436,7 +452,7 @@ namespace sorth
     }
 
 
-    void SubBuffer::set_position(int64_t new_position)
+    void SubBuffer::set_position(size_t new_position)
     {
         if (new_position > size())
         {
@@ -452,7 +468,7 @@ namespace sorth
     }
 
 
-    void SubBuffer::increment_position(int64_t increment)
+    void SubBuffer::increment_position(size_t increment)
     {
         parent.increment_position(increment);
     }
@@ -482,7 +498,7 @@ namespace sorth
     }
 
 
-    void SubBuffer::write_int(int64_t byte_size, int64_t value)
+    void SubBuffer::write_int(size_t byte_size, int64_t value)
     {
         auto original = parent.position();
 
@@ -494,7 +510,7 @@ namespace sorth
     }
 
 
-    int64_t SubBuffer::read_int(int64_t byte_size, bool is_signed)
+    int64_t SubBuffer::read_int(size_t byte_size, bool is_signed)
     {
         auto original = parent.position();
 
@@ -508,7 +524,7 @@ namespace sorth
     }
 
 
-    void SubBuffer::write_float(int64_t byte_size, double value)
+    void SubBuffer::write_float(size_t byte_size, double value)
     {
         auto original = parent.position();
 
@@ -520,7 +536,7 @@ namespace sorth
     }
 
 
-    double SubBuffer::read_float(int64_t byte_size)
+    double SubBuffer::read_float(size_t byte_size)
     {
         auto original = parent.position();
 
@@ -534,7 +550,7 @@ namespace sorth
     }
 
 
-    void SubBuffer::write_string(const std::string& string, int64_t max_size)
+    void SubBuffer::write_string(const std::string& string, size_t max_size)
     {
         auto original = parent.position();
 
@@ -546,7 +562,7 @@ namespace sorth
     }
 
 
-    std::string SubBuffer::read_string(int64_t max_size)
+    std::string SubBuffer::read_string(size_t max_size)
     {
         auto original = parent.position();
 
@@ -560,7 +576,7 @@ namespace sorth
     }
 
 
-    void SubBuffer::local_increment_position(int64_t increment)
+    void SubBuffer::local_increment_position(size_t increment)
     {
         auto new_position = current_position + increment;
         auto byte_size = parent.size();

@@ -36,7 +36,7 @@ namespace sorth
 
             void word_term_raw_mode(InterpreterPtr& interpreter)
             {
-                auto requested_on = as_numeric<bool>(interpreter, interpreter->pop());
+                auto requested_on = interpreter->pop_as_bool();
 
                 if (requested_on && (!is_in_raw_mode))
                 {
@@ -265,7 +265,7 @@ namespace sorth
 
         void word_term_is_printable(InterpreterPtr& interpreter)
         {
-            auto str = as_string(interpreter, interpreter->pop());
+            auto str = interpreter->pop_as_string();
 
             throw_error_if(str.size() != 1, interpreter,
                            "Expected single character.");

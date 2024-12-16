@@ -12,15 +12,15 @@ namespace sorth
             std::vector<Value> items;
 
         public:
-            Array(int64_t size);
+            Array(size_t size);
 
         public:
-            int64_t size() const;
-            Value& operator [](int64_t index);
-            void resize(int64_t new_size);
+            size_t size() const;
+            Value& operator [](size_t index);
+            void resize(size_t new_size);
 
-            void insert(int64_t index, const Value& value);
-            void remove(int64_t index);
+            void insert(size_t index, const Value& value);
+            void remove(size_t index);
 
         public:
             void push_front(const Value& value);
@@ -28,15 +28,33 @@ namespace sorth
             Value pop_front(InterpreterPtr& interpreter);
             Value pop_back(InterpreterPtr& interpreter);
 
+        public:
+            size_t hash() const noexcept;
+
         private:
             friend std::ostream& operator <<(std::ostream& stream, const ArrayPtr& array);
-            friend bool operator ==(const ArrayPtr& rhs, const ArrayPtr& lhs);
+            friend std::strong_ordering operator <=>(const Array& rhs, const Array& lhs);
     };
 
 
     std::ostream& operator <<(std::ostream& stream, const ArrayPtr& array);
 
-    bool operator ==(const ArrayPtr& rhs, const ArrayPtr& lhs);
+
+    std::strong_ordering operator <=>(const Array& rhs, const Array& lhs);
+
+    std::strong_ordering operator <=>(const ArrayPtr& rhs, const ArrayPtr& lhs);
+
+
+    inline bool operator ==(const ArrayPtr& rhs, const ArrayPtr& lhs)
+    {
+        return *rhs <=> *lhs == std::strong_ordering::equal;
+    }
+
+
+    inline bool operator !=(const ArrayPtr& rhs, const ArrayPtr& lhs)
+    {
+        return *rhs <=> *lhs != std::strong_ordering::equal;
+    }
 
 
 }

@@ -6,9 +6,11 @@ namespace sorth
 {
 
 
+    using ValueList = std::vector<Value>;
+
+
     // The base definition of a data object, useful for reflection and creation of the actual data
     // objects.
-
     struct DataObjectDefinition
     {
         using NameList = std::vector<std::string>;
@@ -30,6 +32,9 @@ namespace sorth
     {
         DataObjectDefinitionPtr definition;  // Reference of the base definition.
         ValueList fields;                    // The actual values of the structure.
+
+        public:
+            size_t hash() const noexcept;
     };
 
 
@@ -46,8 +51,7 @@ namespace sorth
                                       bool is_hidden = false);
 
     // Create a new data object for the given definition.
-    DataObjectPtr make_data_object(InterpreterPtr& interpreter,
-                                   const DataObjectDefinitionPtr& definition_ptr);
+    DataObjectPtr make_data_object(const DataObjectDefinitionPtr& definition_ptr);
 
 
     // When we print out a data structure we include the definition so that we can include field
@@ -55,7 +59,20 @@ namespace sorth
     std::ostream& operator <<(std::ostream& stream, const DataObjectPtr& data);
 
 
-    bool operator ==(const DataObjectPtr& rhs, const DataObjectPtr& lhs);
+    std::strong_ordering operator <=>(const DataObject& rhs, const DataObject& lhs);
+
+    std::strong_ordering operator <=>(const DataObjectPtr& rhs, const DataObjectPtr& lhs);
+
+
+    inline bool operator ==(const DataObjectPtr& rhs, const DataObjectPtr& lhs)
+    {
+        return rhs <=> lhs == std::strong_ordering::equal;
+    }
+
+    inline bool operator !=(const DataObjectPtr& rhs, const DataObjectPtr& lhs)
+    {
+        return rhs <=> lhs != std::strong_ordering::equal;
+    }
 
 
 }

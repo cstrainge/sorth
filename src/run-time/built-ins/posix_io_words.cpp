@@ -35,8 +35,8 @@ namespace sorth
 
         void call_open(InterpreterPtr& interpreter, int flags)
         {
-            auto file_mode = (int)as_numeric<int64_t>(interpreter, interpreter->pop());
-            auto file_path = as_string(interpreter, interpreter->pop());
+            auto file_mode = (int)interpreter->pop_as_integer();
+            auto file_path = interpreter->pop_as_string();
 
             bool is_new_file = false;
 
@@ -137,7 +137,7 @@ namespace sorth
 
         void word_file_close(InterpreterPtr& interpreter)
         {
-            int fd = (int)as_numeric<int64_t>(interpreter, interpreter->pop());
+            int fd = (int)interpreter->pop_as_integer();
             int result;
 
             errno = 0;
@@ -156,7 +156,7 @@ namespace sorth
 
         void word_socket_connect(InterpreterPtr& interpreter)
         {
-            auto path = as_string(interpreter, interpreter->pop());
+            auto path = interpreter->pop_as_string();
 
             struct sockaddr_un address;
 
@@ -182,7 +182,7 @@ namespace sorth
         void word_file_size_read(InterpreterPtr& interpreter)
         {
             struct stat buffer;
-            int fd = (int)as_numeric<int64_t>(interpreter, interpreter->pop());
+            int fd = (int)interpreter->pop_as_integer();
 
             errno = 0;
 
@@ -208,7 +208,7 @@ namespace sorth
 
         void word_file_exists(InterpreterPtr& interpreter)
         {
-            auto file_path = as_string(interpreter, interpreter->pop());
+            auto file_path = interpreter->pop_as_string();
 
             interpreter->push(call_exists(file_path.c_str()));
         }
@@ -216,14 +216,14 @@ namespace sorth
 
         void word_file_is_open(InterpreterPtr& interpreter)
         {
-            int fd = (int)as_numeric<int64_t>(interpreter, interpreter->pop());
+            int fd = (int)interpreter->pop_as_integer();
             interpreter->push(fcntl(fd, F_GETFD) != -1);
         }
 
 
         void word_file_is_eof(InterpreterPtr& interpreter)
         {
-            int fd = (int)as_numeric<int64_t>(interpreter, interpreter->pop());
+            int fd = (int)interpreter->pop_as_integer();
 
             auto position = lseek(fd, 0, SEEK_CUR);
             auto size = call_file_size(interpreter, fd);
@@ -240,7 +240,7 @@ namespace sorth
 
         void word_file_read_character(InterpreterPtr& interpreter)
         {
-            int fd = (int)as_numeric<int64_t>(interpreter, interpreter->pop());
+            int fd = (int)interpreter->pop_as_integer();
 
             ssize_t result = 0;
             char next;
@@ -263,8 +263,8 @@ namespace sorth
 
         void word_file_read_string(InterpreterPtr& interpreter)
         {
-            int fd = (int)as_numeric<int64_t>(interpreter, interpreter->pop());
-            size_t new_size = as_numeric<int64_t>(interpreter, interpreter->pop());
+            int fd = (int)interpreter->pop_as_integer();
+            size_t new_size = interpreter->pop_as_size();
 
             char buffer[new_size + 1];
             memset(buffer, 0, new_size + 1);
@@ -300,12 +300,12 @@ namespace sorth
 
         void word_file_write(InterpreterPtr& interpreter)
         {
-            int fd = (int)as_numeric<int64_t>(interpreter, interpreter->pop());
+            int fd = (int)interpreter->pop_as_integer();
             auto value = interpreter->pop();
 
-            if (std::holds_alternative<ByteBufferPtr>(value))
+            if (value.is_byte_buffer())
             {
-                auto buffer = as_byte_buffer(interpreter, value);
+                auto buffer = value.as_byte_buffer(interpreter);
 
                 call_write(interpreter, fd, buffer->data_ptr(), buffer->size());
             }
@@ -322,7 +322,7 @@ namespace sorth
 
         void word_file_line_read(InterpreterPtr& interpreter)
         {
-            int fd = (int)as_numeric<int64_t>(interpreter, interpreter->pop());
+            int fd = (int)interpreter->pop_as_integer();
             std::string line;
             char next = 0;
             ssize_t result = 0;
@@ -354,8 +354,8 @@ namespace sorth
 
         void word_file_line_write(InterpreterPtr& interpreter)
         {
-            int fd = (int)as_numeric<int64_t>(interpreter, interpreter->pop());
-            auto line = as_string(interpreter, interpreter->pop());
+            int fd = (int)interpreter->pop_as_integer();
+            auto line = interpreter->pop_as_string();
 
             bool has_nl = line[line.size() - 1] == '\n';
             size_t total_size = has_nl

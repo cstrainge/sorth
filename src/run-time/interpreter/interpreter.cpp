@@ -33,6 +33,9 @@ namespace sorth
     using ThreadMap = std::unordered_map<std::thread::id, SubThreadInfo>;
 
 
+    using ValueStack = std::list<Value>;
+
+
     namespace
     {
 
@@ -139,7 +142,20 @@ namespace sorth
 
                 virtual int64_t depth() const override;
                 virtual void push(const Value& value) override;
+
                 virtual Value pop() override;
+                virtual int64_t pop_as_integer() override;
+                virtual size_t pop_as_size() override;
+                virtual double pop_as_float() override;
+                virtual bool pop_as_bool() override;
+                virtual std::string pop_as_string() override;
+                virtual std::thread::id pop_as_thread_id() override;
+                virtual DataObjectPtr pop_as_structure() override;
+                virtual ArrayPtr pop_as_array() override;
+                virtual HashTablePtr pop_as_hash_table() override;
+                virtual ByteBufferPtr pop_as_byte_buffer() override;
+                virtual Token pop_as_token() override;
+                virtual ByteCode pop_as_byte_code() override;
 
                 virtual int64_t thread_input_depth(std::thread::id id) override;
                 virtual void thread_push_input(std::thread::id& id, Value& value) override;
@@ -662,14 +678,14 @@ namespace sorth
                     {
                         case Instruction::Id::def_variable:
                             {
-                                auto name = as_string(shared_from_this(), operation.value);
+                                auto name = operation.value.as_string(shared_from_this());
                                 define_variable(name);
                             }
                             break;
 
                         case Instruction::Id::def_constant:
                             {
-                                auto name = as_string(shared_from_this(), operation.value);
+                                auto name = operation.value.as_string(shared_from_this());
                                 auto value = pop();
 
                                 define_constant(name, value);
@@ -678,14 +694,14 @@ namespace sorth
 
                         case Instruction::Id::read_variable:
                             {
-                                auto index = as_numeric<int64_t>(shared_from_this(), pop());
+                                auto index = pop_as_size();
                                 push(read_variable(index));
                             }
                             break;
 
                         case Instruction::Id::write_variable:
                             {
-                                auto index = as_numeric<int64_t>(shared_from_this(), pop());
+                                auto index = pop_as_size();
                                 auto value = pop();
 
                                 write_variable(index, value);
@@ -694,9 +710,9 @@ namespace sorth
 
                         case Instruction::Id::execute:
                             {
-                                if (is_string(operation.value))
+                                if (operation.value.is_string())
                                 {
-                                    auto name = as_string(shared_from_this(), operation.value);
+                                    auto name = operation.value.as_string(shared_from_this());
                                     auto [found, word] = dictionary.find(name);
 
                                     if (!found)
@@ -722,10 +738,9 @@ namespace sorth
 
                                     call_stack_pop();
                                 }
-                                else if (is_numeric(operation.value))
+                                else if (operation.value.is_numeric())
                                 {
-                                    auto index = as_numeric<int64_t>(shared_from_this(),
-                                                                    operation.value);
+                                    auto index = operation.value.as_integer(shared_from_this());
                                     auto& word_handler = word_handlers[index];
 
                                     call_stack_push(word_handler);
@@ -752,7 +767,7 @@ namespace sorth
 
                         case Instruction::Id::word_index:
                             {
-                                auto name = as_string(shared_from_this(), operation.value);
+                                auto name = operation.value.as_string(shared_from_this());
                                 auto [ found, word ] = dictionary.find(name);
 
                                 if (!found)
@@ -766,7 +781,7 @@ namespace sorth
 
                         case Instruction::Id::word_exists:
                             {
-                                auto name = as_string(shared_from_this(), operation.value);
+                                auto name = operation.value.as_string(shared_from_this());
                                 auto [ found, word ] = dictionary.find(name);
 
                                 push(found);
@@ -779,8 +794,8 @@ namespace sorth
 
                         case Instruction::Id::mark_loop_exit:
                             {
-                                int64_t relative_jump = as_numeric<int64_t>(shared_from_this(),
-                                                                            operation.value);
+                                int64_t relative_jump =
+                                                     operation.value.as_integer(shared_from_this());
                                 int64_t absolute = pc + relative_jump;
 
                                 loop_locations.push_back({pc + 1, absolute});
@@ -796,8 +811,8 @@ namespace sorth
 
                         case Instruction::Id::mark_catch:
                             {
-                                int64_t relative_jump = as_numeric<int64_t>(shared_from_this(),
-                                                                            operation.value);
+                                int64_t relative_jump =
+                                                     operation.value.as_integer(shared_from_this());
                                 int64_t absolute = pc + relative_jump;
 
                                 catch_locations.push_back(absolute);
@@ -826,29 +841,27 @@ namespace sorth
                             break;
 
                         case Instruction::Id::jump:
-                            pc += as_numeric<int64_t>(shared_from_this(), operation.value) - 1;
+                            pc += operation.value.as_integer(shared_from_this()) - 1;
                             break;
 
                         case Instruction::Id::jump_if_zero:
                             {
-                                auto top = pop();
-                                auto value = as_numeric<bool>(shared_from_this(), top);
+                                auto value = pop_as_bool();
 
                                 if (!value)
                                 {
-                                    pc += as_numeric<int64_t>(shared_from_this(), operation.value) - 1;
+                                    pc += operation.value.as_integer(shared_from_this()) - 1;
                                 }
                             }
                             break;
 
                         case Instruction::Id::jump_if_not_zero:
                             {
-                                auto top = pop();
-                                auto value = as_numeric<bool>(shared_from_this(), top);
+                                auto value = pop_as_bool();
 
                                 if (value)
                                 {
-                                    pc += as_numeric<int64_t>(shared_from_this(), operation.value) - 1;
+                                    pc += operation.value.as_integer(shared_from_this()) - 1;
                                 }
                             }
                             break;
@@ -925,9 +938,10 @@ namespace sorth
 
         void InterpreterImpl::print_stack(std::ostream& stream)
         {
+            stream << "Stack: " << stack.size() << std::endl;
             for (const auto& value : stack)
             {
-                if (std::holds_alternative<std::string>(value))
+                if (value.is_string())
                 {
                     stream << stringify(value) << std::endl;
                 }
@@ -936,6 +950,8 @@ namespace sorth
                     stream << value << std::endl;
                 }
             }
+
+            stream << "----" << std::endl;
         }
 
 
@@ -974,6 +990,78 @@ namespace sorth
             stack.pop_front();
 
             return next;
+        }
+
+
+        int64_t InterpreterImpl::pop_as_integer()
+        {
+            return pop().as_integer(shared_from_this());
+        }
+
+
+        size_t InterpreterImpl::pop_as_size()
+        {
+            return static_cast<size_t>(pop().as_integer(shared_from_this()));
+        }
+
+
+        double InterpreterImpl::pop_as_float()
+        {
+            return pop().as_float(shared_from_this());
+        }
+
+
+        bool InterpreterImpl::pop_as_bool()
+        {
+            return pop().as_bool();
+        }
+
+
+        std::string InterpreterImpl::pop_as_string()
+        {
+            return pop().as_string(shared_from_this());
+        }
+
+
+        std::thread::id InterpreterImpl::pop_as_thread_id()
+        {
+            return pop().as_thread_id(shared_from_this());
+        }
+
+
+        DataObjectPtr InterpreterImpl::pop_as_structure()
+        {
+            return pop().as_structure(shared_from_this());
+        }
+
+
+        ArrayPtr InterpreterImpl::pop_as_array()
+        {
+            return pop().as_array(shared_from_this());
+        }
+
+
+        HashTablePtr InterpreterImpl::pop_as_hash_table()
+        {
+            return pop().as_hash_table(shared_from_this());
+        }
+
+
+        ByteBufferPtr InterpreterImpl::pop_as_byte_buffer()
+        {
+            return pop().as_byte_buffer(shared_from_this());
+        }
+
+
+        Token InterpreterImpl::pop_as_token()
+        {
+            return pop().as_token(shared_from_this());
+        }
+
+
+        ByteCode InterpreterImpl::pop_as_byte_code()
+        {
+            return pop().as_byte_code(shared_from_this());
         }
 
 
@@ -1103,7 +1191,7 @@ namespace sorth
                             name,
                             [value](InterpreterPtr& This)
                             {
-                                This->push(deep_copy_value(This, value));
+                                This->push(value.deep_copy());
                             },
                             "Constant value " + name + ".",
                             " -- value");

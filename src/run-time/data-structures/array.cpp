@@ -26,52 +26,45 @@ namespace sorth
     }
 
 
-    bool operator ==(const ArrayPtr& rhs, const ArrayPtr& lhs)
+    std::strong_ordering operator <=>(const Array& rhs, const Array& lhs)
     {
-        if (rhs->size() != lhs->size())
-        {
-            return false;
-        }
-
-        for (int i = 0; i < rhs->size(); ++i)
-        {
-            if ((*rhs)[i] != (*lhs)[i])
-            {
-                return false;
-            }
-        }
-
-        return true;
+        return rhs.items <=> lhs.items;
     }
 
 
-    Array::Array(int64_t size)
+    std::strong_ordering operator <=>(const ArrayPtr& rhs, const ArrayPtr& lhs)
+    {
+        return *rhs <=> *lhs;
+    }
+
+
+    Array::Array(size_t size)
     {
         items.resize(size);
     }
 
 
-    int64_t Array::size() const
+    size_t Array::size() const
     {
         return items.size();
     }
 
-    Value& Array::operator [](int64_t index)
+    Value& Array::operator [](size_t index)
     {
         return items[index];
     }
 
-    void Array::resize(int64_t new_size)
+    void Array::resize(size_t new_size)
     {
         items.resize((size_t)new_size);
     }
 
-    void Array::insert(int64_t index, const Value& value)
+    void Array::insert(size_t index, const Value& value)
     {
         items.insert(std::next(items.begin(), index), value);
     }
 
-    void Array::remove(int64_t index)
+    void Array::remove(size_t index)
     {
         items.erase(std::next(items.begin(), index));
     }
@@ -112,6 +105,19 @@ namespace sorth
         items.pop_back();
 
         return value;
+    }
+
+
+    size_t Array::hash() const noexcept
+    {
+        size_t hash_value = 0;
+
+        for (const auto& value : items)
+        {
+            hash_value ^= Value::hash_combine(hash_value, value.hash());
+        }
+
+        return hash_value;
     }
 
 

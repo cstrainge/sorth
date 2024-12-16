@@ -13,28 +13,42 @@ namespace sorth
             virtual ~Buffer();
 
         public:
-            virtual void resize(int64_t new_size) = 0;
-            virtual int64_t size() const = 0;
+            virtual void resize(size_t new_size) = 0;
+            virtual size_t size() const = 0;
 
-            virtual int64_t position() const = 0;
+            virtual size_t position() const = 0;
             virtual void* position_ptr() const = 0;
 
-            virtual void set_position(int64_t new_position) = 0;
-            virtual void increment_position(int64_t increment) = 0;
+            virtual void set_position(size_t new_position) = 0;
+            virtual void increment_position(size_t increment) = 0;
 
         public:
             virtual void* data_ptr() = 0;
             virtual const void* data_ptr() const = 0;
 
         public:
-            virtual void write_int(int64_t byte_size, int64_t value) = 0;
-            virtual int64_t read_int(int64_t byte_size, bool is_signed) = 0;
+            virtual void write_int(size_t byte_size, int64_t value) = 0;
+            virtual int64_t read_int(size_t byte_size, bool is_signed) = 0;
 
-            virtual void write_float(int64_t byte_size, double value) = 0;
-            virtual double read_float(int64_t byte_size) = 0;
+            virtual void write_float(size_t byte_size, double value) = 0;
+            virtual double read_float(size_t byte_size) = 0;
 
-            virtual void write_string(const std::string& string, int64_t max_size) = 0;
-            virtual std::string read_string(int64_t max_size) = 0;
+            virtual void write_string(const std::string& string, size_t max_size) = 0;
+            virtual std::string read_string(size_t max_size) = 0;
+
+        public:
+            virtual size_t hash() const noexcept
+            {
+                size_t hash_value = 0;
+                const char* buffer = static_cast<const char*>(data_ptr());
+
+                for (size_t i = 0; i < size(); ++i)
+                {
+                    hash_value ^= Value::hash_combine(hash_value, std::hash<char>()(buffer[i]));
+                }
+
+                return hash_value;
+            }
     };
 
 
@@ -48,13 +62,13 @@ namespace sorth
         private:
             bool owned;
             unsigned char* bytes;
-            int64_t byte_size;
+            size_t byte_size;
 
-            int64_t current_position;
+            size_t current_position;
 
         public:
-            ByteBuffer(int64_t size);
-            ByteBuffer(void* raw_ptr, int64_t size);
+            ByteBuffer(size_t size);
+            ByteBuffer(void* raw_ptr, size_t size);
             ByteBuffer(const ByteBuffer& buffer);
             ByteBuffer(ByteBuffer&& buffer);
             virtual ~ByteBuffer() override;
@@ -64,28 +78,28 @@ namespace sorth
             ByteBuffer& operator =(ByteBuffer&& buffer);
 
         public:
-            virtual void resize(int64_t new_size) override;
-            virtual int64_t size() const override;
+            virtual void resize(size_t new_size) override;
+            virtual size_t size() const override;
 
-            virtual int64_t position() const override;
+            virtual size_t position() const override;
             virtual void* position_ptr() const override;
 
-            virtual void set_position(int64_t new_position) override;
-            virtual void increment_position(int64_t increment) override;
+            virtual void set_position(size_t new_position) override;
+            virtual void increment_position(size_t increment) override;
 
         public:
             virtual void* data_ptr() override;
             virtual const void* data_ptr() const override;
 
         public:
-            virtual void write_int(int64_t byte_size, int64_t value) override;
-            virtual int64_t read_int(int64_t byte_size, bool is_signed) override;
+            virtual void write_int(size_t byte_size, int64_t value) override;
+            virtual int64_t read_int(size_t byte_size, bool is_signed) override;
 
-            virtual void write_float(int64_t byte_size, double value) override;
-            virtual double read_float(int64_t byte_size) override;
+            virtual void write_float(size_t byte_size, double value) override;
+            virtual double read_float(size_t byte_size) override;
 
-            virtual void write_string(const std::string& string, int64_t max_size) override;
-            virtual std::string read_string(int64_t max_size) override;
+            virtual void write_string(const std::string& string, size_t max_size) override;
+            virtual std::string read_string(size_t max_size) override;
 
         private:
             void reset();
@@ -93,43 +107,49 @@ namespace sorth
 
 
 
+    std::strong_ordering operator <=>(const ByteBuffer& rhs, const ByteBuffer& lhs);
+
+    std::strong_ordering operator <=>(const ByteBufferPtr& rhs, const ByteBufferPtr& lhs);
+
+
+
     class SubBuffer : public Buffer
     {
         private:
             Buffer& parent;
-            int64_t base_position;
-            int64_t current_position;
+            size_t base_position;
+            size_t current_position;
 
         public:
-            SubBuffer(Buffer& parent, int64_t base_position);
+            SubBuffer(Buffer& parent, size_t base_position);
             virtual ~SubBuffer();
 
         public:
-            virtual void resize(int64_t new_size) override;
-            virtual int64_t size() const override;
+            virtual void resize(size_t new_size) override;
+            virtual size_t size() const override;
 
-            virtual int64_t position() const override;
+            virtual size_t position() const override;
             virtual void* position_ptr() const override;
 
-            virtual void set_position(int64_t new_position) override;
-            virtual void increment_position(int64_t increment) override;
+            virtual void set_position(size_t new_position) override;
+            virtual void increment_position(size_t increment) override;
 
         public:
             virtual void* data_ptr() override;
             virtual const void* data_ptr() const override;
 
         public:
-            virtual void write_int(int64_t byte_size, int64_t value) override;
-            virtual int64_t read_int(int64_t byte_size, bool is_signed) override;
+            virtual void write_int(size_t byte_size, int64_t value) override;
+            virtual int64_t read_int(size_t byte_size, bool is_signed) override;
 
-            virtual void write_float(int64_t byte_size, double value) override;
-            virtual double read_float(int64_t byte_size) override;
+            virtual void write_float(size_t byte_size, double value) override;
+            virtual double read_float(size_t byte_size) override;
 
-            virtual void write_string(const std::string& string, int64_t max_size) override;
-            virtual std::string read_string(int64_t max_size) override;
+            virtual void write_string(const std::string& string, size_t max_size) override;
+            virtual std::string read_string(size_t max_size) override;
 
         private:
-            void local_increment_position(int64_t increment);
+            void local_increment_position(size_t increment);
     };
 
 

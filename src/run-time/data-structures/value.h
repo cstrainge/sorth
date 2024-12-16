@@ -2,21 +2,21 @@
 #pragma once
 
 
+
 namespace sorth
 {
 
 
-    namespace internal
-    {
-        struct Instruction;
-        using ByteCode = std::vector<Instruction>;
-    }
-
     class Interpreter;
     using InterpreterPtr = std::shared_ptr<Interpreter>;
 
-    struct DataObject;
-    using DataObjectPtr = std::shared_ptr<DataObject>;
+
+
+    // The value type that represents a nothing value in the language.
+    struct None
+    {
+    };
+
 
     class Array;
     using ArrayPtr = std::shared_ptr<Array>;
@@ -27,94 +27,169 @@ namespace sorth
     class HashTable;
     using HashTablePtr = std::shared_ptr<HashTable>;
 
+    class DataObject;
+    using DataObjectPtr = std::shared_ptr<DataObject>;
 
-    struct None
+
+    namespace internal
     {
+
+
+        class Instruction;
+        using ByteCode = std::vector<Instruction>;
+
+
+        class Token;
+
+
+    }
+
+
+    // The value class represents all types an interpreter value can take in the language.
+    class Value
+    {
+        private:
+            using ValueType = std::variant<None,
+                                           int64_t,
+                                           double,
+                                           bool,
+                                           std::string,
+                                           std::thread::id,
+                                           DataObjectPtr,
+                                           ArrayPtr,
+                                           HashTablePtr,
+                                           ByteBufferPtr,
+                                           internal::Token,
+                                           internal::ByteCode>;
+
+        private:
+            ValueType value;
+
+        public:
+            static thread_local size_t value_format_indent;
+
+        public:
+            Value() noexcept = default;
+            Value(const None& none) noexcept;
+            Value(int64_t value) noexcept;
+            Value(size_t value) noexcept;
+            Value(double value) noexcept;
+            Value(bool value) noexcept;
+            Value(const char* value) noexcept;
+            Value(const std::string& value) noexcept;
+            Value(const std::thread::id& value) noexcept;
+            Value(const DataObjectPtr& value) noexcept;
+            Value(const ArrayPtr& value) noexcept;
+            Value(const HashTablePtr& value) noexcept;
+            Value(const ByteBufferPtr& value) noexcept;
+            Value(const internal::Token& value) noexcept;
+            Value(const internal::ByteCode& value) noexcept;
+            Value(const Value& value) = default;
+            Value(Value&& value) = default;
+            ~Value() noexcept = default;
+
+        public:
+            Value& operator =(const Value& value) = default;
+            Value& operator =(Value&& value) = default;
+
+            Value& operator =(const None& none) noexcept;
+            Value& operator =(int64_t value) noexcept;
+            Value& operator =(double value) noexcept;
+            Value& operator =(bool value) noexcept;
+            Value& operator =(const char* value) noexcept;
+            Value& operator =(const std::string& value) noexcept;
+            Value& operator =(const std::thread::id& value) noexcept;
+            Value& operator =(const DataObjectPtr& value) noexcept;
+            Value& operator =(const ArrayPtr& value) noexcept;
+            Value& operator =(const HashTablePtr& value) noexcept;
+            Value& operator =(const ByteBufferPtr& value) noexcept;
+            Value& operator =(const internal::Token& value) noexcept;
+            Value& operator =(const internal::ByteCode& value) noexcept;
+
+            operator bool() const noexcept;
+
+        public:
+            inline size_t type_index() const noexcept
+            {
+                return value.index();
+            }
+
+        public:
+            Value deep_copy() const;
+
+        public:
+            bool is_none() const noexcept;
+            bool is_numeric() const noexcept;
+            bool is_integer() const noexcept;
+            bool is_float() const noexcept;
+            bool is_bool() const noexcept;
+            bool is_string() const noexcept;
+            bool is_thread_id() const noexcept;
+            bool is_structure() const noexcept;
+            bool is_array() const noexcept;
+            bool is_hash_table() const noexcept;
+            bool is_byte_buffer() const noexcept;
+            bool is_token() const noexcept;
+            bool is_byte_code() const noexcept;
+
+        public:
+            static bool either_is_string(const Value& a, const Value& b) noexcept;
+
+            static bool either_is_numeric(const Value& a, const Value& b) noexcept;
+
+            static bool either_is_integer(const Value& a, const Value& b) noexcept;
+            static bool either_is_float(const Value& a, const Value& b) noexcept;
+
+        public:
+            int64_t as_integer(const InterpreterPtr& interpreter) const;
+            double as_float(const InterpreterPtr& interpreter) const;
+            bool as_bool() const noexcept;
+            std::string as_string(const InterpreterPtr& interpreter) const;
+            std::thread::id as_thread_id(const InterpreterPtr& interpreter) const;
+            std::string as_string_with_conversion() const noexcept;
+            DataObjectPtr as_structure(const InterpreterPtr& interpreter) const;
+            ArrayPtr as_array(const InterpreterPtr& interpreter) const;
+            HashTablePtr as_hash_table(const InterpreterPtr& interpreter) const;
+            ByteBufferPtr as_byte_buffer(const InterpreterPtr& interpreter) const;
+            internal::Token as_token(const InterpreterPtr& interpreter) const;
+            internal::ByteCode as_byte_code(const InterpreterPtr& interpreter) const;
+
+        public:
+            size_t hash() const noexcept;
+            static size_t hash_combine(size_t seed, size_t value) noexcept;
+
+        private:
+            friend std::ostream& operator <<(std::ostream& stream, const Value& value) noexcept;
+            friend std::strong_ordering operator <=>(const Value& rhs, const Value& lhs) noexcept;
     };
 
 
-    using Value = std::variant<None,
-                               int64_t,
-                               double,
-                               bool,
-                               std::string,
-                               DataObjectPtr,
-                               ArrayPtr,
-                               ByteBufferPtr,
-                               HashTablePtr,
-                               internal::Token,
-                               internal::Location,
-                               internal::ByteCode,
-                               std::thread::id>;
-
-    using ValueStack = std::list<Value>;
-    using ValueList = std::vector<Value>;
-
-    using VariableList = internal::ContextualList<Value>;
-
-    std::ostream& operator <<(std::ostream& stream, const Value& value);
 
 
-    size_t hash_value(const Value& key);
-    bool operator ==(const sorth::Value& rhs, const sorth::Value& lhs);
+    // Return a string value, but convert the value to a string if it is not a string.  Also enclose
+    // the string in quotes, and will escape any characters that need to be escaped.
+    std::string stringify(const Value& value) noexcept;
+
+    // Enclose a string in quotes and escape any characters that need to be escaped.
+    std::string stringify(const std::string& value) noexcept;
 
 
-    // Keep track of indenting for pretty printing certain value types like arrays and hashmaps.
-    extern thread_local uint64_t value_print_indent;
+    std::ostream& operator <<(std::ostream& stream, const Value& value) noexcept;
+
+    std::strong_ordering operator <=>(const Value& rhs, const Value& lhs) noexcept;
 
 
-    Value deep_copy_value(InterpreterPtr& interpreter, const Value& value);
-    Value deep_copy_data_object(InterpreterPtr& interpreter, const Value& value);
-    Value deep_copy_array(InterpreterPtr& interpreter, const Value& value);
-    Value deep_copy_byte_buffer(InterpreterPtr& interpreter, const Value& value);
-    Value deep_copy_hash_table(InterpreterPtr& interpreter, const Value& value);
-
-
-}
-
-
-inline std::string stringify(const std::string& input)
-{
-    std::string output = "\"";
-
-    for (size_t i = 0; i < input.size(); ++i)
+    inline bool operator ==(const Value& rhs, const Value& lhs) noexcept
     {
-        char next = input[i];
-
-        switch (next)
-        {
-            case '\r': output += "\\r";  break;
-            case '\n': output += "\\n";  break;
-            case '\t': output += "\\n";  break;
-            case '\"': output += "\\\""; break;
-
-            default:   output += next;   break;
-        }
+        return (rhs <=> lhs) == std::strong_ordering::equal;
     }
 
-    output += "\"";
-
-    return output;
-}
-
-
-inline std::string stringify(const sorth::Value& value)
-{
-    std::string result;
-
-    if (std::holds_alternative<std::string>(value))
+    inline bool operator !=(const Value& rhs, const Value& lhs) noexcept
     {
-        result = stringify(std::get<std::string>(value));
-    }
-    else
-    {
-        std::stringstream stream;
-
-        stream << value;
-        result = stream.str();
+        return (rhs <=> lhs) != std::strong_ordering::equal;
     }
 
-    return result;
+
 }
 
 
@@ -125,9 +200,9 @@ namespace std
     template<>
     struct hash<sorth::Value>
     {
-        size_t operator()(const sorth::Value& key) const
+        inline size_t operator()(const sorth::Value& key) const
         {
-            return sorth::hash_value(key);
+            return key.hash();
         }
     };
 

@@ -95,7 +95,7 @@ namespace sorth
 
         void word_file_open(InterpreterPtr& interpreter)
         {
-            DWORD flags = (DWORD)as_numeric<int64_t>(interpreter, interpreter->pop());
+            DWORD flags = (DWORD)interpreter->pop_as_integer();
             auto path = as_string(interpreter, interpreter->pop());
 
             interpreter->push((int64_t)handle_open(interpreter, path, flags, OPEN_ALWAYS));
@@ -106,7 +106,7 @@ namespace sorth
 
         void word_file_create_tempfile(InterpreterPtr& interpreter)
         {
-            DWORD flags = (DWORD)as_numeric<int64_t>(interpreter, interpreter->pop());
+            DWORD flags = (DWORD)interpreter->pop_as_integer();
             char temp_path[MAX_PATH + 1] = "";
             char full_temp_path[MAX_PATH + 1] = "";
 
@@ -135,7 +135,7 @@ namespace sorth
 
         void word_file_create(InterpreterPtr& interpreter)
         {
-            DWORD flags = (DWORD)as_numeric<int64_t>(interpreter, interpreter->pop());
+            DWORD flags = (DWORD)interpreter->pop_as_integer();
             auto path = as_string(interpreter, interpreter->pop());
 
             interpreter->push((int64_t)handle_open(interpreter, path, flags, CREATE_ALWAYS));
@@ -146,7 +146,7 @@ namespace sorth
 
         void word_file_close(InterpreterPtr& interpreter)
         {
-            auto handle = (HANDLE)as_numeric<int64_t>(interpreter, interpreter->pop());
+            auto handle = (HANDLE)interpreter->pop_as_integer();
 
             if (!CloseHandle(handle))
             {
@@ -204,7 +204,7 @@ namespace sorth
 
         void word_file_size_read(InterpreterPtr& interpreter)
         {
-            auto handle = (HANDLE)as_numeric<int64_t>(interpreter, interpreter->pop());
+            auto handle = (HANDLE)interpreter->pop_as_integer();
 
             LARGE_INTEGER file_size;
 
@@ -237,7 +237,7 @@ namespace sorth
 
         void word_file_is_open(InterpreterPtr& interpreter)
         {
-            auto handle = (HANDLE)as_numeric<int64_t>(interpreter, interpreter->pop());
+            auto handle = (HANDLE)interpreter->pop_as_integer();
             DWORD flags = 0;
 
             if (!GetHandleInformation(handle, &flags))
@@ -253,7 +253,7 @@ namespace sorth
 
         void word_file_is_eof(InterpreterPtr& interpreter)
         {
-            auto handle = (HANDLE)as_numeric<int64_t>(interpreter, interpreter->pop());
+            auto handle = (HANDLE)interpreter->pop_as_integer();
             char buffer = 0;
             DWORD bytes_read = 0;
 
@@ -293,7 +293,7 @@ namespace sorth
 
         void word_file_read_character(InterpreterPtr& interpreter)
         {
-            auto handle = (HANDLE)as_numeric<int64_t>(interpreter, interpreter->pop());
+            auto handle = (HANDLE)interpreter->pop_as_integer();
             char next_char = handle_read_char(interpreter, handle);
 
             interpreter->push(std::string(1, next_char));
@@ -304,8 +304,8 @@ namespace sorth
 
         void word_file_read_string(InterpreterPtr& interpreter)
         {
-            auto handle = (HANDLE)as_numeric<int64_t>(interpreter, interpreter->pop());
-            DWORD size = (DWORD)as_numeric<int64_t>(interpreter, interpreter->pop());
+            auto handle = (HANDLE)interpreter->pop_as_integer();
+            DWORD size = (DWORD)interpreter->pop_as_integer();
 
             char* buffer = nullptr;
 
@@ -352,12 +352,12 @@ namespace sorth
 
         void word_file_write(InterpreterPtr& interpreter)
         {
-            auto handle = (HANDLE)as_numeric<int64_t>(interpreter, interpreter->pop());
+            auto handle = (HANDLE)interpreter->pop_as_integer();
             auto value = interpreter->pop();
 
-            if (std::holds_alternative<ByteBufferPtr>(value))
+            if (value->is_byte_buffer())
             {
-                auto buffer = as_byte_buffer(interpreter, value);
+                auto buffer = value.as_byte_buffer(interpreter);
 
                 handle_write_bytes(interpreter, handle, (char*)buffer->data_ptr(),
                                    (DWORD)buffer->size());
@@ -378,7 +378,7 @@ namespace sorth
 
         void word_file_line_read(InterpreterPtr& interpreter)
         {
-            auto handle = (HANDLE)as_numeric<int64_t>(interpreter, interpreter->pop());
+            auto handle = (HANDLE)interpreter->pop_as_integer();
             char next_char;
             std::string line;
 
@@ -401,7 +401,7 @@ namespace sorth
 
         void word_file_line_write(InterpreterPtr& interpreter)
         {
-            auto handle = (HANDLE)as_numeric<int64_t>(interpreter, interpreter->pop());
+            auto handle = (HANDLE)interpreter->pop_as_integer();
             auto line = as_string(interpreter, interpreter->pop());
 
             if (line[line.size() - 1] != '\n')

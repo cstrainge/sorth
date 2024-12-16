@@ -1148,7 +1148,7 @@ namespace sorth::internal
                             {
                                 // Get the variable name and create a string constant in the module
                                 // for it.
-                                auto name = as_string(interpreter, code[i].value);
+                                auto name = code[i].value.as_string(interpreter);
                                 auto name_ptr = define_string_constant(name,
                                                                        builder,
                                                                        module,
@@ -1176,7 +1176,7 @@ namespace sorth::internal
                             {
                                 // Get the constant name and create a string constant in the module
                                 // for it.
-                                auto name = as_string(interpreter, code[i].value);
+                                auto name = code[i].value.as_string(interpreter);
                                 auto name_ptr = define_string_constant(name,
                                                                        builder,
                                                                        module,
@@ -1248,11 +1248,11 @@ namespace sorth::internal
                                 // Capture the result of teh execute call instruction.
                                 llvm::CallInst* result = nullptr;
 
-                                if (is_string(value))
+                                if (value.is_string())
                                 {
                                     // The value is a string, so execute the word based on it's
                                     // name.
-                                    auto name = as_string(interpreter, value);
+                                    auto name = value.as_string(interpreter);
                                     auto name_ptr = define_string_constant(name,
                                                                            builder,
                                                                            module,
@@ -1261,11 +1261,11 @@ namespace sorth::internal
                                     result = builder.CreateCall(handle_word_execute_name_fn,
                                                                 { interpreter_ptr, name_ptr });
                                 }
-                                else if (is_numeric(value))
+                                else if (value.is_numeric())
                                 {
                                     // The value is a number, so execute the word based on it's
                                     // handler index.
-                                    auto index = as_numeric<int64_t>(interpreter, value);
+                                    auto index = value.as_integer(interpreter);
                                     auto int_const = llvm::ConstantInt::get(int64_type, index);
                                     result = builder.CreateCall(handle_word_execute_index_fn,
                                                                 { interpreter_ptr, int_const });
@@ -1297,7 +1297,7 @@ namespace sorth::internal
                         case Instruction::Id::word_index:
                             {
                                 // Make sure we have a name for lookup.
-                                if (!is_string(code[i].value))
+                                if (!code[i].value.is_string())
                                 {
                                     throw_error("Expected a numeric value for word_index.");
                                 }
@@ -1305,7 +1305,7 @@ namespace sorth::internal
                                 // See if we can find the word in the interpreter at compile time.
                                 // If we can, we'll generate the code to push it's index on the
                                 // stack, if we can't we'll generate code to try again at runtime.
-                                auto name = as_string(interpreter, code[i].value);
+                                auto name = code[i].value.as_string(interpreter);
                                 auto [ found, word_info ] = interpreter->find_word(name);
 
                                 if (found)
@@ -1330,7 +1330,7 @@ namespace sorth::internal
                         case Instruction::Id::word_exists:
                             {
                                 // Make sure we have a name for lookup.
-                                if (!is_string(code[i].value))
+                                if (!code[i].value.is_string())
                                 {
                                     throw_error("Expected a numeric value for word_index.");
                                 }
@@ -1338,7 +1338,7 @@ namespace sorth::internal
                                 // See if we can find the word in the interpreter at compile time.
                                 // If we can, we'll generate the code to push a true value onto the
                                 // stack, if we can't we'll generate code to try again at runtime.
-                                auto name = as_string(interpreter, code[i].value);
+                                auto name = code[i].value.as_string(interpreter);
                                 auto [ found, _ ] = interpreter->find_word(name);
 
                                 if (found)
@@ -1367,31 +1367,31 @@ namespace sorth::internal
 
                                 // Check the type of the value.  If it's one of the simple types
                                 // directly generate the code to push it's value onto the stack.
-                                if (std::holds_alternative<bool>(value))
+                                if (value.is_bool())
                                 {
-                                    auto bool_value = std::get<bool>(value);
+                                    auto bool_value = value.as_bool();
                                     auto bool_const = llvm::ConstantInt::get(bool_type, bool_value);
                                     builder.CreateCall(handle_push_bool_fn,
                                                        { interpreter_ptr, bool_const });
                                 }
-                                else if (std::holds_alternative<int64_t>(value))
+                                else if (value.is_integer())
                                 {
-                                    auto int_value = std::get<int64_t>(value);
+                                    auto int_value = value.as_integer(interpreter);
                                     auto int_const = llvm::ConstantInt::get(int64_type, int_value);
                                     builder.CreateCall(handle_push_int_fn,
                                                        { interpreter_ptr, int_const });
                                 }
-                                else if (std::holds_alternative<double>(value))
+                                else if (value.is_float())
                                 {
-                                    auto double_value = std::get<double>(value);
+                                    auto double_value = value.as_float(interpreter);
                                     auto double_const = llvm::ConstantFP::get(double_type,
                                                                               double_value);
                                     builder.CreateCall(handle_push_double_fn,
                                                        { interpreter_ptr, double_const });
                                 }
-                                else if (std::holds_alternative<std::string>(value))
+                                else if (value.is_string())
                                 {
-                                    auto string_value = std::get<std::string>(value);
+                                    auto string_value = value.as_string(interpreter);
                                     auto string_ptr = define_string_constant(string_value,
                                                                              builder,
                                                                              module,
@@ -1421,8 +1421,7 @@ namespace sorth::internal
                             {
                                 // Capture the start and end indexes of the loop for later use.
                                 auto start_index = i + 1;
-                                auto end_index = i + as_numeric<int64_t>(interpreter,
-                                                                         code[i].value);
+                                auto end_index = i + code[i].value.as_integer(interpreter);
 
                                 loop_markers.push_back({ start_index, end_index });
                             }
@@ -1438,8 +1437,7 @@ namespace sorth::internal
                         case Instruction::Id::mark_catch:
                             {
                                 // Capture the index of the catch block for later use.
-                                auto target_index = i + as_numeric<int64_t>(interpreter,
-                                                                            code[i].value);
+                                auto target_index = i + code[i].value.as_integer(interpreter);
                                 catch_markers.push_back(target_index);
                                 catch_target_markers.insert(target_index);
                             }
@@ -1478,7 +1476,7 @@ namespace sorth::internal
                         case Instruction::Id::jump:
                             {
                                 // Jump to the target block.
-                                auto index = i + as_numeric<int64_t>(interpreter, code[i].value);
+                                auto index = i + code[i].value.as_integer(interpreter);
                                 builder.CreateBr(blocks[index]);
                             }
                             break;
@@ -1486,7 +1484,7 @@ namespace sorth::internal
                         case Instruction::Id::jump_if_zero:
                             {
                                 // Convert the relative index to an absolute index.
-                                auto index = i + as_numeric<int64_t>(interpreter, code[i].value);
+                                auto index = i + code[i].value.as_integer(interpreter);
 
                                 // Allocate a bool to hold the test value.  Then call the
                                 // handle_pop_bool function to get the value from the stack.
@@ -1522,7 +1520,7 @@ namespace sorth::internal
                         case Instruction::Id::jump_if_not_zero:
                             {
                                 // Convert the relative index to an absolute index.
-                                auto index = i + as_numeric<int64_t>(interpreter, code[i].value);
+                                auto index = i + code[i].value.as_integer(interpreter);
 
                                 // Allocate a bool to hold the test value.  Then call the
                                 // handle_pop_bool function to get the value from the stack.
@@ -1638,7 +1636,7 @@ namespace sorth::internal
                 {
                     auto& interpreter = *static_cast<InterpreterPtr*>(interpreter_ptr);
 
-                    *value = as_numeric<bool>(interpreter, interpreter->pop());
+                    *value = interpreter->pop_as_bool();
                 }
                 catch (std::runtime_error& error)
                 {
@@ -1794,7 +1792,7 @@ namespace sorth::internal
                 try
                 {
                     auto& interpreter = *static_cast<InterpreterPtr*>(interpreter_ptr);
-                    auto index = as_numeric<int64_t>(interpreter, interpreter->pop());
+                    auto index = interpreter->pop_as_integer();
 
                     interpreter->push(interpreter->read_variable(index));
                 }
@@ -1816,7 +1814,7 @@ namespace sorth::internal
                 try
                 {
                     auto& interpreter = *static_cast<InterpreterPtr*>(interpreter_ptr);
-                    auto index = as_numeric<int64_t>(interpreter, interpreter->pop());
+                    auto index = interpreter->pop_as_integer();
                     auto value = interpreter->pop();
 
                     interpreter->write_variable(index, value);
@@ -1891,7 +1889,7 @@ namespace sorth::internal
                 auto& array = *static_cast<std::vector<Value>*>(array_ptr);
                 auto& value = array[index];
 
-                interpreter->push(deep_copy_value(interpreter, value));
+                interpreter->push(value.deep_copy());
             }
 
 

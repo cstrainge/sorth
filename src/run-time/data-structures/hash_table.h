@@ -25,15 +25,33 @@ namespace sorth
                 return items;
             }
 
+        public:
+            size_t hash() const noexcept;
+
         private:
             friend std::ostream& operator <<(std::ostream& stream, const ArrayPtr& table);
-            friend bool operator ==(const HashTablePtr& rhs, const HashTablePtr& lhs);
+            friend std::strong_ordering operator <=>(const HashTable& rhs, const HashTable& lhs);
     };
 
 
     std::ostream& operator <<(std::ostream& stream, const HashTablePtr& table);
 
-    bool operator ==(const HashTablePtr& rhs, const HashTablePtr& lhs);
+
+    std::strong_ordering operator <=>(const HashTable& rhs, const HashTable& lhs);
+
+    std::strong_ordering operator <=>(const HashTablePtr& rhs, const HashTablePtr& lhs);
+
+
+    inline bool operator ==(const HashTablePtr& rhs, const HashTablePtr& lhs)
+    {
+        return *rhs <=> *lhs == std::strong_ordering::equal;
+    }
+
+
+    inline bool operator !=(const HashTablePtr& rhs, const HashTablePtr& lhs)
+    {
+        return *rhs <=> *lhs != std::strong_ordering::equal;
+    }
 
 
 }

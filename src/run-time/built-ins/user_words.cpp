@@ -16,7 +16,7 @@ namespace sorth
 
         void word_user_env_read(InterpreterPtr& interpreter)
         {
-            auto name = as_string(interpreter, interpreter->pop());
+            auto name = interpreter->pop_as_string();
             const char* value = std::getenv(name.c_str());
 
             if (value != nullptr)

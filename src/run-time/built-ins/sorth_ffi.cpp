@@ -135,7 +135,7 @@ namespace sorth
                             {
                                 const auto [ size, padding ] = alignment(sizeof(bool), align);
 
-                                buffer.write_int(size, as_numeric<bool>(interpreter, value));
+                                buffer.write_int(size, value.as_bool());
                                 buffer.increment_position(padding);
                             },
                         .convert_to = [](auto Interpreter, auto align, auto& buffer) -> Value
@@ -175,7 +175,7 @@ namespace sorth
                             {
                                 const auto [ size, padding ] = alignment(sizeof(int8_t), align);
 
-                                buffer.write_int(size, as_numeric<int64_t>(interpreter, value));
+                                buffer.write_int(size, value.as_integer(interpreter));
                                 buffer.increment_position(padding);
                             },
                         .convert_to = [](auto Interpreter, auto align, auto& buffer) -> Value
@@ -215,7 +215,7 @@ namespace sorth
                             {
                                 const auto [ size, padding ] = alignment(sizeof(uint8_t), align);
 
-                                buffer.write_int(size, as_numeric<int64_t>(interpreter, value));
+                                buffer.write_int(size, value.as_integer(interpreter));
                                 buffer.increment_position(align - sizeof(bool));
                             },
                         .convert_to = [](auto Interpreter, auto align, auto& buffer) -> Value
@@ -255,7 +255,7 @@ namespace sorth
                             {
                                 const auto [ size, padding ] = alignment(sizeof(int16_t), align);
 
-                                buffer.write_int(size, as_numeric<int64_t>(interpreter, value));
+                                buffer.write_int(size, value.as_integer(interpreter));
                                 buffer.increment_position(padding);
                             },
                         .convert_to = [](auto Interpreter, auto align, auto& buffer) -> Value
@@ -295,7 +295,7 @@ namespace sorth
                             {
                                 const auto [ size, padding ] = alignment(sizeof(uint16_t), align);
 
-                                buffer.write_int(size, as_numeric<int64_t>(interpreter, value));
+                                buffer.write_int(size, value.as_integer(interpreter));
                                 buffer.increment_position(padding);
                             },
                         .convert_to = [](auto Interpreter, auto align, auto& buffer) -> Value
@@ -335,7 +335,7 @@ namespace sorth
                             {
                                 const auto [ size, padding ] = alignment(sizeof(int32_t), align);
 
-                                buffer.write_int(size, as_numeric<int64_t>(interpreter, value));
+                                buffer.write_int(size, value.as_integer(interpreter));
                                 buffer.increment_position(padding);
                             },
                         .convert_to = [](auto Interpreter, auto align, auto& buffer) -> Value
@@ -375,7 +375,7 @@ namespace sorth
                             {
                                 const auto [ size, padding ] = alignment(sizeof(uint32_t), align);
 
-                                buffer.write_int(size, as_numeric<int64_t>(interpreter, value));
+                                buffer.write_int(size, value.as_integer(interpreter));
                                 buffer.increment_position(padding);
                             },
                         .convert_to = [](auto Interpreter, auto align, auto& buffer) -> Value
@@ -413,7 +413,7 @@ namespace sorth
                             {
                                 const auto [ size, padding ] = alignment(sizeof(int64_t), align);
 
-                                buffer.write_int(size, as_numeric<int64_t>(interpreter, value));
+                                buffer.write_int(size, value.as_integer(interpreter));
                                 buffer.increment_position(padding);
                             },
                         .convert_to = [](auto Interpreter, auto align, auto& buffer) -> Value
@@ -452,7 +452,7 @@ namespace sorth
                             {
                                 const auto [ size, padding ] = alignment(sizeof(uint64_t), align);
 
-                                buffer.write_int(size, as_numeric<int64_t>(interpreter, value));
+                                buffer.write_int(size, value.as_integer(interpreter));
                                 buffer.increment_position(padding);
                             },
                         .convert_to = [](auto Interpreter, auto align, auto& buffer) -> Value
@@ -492,7 +492,7 @@ namespace sorth
                             {
                                 const auto [ size, padding ] = alignment(sizeof(float), align);
 
-                                buffer.write_float(size, as_numeric<double>(interpreter, value));
+                                buffer.write_float(size, value.as_float(interpreter));
                                 buffer.increment_position(padding);
                             },
                         .convert_to = [](auto Interpreter, auto align, auto& buffer) -> Value
@@ -532,7 +532,7 @@ namespace sorth
                             {
                                 const auto [ size, padding ] = alignment(sizeof(double), align);
 
-                                buffer.write_float(size, as_numeric<double>(interpreter, value));
+                                buffer.write_float(size, value.as_float(interpreter));
                                 buffer.increment_position(padding);
                             },
                         .convert_to = [](auto Interpreter, auto align, auto& buffer) -> Value
@@ -570,7 +570,7 @@ namespace sorth
                                            auto& buffer,
                                            auto& extra)
                             {
-                                auto string = as_string(interpreter, value);
+                                auto string = value.as_string(interpreter);
 
                                 const auto [ ptr_size, ptr_padding ] = alignment(sizeof(char*),
                                                                                  align);
@@ -600,7 +600,7 @@ namespace sorth
                                 const auto [ ptr_size, ptr_padding ] = alignment(sizeof(char*),
                                                                                  align);
 
-                                auto string = as_string(interpreter, value);
+                                auto string = value.as_string(interpreter);
                                 const auto [ str_size, str_padding ] = alignment(string.size() + 1,
                                                                                  align);
 
@@ -626,7 +626,7 @@ namespace sorth
                             {
                                 const auto [ size, padding ] = alignment(sizeof(void*), align);
 
-                                buffer.write_int(size, as_numeric<int64_t>(interpreter, value));
+                                buffer.write_int(size, value.as_integer(interpreter));
                                 buffer.increment_position(padding);
                             },
                         .convert_to = [](auto Interpreter, auto align, auto& buffer) -> Value
@@ -680,7 +680,7 @@ namespace sorth
 
             for (int i = 0; i < param_names->size(); ++i)
             {
-                auto name = as_string(interpreter, (*param_names)[i]);
+                auto name = (*param_names)[i].as_string(interpreter);
                 auto& conversion = get_conversion_info(interpreter, name);
 
                 params.push_back(FfiParamInfo
@@ -849,8 +849,8 @@ namespace sorth
 
         void word_ffi_open(InterpreterPtr& interpreter)
         {
-            auto register_name = as_string(interpreter, interpreter->pop());
-            auto lib_name = as_string(interpreter, interpreter->pop());
+            auto register_name = interpreter->pop_as_string();
+            auto lib_name = interpreter->pop_as_string();
 
             auto handle = load_library(interpreter, lib_name);
             library_map[register_name] = handle;
@@ -859,11 +859,11 @@ namespace sorth
 
         void word_ffi_fn(InterpreterPtr& interpreter)
         {
-            auto ret_name = as_string(interpreter, interpreter->pop());
-            auto raw_params = as_array(interpreter, interpreter->pop());
-            auto fn_alias = as_string(interpreter, interpreter->pop());
-            auto fn_name = as_string(interpreter, interpreter->pop());
-            auto lib_name = as_string(interpreter, interpreter->pop());
+            auto ret_name = interpreter->pop_as_string();
+            auto raw_params = interpreter->pop_as_array();
+            auto fn_alias = interpreter->pop_as_string();
+            auto fn_name = interpreter->pop_as_string();
+            auto lib_name = interpreter->pop_as_string();
 
             auto function = find_function(interpreter, lib_name, fn_name);
             auto cif = std::make_shared<ffi_cif>();
@@ -919,18 +919,18 @@ namespace sorth
         {
             auto location = interpreter->get_current_location();
 
-            auto found_initializers = as_numeric<bool>(interpreter, interpreter->pop());
-            auto is_hidden = as_numeric<bool>(interpreter, interpreter->pop());
-            auto types = as_array(interpreter, interpreter->pop());
-            auto fields = as_array(interpreter, interpreter->pop());
-            auto packing = as_numeric<int64_t>(interpreter, interpreter->pop());
-            auto name = as_string(interpreter, interpreter->pop());
+            auto found_initializers = interpreter->pop_as_bool();
+            auto is_hidden = interpreter->pop_as_bool();
+            auto types = interpreter->pop_as_array();
+            auto fields = interpreter->pop_as_array();
+            auto packing = interpreter->pop_as_integer();
+            auto name = interpreter->pop_as_string();
 
             ArrayPtr defaults;
 
             if (found_initializers)
             {
-                defaults = as_array(interpreter, interpreter->pop());
+                defaults = interpreter->pop_as_array();
             }
 
 
@@ -948,7 +948,7 @@ namespace sorth
             for (size_t i = 0; i < types->size(); ++i)
             {
                 field_conversions[i] = get_conversion_info(interpreter,
-                                                           as_string(interpreter, (*types)[i]));
+                                                           (*types)[i].as_string(interpreter));
             }
 
             // Centralize the size calculation for the struct.
@@ -956,7 +956,7 @@ namespace sorth
                                         size_t align,
                                         Value value) -> CalculatedSize
                 {
-                    auto data_object = as_data_object(interpreter, value);
+                    auto data_object = value.as_structure(interpreter);
 
                     size_t size = 0;
                     size_t extra = 0;
@@ -1018,7 +1018,7 @@ namespace sorth
                                         auto& buffer,
                                         auto& extra)
                         {
-                            auto data_object = as_data_object(interpreter, value);
+                            auto data_object = value.as_structure(interpreter);
 
                             for (int i = 0; i < field_conversions.size(); ++i)
                             {
@@ -1031,7 +1031,7 @@ namespace sorth
                         },
                     .convert_to = [=](auto interpreter, auto align, auto& buffer) -> Value
                         {
-                            auto data = make_data_object(interpreter, definition_ptr);
+                            auto data = make_data_object(definition_ptr);
 
                             for (int i = 0; i < field_conversions.size(); ++i)
                             {
@@ -1076,7 +1076,7 @@ namespace sorth
                         {
                             auto [ size, extra_size ] = size_calculation(interpreter, align, value);
 
-                            auto data_object = as_data_object(interpreter, value);
+                            auto data_object = value.as_structure(interpreter);
                             auto sub_buffer = SubBuffer(extra, extra_size);
 
                             buffer.write_int(sizeof(char*), (size_t)extra.position_ptr());
@@ -1095,7 +1095,7 @@ namespace sorth
                             auto value = buffer.read_int(sizeof(void*), false);
                             void* raw_ptr = reinterpret_cast<void*>(static_cast<uintptr_t>(value));
                             auto raw_buffer = ByteBuffer(raw_ptr, -1);
-                            auto data = make_data_object(interpreter, definition_ptr);
+                            auto data = make_data_object(definition_ptr);
 
                             for (int i = 0; i < field_conversions.size(); ++i)
                             {

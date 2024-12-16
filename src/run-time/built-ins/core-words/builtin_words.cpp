@@ -126,15 +126,17 @@ namespace sorth
             Value a = interpreter->pop();
             Value result;
 
-            if (either_is<double>(a, b))
+            if (Value::either_is_float(a, b))
             {
-                result = dop(as_numeric<double>(interpreter, a),
-                             as_numeric<double>(interpreter, b));
+                result = dop(a.as_float(interpreter), b.as_float(interpreter));
+            }
+            else if (Value::either_is_integer(a, b))
+            {
+                result = iop(a.as_integer(interpreter), b.as_integer(interpreter));
             }
             else
             {
-                result = iop(as_numeric<int64_t>(interpreter, a),
-                             as_numeric<int64_t>(interpreter, b));
+                throw_error(interpreter, "Expected numeric values.");
             }
 
             interpreter->push(result);
@@ -143,10 +145,10 @@ namespace sorth
 
         void logic_op(InterpreterPtr& interpreter, std::function<bool(bool, bool)> op)
         {
-            auto b = interpreter->pop();
-            auto a = interpreter->pop();
-            auto result = op(as_numeric<bool>(interpreter, a),
-                             as_numeric<bool>(interpreter, b));
+            auto b = interpreter->pop_as_bool();
+            auto a = interpreter->pop_as_bool();
+
+            auto result = op(a, b);
 
             interpreter->push(result);
         }
@@ -154,10 +156,10 @@ namespace sorth
 
         void logic_bit_op(InterpreterPtr& interpreter, std::function<int64_t(int64_t, int64_t)> op)
         {
-            auto b = interpreter->pop();
-            auto a = interpreter->pop();
-            auto result = op(as_numeric<int64_t>(interpreter, a),
-                             as_numeric<int64_t>(interpreter, b));
+            auto b = interpreter->pop_as_integer();
+            auto a = interpreter->pop_as_integer();
+
+            auto result = op(a, b);
 
             interpreter->push(result);
         }
@@ -171,26 +173,21 @@ namespace sorth
             auto b = interpreter->pop();
             auto a = interpreter->pop();
 
-            if (either_is<std::string>(a, b))
+            if (Value::either_is_string(a, b))
             {
-                auto str_a = as_string(interpreter, a);
-                auto str_b = as_string(interpreter, b);
-
-                sop(str_a, str_b);
+                sop(a.as_string_with_conversion(), b.as_string_with_conversion());
             }
-            else if (either_is<double>(a, b))
+            else if (Value::either_is_float(a, b))
             {
-                auto a_num = as_numeric<double>(interpreter, a);
-                auto b_num = as_numeric<double>(interpreter, b);
-
-                dop(a_num, b_num);
+                dop(a.as_float(interpreter), b.as_float(interpreter));
+            }
+            else if (Value::either_is_numeric(a, b))
+            {
+                iop(a.as_integer(interpreter), b.as_integer(interpreter));
             }
             else
             {
-                auto a_num = as_numeric<int64_t>(interpreter, a);
-                auto b_num = as_numeric<int64_t>(interpreter, b);
-
-                iop(a_num, b_num);
+                throw_error(interpreter, "Expected string or numeric values.");
             }
         }
 
@@ -241,12 +238,12 @@ namespace sorth
                                               std::string& name,
                                               Word& word)
         {
-            auto new_location = make_data_object(interpreter, location_definition);
+            auto new_location = make_data_object(location_definition);
             new_location->fields[0] = word.location.get_path()->string();
             new_location->fields[1] = (int64_t)word.location.get_line();
             new_location->fields[2] = (int64_t)word.location.get_column();
 
-            auto new_word = make_data_object(interpreter, word_info_definition);
+            auto new_word = make_data_object(word_info_definition);
             new_word->fields[0] = name;
             new_word->fields[1] = word.is_immediate;
             new_word->fields[2] = word.is_scripted;
@@ -297,7 +294,7 @@ namespace sorth
 
     void word_include(InterpreterPtr& interpreter)
     {
-        auto path = as_string(interpreter, interpreter->pop());
+        auto path = interpreter->pop_as_string();
         interpreter->process_source(interpreter->find_file(path));
     }
 
@@ -349,7 +346,7 @@ namespace sorth
                 return token.text;
             };
 
-        auto result = as_numeric<bool>(interpreter, interpreter->pop());
+        auto result = interpreter->pop_as_bool();
 
         if (result)
         {
@@ -376,12 +373,12 @@ namespace sorth
     {
         auto value = interpreter->pop();
 
-        if (!std::holds_alternative<std::thread::id>(value))
+        if (!value.is_thread_id())
         {
             throw_error(interpreter, "Value not a thread id.");
         }
 
-        return std::get<std::thread::id>(value);
+        return value.as_thread_id(interpreter);
     }
 
 
@@ -406,7 +403,7 @@ namespace sorth
 
     void word_thread_new(InterpreterPtr& interpreter)
     {
-        auto name = as_string(interpreter, interpreter->pop());
+        auto name = interpreter->pop_as_string();
         auto [ found, word ] = interpreter->find_word(name);
 
         if (!found)
@@ -474,9 +471,9 @@ namespace sorth
     {
         auto value = interpreter->pop();
 
-        if (std::holds_alternative<Token>(value))
+        if (value.is_token())
         {
-            value = std::get<Token>(value).text;
+            value = value.as_token(interpreter).text;
         }
 
         insert_user_instruction(interpreter,
@@ -491,9 +488,9 @@ namespace sorth
     {
         auto value = interpreter->pop();
 
-        if (std::holds_alternative<Token>(value))
+        if (value.is_token())
         {
-            value = std::get<Token>(value).text;
+            value = value.as_token(interpreter).text;
         }
 
         insert_user_instruction(interpreter,
@@ -528,9 +525,9 @@ namespace sorth
     {
         auto value = interpreter->pop();
 
-        if (std::holds_alternative<Token>(value))
+        if (value.is_token())
         {
-            value = std::get<Token>(value).text;
+            value = value.as_token(interpreter).text;
         }
 
         insert_user_instruction(interpreter,
@@ -685,7 +682,7 @@ namespace sorth
 
     void word_code_execute_stack_block(InterpreterPtr& interpreter)
     {
-        auto name = as_string(interpreter, interpreter->pop());
+        auto name = interpreter->pop_as_string();
         interpreter->execute_code(name, interpreter->constructor().stack.top().code);
     }
 
@@ -712,11 +709,9 @@ namespace sorth
     {
         auto top = interpreter->pop();
 
-        throw_error_if(!std::holds_alternative<ByteCode>(top),
-                       interpreter,
-                       "Expected a byte code block.");
+        throw_error_if(!top.is_byte_code(), interpreter, "Expected a byte code block.");
 
-        interpreter->constructor().stack.push({ .code = std::get<ByteCode>(top) });
+        interpreter->constructor().stack.push({ .code = top.as_byte_code(interpreter) });
     }
 
 
@@ -743,13 +738,15 @@ namespace sorth
 
         for (size_t i = 0; i < top_code.size(); ++i)
         {
-            if (is_jump(top_code[i]))
+            if (   is_jump(top_code[i])
+                && (top_code[i].value.is_string()))
             {
                 jump_indicies.push_back(i);
             }
-            else if (top_code[i].id == Instruction::Id::jump_target)
+            else if (   (top_code[i].id == Instruction::Id::jump_target)
+                     && (top_code[i].value.is_string()))
             {
-                jump_targets.insert({ as_string(interpreter, top_code[i].value), i });
+                jump_targets.insert({ top_code[i].value.as_string(interpreter), i });
                 top_code[i].value = (int64_t)0;
             }
         }
@@ -758,7 +755,7 @@ namespace sorth
         {
             auto& jump_op = top_code[jump_index];
 
-            auto jump_name = as_string(interpreter, jump_op.value);
+            auto jump_name = jump_op.value.as_string(interpreter);
             auto iter = jump_targets.find(jump_name);
 
             if (iter != jump_targets.end())
@@ -772,12 +769,12 @@ namespace sorth
 
     void word_code_compile_until_words(InterpreterPtr& interpreter)
     {
-        auto count = as_numeric<int64_t>(interpreter, interpreter->pop());
+        auto count = interpreter->pop_as_integer();
         std::vector<std::string> word_list;
 
         for (int64_t i = 0; i < count; ++i)
         {
-            word_list.push_back(as_string(interpreter, interpreter->pop()));
+            word_list.push_back(interpreter->pop_as_string());
         }
 
         auto is_one_of_words = [&](const std::string& match) -> std::tuple<bool, std::string>
@@ -840,14 +837,13 @@ namespace sorth
 
     void word_code_insert_at_front(InterpreterPtr& interpreter)
     {
-        interpreter->constructor().user_is_inserting_at_beginning =
-                                                  as_numeric<bool>(interpreter, interpreter->pop());
+        interpreter->constructor().user_is_inserting_at_beginning = interpreter->pop_as_bool();
     }
 
 
     void word_code_execute_source(InterpreterPtr& interpreter)
     {
-        auto code = as_string(interpreter, interpreter->pop());
+        auto code = interpreter->pop_as_string();
         interpreter->process_source(code);
     }
 
@@ -856,9 +852,9 @@ namespace sorth
     {
         auto value = interpreter->pop();
 
-        if (std::holds_alternative<Token>(value))
+        if (value.is_token())
         {
-            auto token = std::get<Token>(value);
+            auto token = value.as_token(interpreter);
             interpreter->push(token.type == Token::Type::string);
         }
         else
@@ -872,9 +868,9 @@ namespace sorth
     {
         auto value = interpreter->pop();
 
-        if (std::holds_alternative<Token>(value))
+        if (value.is_token())
         {
-            interpreter->push(std::get<Token>(value).text);
+            interpreter->push(value.as_token(interpreter).text);
         }
         else
         {
@@ -943,16 +939,16 @@ namespace sorth
     {
         auto word_value = interpreter->pop();
 
-        if (is_numeric(word_value))
+        if (word_value.is_numeric())
         {
-            auto index = as_numeric<int64_t>(interpreter, word_value);
+            auto index = static_cast<size_t>(word_value.as_integer(interpreter));
             auto& handler = interpreter->get_handler_info(index);
 
             handler.function(interpreter);
         }
-        else if (is_string(word_value))
+        else if (word_value.is_string())
         {
-            auto name = as_string(interpreter, word_value);
+            auto name = word_value.as_string(interpreter);
 
             interpreter->execute_word(name);
         }
@@ -995,7 +991,7 @@ namespace sorth
     void word_is_undefined_im(InterpreterPtr& interpreter)
     {
         word_is_defined_im(interpreter);
-        auto found = as_numeric<bool>(interpreter, interpreter->pop());
+        auto found = interpreter->pop_as_bool();
 
         interpreter->push(!found);
     }
@@ -1003,8 +999,7 @@ namespace sorth
 
     void word_throw(InterpreterPtr& interpreter)
     {
-        throw_error(interpreter,
-            as_string(interpreter, interpreter->pop()));
+        throw_error(interpreter, interpreter->pop_as_string());
     }
 
 
@@ -1169,8 +1164,7 @@ namespace sorth
     {
         auto value = interpreter->pop();
 
-        interpreter->push(   std::holds_alternative<int64_t>(value)
-                          || std::holds_alternative<double>(value));
+        interpreter->push(value.is_numeric());
     }
 
 
@@ -1178,7 +1172,7 @@ namespace sorth
     {
         auto value = interpreter->pop();
 
-        interpreter->push(std::holds_alternative<bool>(value));
+        interpreter->push(value.is_bool());
     }
 
 
@@ -1186,7 +1180,15 @@ namespace sorth
     {
         auto value = interpreter->pop();
 
-        interpreter->push(std::holds_alternative<std::string>(value));
+        interpreter->push(value.is_string());
+    }
+
+
+    void word_value_is_thread_id(InterpreterPtr& interpreter)
+    {
+        auto value = interpreter->pop();
+
+        interpreter->push(value.is_thread_id());
     }
 
 
@@ -1194,7 +1196,7 @@ namespace sorth
     {
         auto value = interpreter->pop();
 
-        interpreter->push(std::holds_alternative<DataObjectPtr>(value));
+        interpreter->push(value.is_structure());
     }
 
 
@@ -1202,7 +1204,7 @@ namespace sorth
     {
         auto value = interpreter->pop();
 
-        interpreter->push(std::holds_alternative<ArrayPtr>(value));
+        interpreter->push(value.is_array());
     }
 
 
@@ -1210,7 +1212,7 @@ namespace sorth
     {
         auto value = interpreter->pop();
 
-        interpreter->push(std::holds_alternative<ByteBufferPtr>(value));
+        interpreter->push(value.is_byte_buffer());
     }
 
 
@@ -1218,20 +1220,20 @@ namespace sorth
     {
         auto value = interpreter->pop();
 
-        interpreter->push(std::holds_alternative<HashTablePtr>(value));
+        interpreter->push(value.is_hash_table());
     }
 
 
     void word_value_copy(InterpreterPtr& interpreter)
     {
         auto original = interpreter->pop();
-        interpreter->push(deep_copy_value(interpreter, original));
+        interpreter->push(original.deep_copy());
     }
 
 
     void word_string_length(InterpreterPtr& interpreter)
     {
-        auto string = as_string(interpreter, interpreter->pop());
+        auto string = interpreter->pop_as_string();
 
         interpreter->push((int64_t)string.size());
     }
@@ -1239,9 +1241,9 @@ namespace sorth
 
     void word_string_insert(InterpreterPtr& interpreter)
     {
-        auto string = as_string(interpreter, interpreter->pop());
-        auto position = (size_t)as_numeric<int64_t>(interpreter, interpreter->pop());
-        auto sub_string = as_string(interpreter, interpreter->pop());
+        auto string = interpreter->pop_as_string();
+        auto position = interpreter->pop_as_size();
+        auto sub_string = interpreter->pop_as_string();
 
         string.insert(position, sub_string);
 
@@ -1251,9 +1253,9 @@ namespace sorth
 
     void word_string_remove(InterpreterPtr& interpreter)
     {
-        auto string = as_string(interpreter, interpreter->pop());
-        auto start = (size_t)as_numeric<int64_t>(interpreter, interpreter->pop());
-        auto count = (size_t)as_numeric<int64_t>(interpreter, interpreter->pop());
+        auto string = interpreter->pop_as_string();
+        auto start = interpreter->pop_as_size();
+        auto count = interpreter->pop_as_size();
 
         if (   (start < 0)
             || (start > string.size()))
@@ -1281,8 +1283,8 @@ namespace sorth
 
     void word_string_find(InterpreterPtr& interpreter)
     {
-        auto string = as_string(interpreter, interpreter->pop());
-        auto search_str = as_string(interpreter, interpreter->pop());
+        auto string = interpreter->pop_as_string();
+        auto search_str = interpreter->pop_as_string();
 
         interpreter->push((int64_t)string.find(search_str, 0));
     }
@@ -1290,8 +1292,8 @@ namespace sorth
 
     void word_string_index_read(InterpreterPtr& interpreter)
     {
-        auto string = as_string(interpreter, interpreter->pop());
-        auto position = (size_t)as_numeric<int64_t>(interpreter, interpreter->pop());
+        auto string = interpreter->pop_as_string();
+        auto position = interpreter->pop_as_size();
 
         if ((position < 0) || (position >= string.size()))
         {
@@ -1305,8 +1307,8 @@ namespace sorth
 
     void word_string_add(InterpreterPtr& interpreter)
     {
-        auto str_b = as_string(interpreter, interpreter->pop());
-        auto str_a = as_string(interpreter, interpreter->pop());
+        auto str_b = interpreter->pop_as_string();
+        auto str_a = interpreter->pop_as_string();
 
         interpreter->push(str_a + str_b);
     }
@@ -1314,7 +1316,7 @@ namespace sorth
 
     void word_string_to_number(InterpreterPtr& interpreter)
     {
-        auto string = as_string(interpreter, interpreter->pop());
+        auto string = interpreter->pop_as_string();
 
         if (string.find('.', 0) != std::string::npos)
         {
@@ -1341,15 +1343,15 @@ namespace sorth
     {
         Location location = interpreter->get_current_location();
 
-        bool found_initializers = as_numeric<bool>(interpreter, interpreter->pop());
-        bool is_hidden = as_numeric<bool>(interpreter, interpreter->pop());
-        ArrayPtr fields = as_array(interpreter, interpreter->pop());
-        std::string name = as_string(interpreter, interpreter->pop());
+        bool found_initializers = interpreter->pop_as_bool();
+        bool is_hidden = interpreter->pop_as_bool();
+        ArrayPtr fields = interpreter->pop_as_array();
+        std::string name = interpreter->pop_as_string();
         ArrayPtr defaults;
 
         if (found_initializers)
         {
-            defaults = as_array(interpreter, interpreter->pop());
+            defaults = interpreter->pop_as_array();
         }
 
         // Create the definition object.
@@ -1367,15 +1369,8 @@ namespace sorth
 
     void word_read_field(InterpreterPtr& interpreter)
     {
-        auto var = interpreter->pop();
-
-        throw_error_if(!std::holds_alternative<DataObjectPtr>(var),
-                       interpreter, "Expected data object.");
-
-        auto object = std::get<DataObjectPtr>(var);
-
-        var = interpreter->pop();
-        auto field_index = as_numeric<int64_t>(interpreter, var);
+        auto object = interpreter->pop_as_structure();
+        auto field_index = interpreter->pop_as_size();
 
         interpreter->push(object->fields[field_index]);
     }
@@ -1383,30 +1378,17 @@ namespace sorth
 
     void word_write_field(InterpreterPtr& interpreter)
     {
-        auto var = interpreter->pop();
+        auto object = interpreter->pop_as_structure();
+        auto field_index = interpreter->pop_as_size();
 
-        throw_error_if(!std::holds_alternative<DataObjectPtr>(var),
-                       interpreter, "Expected data object.");
-
-        auto object = std::get<DataObjectPtr>(var);
-
-        var = interpreter->pop();
-        auto field_index = as_numeric<int64_t>(interpreter, var);
-
-        var = interpreter->pop();
-        object->fields[field_index] = var;
+        object->fields[field_index] = interpreter->pop();
     }
 
 
     void word_structure_iterate(InterpreterPtr& interpreter)
     {
-        auto var = interpreter->pop();
-
-        throw_error_if(!std::holds_alternative<DataObjectPtr>(var),
-                       interpreter, "Expected data object.");
-
-        auto object = std::get<DataObjectPtr>(var);
-        auto word_index = as_numeric<int64_t>(interpreter, interpreter->pop());
+        auto object = interpreter->pop_as_structure();
+        auto word_index = interpreter->pop_as_size();
 
         auto& handler = interpreter->get_handler_info(word_index);
 
@@ -1424,13 +1406,8 @@ namespace sorth
 
     void word_structure_field_exists(InterpreterPtr& interpreter)
     {
-        auto var = interpreter->pop();
-
-        throw_error_if(!std::holds_alternative<DataObjectPtr>(var),
-                       interpreter, "Expected data object.");
-
-        auto object = std::get<DataObjectPtr>(var);
-        auto field_name = as_string(interpreter, interpreter->pop());
+        auto object = interpreter->pop_as_structure();
+        auto field_name = interpreter->pop_as_string();
 
         bool found = false;
 
@@ -1449,19 +1426,8 @@ namespace sorth
 
     void word_structure_compare(InterpreterPtr& interpreter)
     {
-        auto var = interpreter->pop();
-
-        throw_error_if(!std::holds_alternative<DataObjectPtr>(var),
-                       interpreter, "Expected data object.");
-
-        auto a = std::get<DataObjectPtr>(var);
-
-        var = interpreter->pop();
-
-        throw_error_if(!std::holds_alternative<DataObjectPtr>(var),
-                       interpreter, "Expected data object.");
-
-        auto b = std::get<DataObjectPtr>(var);
+        auto a = interpreter->pop_as_structure();
+        auto b = interpreter->pop_as_structure();
 
         interpreter->push(a == b);
     }
@@ -1469,7 +1435,7 @@ namespace sorth
 
     void word_array_new(InterpreterPtr& interpreter)
     {
-        auto count = as_numeric<int64_t>(interpreter, interpreter->pop());
+        auto count = interpreter->pop_as_size();
         auto array_ptr = std::make_shared<Array>(count);
 
         interpreter->push(array_ptr);
@@ -1478,7 +1444,7 @@ namespace sorth
 
     void word_array_size(InterpreterPtr& interpreter)
     {
-        auto array = as_array(interpreter, interpreter->pop());
+        auto array = interpreter->pop_as_array();
 
         interpreter->push(array->size());
     }
@@ -1486,8 +1452,8 @@ namespace sorth
 
     void word_array_write_index(InterpreterPtr& interpreter)
     {
-        auto array = as_array(interpreter, interpreter->pop());
-        auto index = as_numeric<int64_t>(interpreter, interpreter->pop());
+        auto array = interpreter->pop_as_array();
+        auto index = interpreter->pop_as_size();
         auto new_value = interpreter->pop();
 
         throw_if_out_of_bounds(interpreter, index, array->size(), "Array");
@@ -1498,8 +1464,8 @@ namespace sorth
 
     void word_array_read_index(InterpreterPtr& interpreter)
     {
-        auto array = as_array(interpreter, interpreter->pop());
-        auto index = as_numeric<int64_t>(interpreter, interpreter->pop());
+        auto array = interpreter->pop_as_array();
+        auto index = interpreter->pop_as_size();
 
         throw_if_out_of_bounds(interpreter, index, array->size(), "Array");
 
@@ -1509,8 +1475,8 @@ namespace sorth
 
     void word_array_insert(InterpreterPtr& interpreter)
     {
-        auto array = as_array(interpreter, interpreter->pop());
-        auto index = as_numeric<int64_t>(interpreter, interpreter->pop());
+        auto array = interpreter->pop_as_array();
+        auto index = interpreter->pop_as_size();
         auto value = interpreter->pop();
 
         array->insert(index, value);
@@ -1519,8 +1485,8 @@ namespace sorth
 
     void word_array_delete(InterpreterPtr& interpreter)
     {
-        auto array = as_array(interpreter, interpreter->pop());
-        auto index = as_numeric<int64_t>(interpreter, interpreter->pop());
+        auto array = interpreter->pop_as_array();
+        auto index = interpreter->pop_as_size();
 
         throw_if_out_of_bounds(interpreter, index, array->size(), "Array");
 
@@ -1530,8 +1496,8 @@ namespace sorth
 
     void word_array_resize(InterpreterPtr& interpreter)
     {
-        auto array = as_array(interpreter, interpreter->pop());
-        auto new_size = as_numeric<int64_t>(interpreter, interpreter->pop());
+        auto array = interpreter->pop_as_array();
+        auto new_size = interpreter->pop_as_size();
 
         array->resize(new_size);
     }
@@ -1539,8 +1505,8 @@ namespace sorth
 
     void word_array_plus(InterpreterPtr& interpreter)
     {
-        auto array_src = as_array(interpreter, interpreter->pop());
-        auto array_dest = as_array(interpreter, interpreter->pop());
+        auto array_src = interpreter->pop_as_array();
+        auto array_dest = interpreter->pop_as_array();
 
         auto orig_size = array_dest->size();
         auto new_size = orig_size + array_src->size();
@@ -1549,7 +1515,7 @@ namespace sorth
 
         for (auto i = orig_size; i < new_size; ++i)
         {
-            (*array_dest)[i] = deep_copy_value(interpreter, (*array_src)[i - orig_size]);
+            (*array_dest)[i] = (*array_src)[i - orig_size].deep_copy();
         }
 
         interpreter->push(array_dest);
@@ -1559,8 +1525,8 @@ namespace sorth
 
     void word_array_compare(InterpreterPtr& interpreter)
     {
-        auto array_a = as_array(interpreter, interpreter->pop());
-        auto array_b = as_array(interpreter, interpreter->pop());
+        auto array_a = interpreter->pop_as_array();
+        auto array_b = interpreter->pop_as_array();
 
         interpreter->push(array_a == array_b);
     }
@@ -1568,7 +1534,7 @@ namespace sorth
 
     void word_push_front(InterpreterPtr& interpreter)
     {
-        auto array = as_array(interpreter, interpreter->pop());
+        auto array = interpreter->pop_as_array();
         auto value = interpreter->pop();
 
         array->push_front(value);
@@ -1576,7 +1542,7 @@ namespace sorth
 
     void word_push_back(InterpreterPtr& interpreter)
     {
-        auto array = as_array(interpreter, interpreter->pop());
+        auto array = interpreter->pop_as_array();
         auto value = interpreter->pop();
 
         array->push_back(value);
@@ -1584,14 +1550,14 @@ namespace sorth
 
     void word_pop_front(InterpreterPtr& interpreter)
     {
-        auto array = as_array(interpreter, interpreter->pop());
+        auto array = interpreter->pop_as_array();
 
         interpreter->push(array->pop_front(interpreter));
     }
 
     void word_pop_back(InterpreterPtr& interpreter)
     {
-        auto array = as_array(interpreter, interpreter->pop());
+        auto array = interpreter->pop_as_array();
 
         interpreter->push(array->pop_back(interpreter));
     }
@@ -1600,7 +1566,7 @@ namespace sorth
 
     void word_buffer_new(InterpreterPtr& interpreter)
     {
-        auto size = as_numeric<int64_t>(interpreter, interpreter->pop());
+        auto size = interpreter->pop_as_size();
         auto buffer = std::make_shared<ByteBuffer>(size);
 
         interpreter->push(buffer);
@@ -1609,9 +1575,9 @@ namespace sorth
 
     void word_buffer_write_int(InterpreterPtr& interpreter)
     {
-        auto byte_size = as_numeric<int64_t>(interpreter, interpreter->pop());
-        auto buffer = as_byte_buffer(interpreter, interpreter->pop());
-        auto value = as_numeric<int64_t>(interpreter, interpreter->pop());
+        auto byte_size = interpreter->pop_as_size();
+        auto buffer = interpreter->pop_as_byte_buffer();
+        auto value = interpreter->pop_as_integer();
 
         check_buffer_index(interpreter, buffer, byte_size);
         buffer->write_int(byte_size, value);
@@ -1620,9 +1586,9 @@ namespace sorth
 
     void word_buffer_read_int(InterpreterPtr& interpreter)
     {
-        auto is_signed = as_numeric<bool>(interpreter, interpreter->pop());
-        auto byte_size = as_numeric<int64_t>(interpreter, interpreter->pop());
-        auto buffer = as_byte_buffer(interpreter, interpreter->pop());
+        auto is_signed = interpreter->pop_as_bool();
+        auto byte_size = interpreter->pop_as_size();
+        auto buffer = interpreter->pop_as_byte_buffer();
 
         check_buffer_index(interpreter, buffer, byte_size);
         interpreter->push(buffer->read_int(byte_size, is_signed));
@@ -1631,9 +1597,9 @@ namespace sorth
 
     void word_buffer_write_float(InterpreterPtr& interpreter)
     {
-        auto byte_size = as_numeric<int64_t>(interpreter, interpreter->pop());
-        auto buffer = as_byte_buffer(interpreter, interpreter->pop());
-        auto value = as_numeric<double>(interpreter, interpreter->pop());
+        auto byte_size = interpreter->pop_as_size();
+        auto buffer = interpreter->pop_as_byte_buffer();
+        auto value = interpreter->pop_as_float();
 
         check_buffer_index(interpreter, buffer, byte_size);
         buffer->write_float(byte_size, value);
@@ -1642,8 +1608,8 @@ namespace sorth
 
     void word_buffer_read_float(InterpreterPtr& interpreter)
     {
-        auto byte_size = as_numeric<int64_t>(interpreter, interpreter->pop());
-        auto buffer = as_byte_buffer(interpreter, interpreter->pop());
+        auto byte_size = interpreter->pop_as_size();
+        auto buffer = interpreter->pop_as_byte_buffer();
 
         check_buffer_index(interpreter, buffer, byte_size);
         interpreter->push(buffer->read_float(byte_size));
@@ -1652,9 +1618,9 @@ namespace sorth
 
     void word_buffer_write_string(InterpreterPtr& interpreter)
     {
-        auto max_size = as_numeric<int64_t>(interpreter, interpreter->pop());
-        auto buffer = as_byte_buffer(interpreter, interpreter->pop());
-        auto value = as_string(interpreter, interpreter->pop());
+        auto max_size = interpreter->pop_as_size();
+        auto buffer = interpreter->pop_as_byte_buffer();
+        auto value = interpreter->pop_as_string();
 
         check_buffer_index(interpreter, buffer, max_size);
         buffer->write_string(value, max_size);
@@ -1663,8 +1629,8 @@ namespace sorth
 
     void word_buffer_read_string(InterpreterPtr& interpreter)
     {
-        auto max_size = as_numeric<int64_t>(interpreter, interpreter->pop());
-        auto buffer = as_byte_buffer(interpreter, interpreter->pop());
+        auto max_size = interpreter->pop_as_size();
+        auto buffer = interpreter->pop_as_byte_buffer();
 
         check_buffer_index(interpreter, buffer, max_size);
         interpreter->push(buffer->read_string(max_size));
@@ -1673,8 +1639,8 @@ namespace sorth
 
     void word_buffer_set_position(InterpreterPtr& interpreter)
     {
-        auto buffer = as_byte_buffer(interpreter, interpreter->pop());
-        auto new_position = as_numeric<int64_t>(interpreter, interpreter->pop());
+        auto buffer = interpreter->pop_as_byte_buffer();
+        auto new_position = interpreter->pop_as_size();
 
         buffer->set_position(new_position);
     }
@@ -1682,7 +1648,7 @@ namespace sorth
 
     void word_buffer_get_position(InterpreterPtr& interpreter)
     {
-        auto buffer = as_byte_buffer(interpreter, interpreter->pop());
+        auto buffer = interpreter->pop_as_byte_buffer();
 
         interpreter->push(buffer->position());
     }
@@ -1697,7 +1663,7 @@ namespace sorth
 
     void word_hash_table_insert(InterpreterPtr& interpreter)
     {
-        auto table = as_hash_table(interpreter, interpreter->pop());
+        auto table = interpreter->pop_as_hash_table();
         auto key = interpreter->pop();
         auto value = interpreter->pop();
 
@@ -1707,7 +1673,7 @@ namespace sorth
 
     void word_hash_table_find(InterpreterPtr& interpreter)
     {
-        auto table = as_hash_table(interpreter, interpreter->pop());
+        auto table = interpreter->pop_as_hash_table();
         auto key = interpreter->pop();
 
         auto [ found, value ] = table->get(key);
@@ -1727,7 +1693,7 @@ namespace sorth
 
     void word_hash_table_exists(InterpreterPtr& interpreter)
     {
-        auto table = as_hash_table(interpreter, interpreter->pop());
+        auto table = interpreter->pop_as_hash_table();
         auto key = interpreter->pop();
 
         auto [ found, value ] = table->get(key);
@@ -1738,16 +1704,15 @@ namespace sorth
 
     void word_hash_plus(InterpreterPtr& interpreter)
     {
-        auto hash_src = as_hash_table(interpreter, interpreter->pop());
-        auto hash_dest = as_hash_table(interpreter, interpreter->pop());
+        auto hash_src = interpreter->pop_as_hash_table();
+        auto hash_dest = interpreter->pop_as_hash_table();
 
         for (auto entry : hash_src->get_items())
         {
             auto key = entry.first;
             auto value = entry.second;
 
-            hash_dest->insert(deep_copy_value(interpreter, key),
-                              deep_copy_value(interpreter, value));
+            hash_dest->insert(key.deep_copy(), value.deep_copy());
         }
 
         interpreter->push(hash_dest);
@@ -1756,8 +1721,8 @@ namespace sorth
 
     void word_hash_compare(InterpreterPtr& interpreter)
     {
-        auto hash_a = as_hash_table(interpreter, interpreter->pop());
-        auto hash_b = as_hash_table(interpreter, interpreter->pop());
+        auto hash_a = interpreter->pop_as_hash_table();
+        auto hash_b = interpreter->pop_as_hash_table();
 
         interpreter->push(hash_a == hash_b);
     }
@@ -1765,7 +1730,7 @@ namespace sorth
 
     void word_hash_table_size(InterpreterPtr& interpreter)
     {
-        auto hash = as_hash_table(interpreter, interpreter->pop());
+        auto hash = interpreter->pop_as_hash_table();
 
         interpreter->push(hash->size());
     }
@@ -1773,8 +1738,8 @@ namespace sorth
 
     void word_hash_table_iterate(InterpreterPtr& interpreter)
     {
-        auto table = as_hash_table(interpreter, interpreter->pop());
-        auto word_index = as_numeric<int64_t>(interpreter, interpreter->pop());
+        auto table = interpreter->pop_as_hash_table();
+        auto word_index = interpreter->pop_as_size();
 
         auto& handler = interpreter->get_handler_info(word_index);
 
@@ -1823,8 +1788,8 @@ namespace sorth
 
     void word_mod(InterpreterPtr& interpreter)
     {
-        auto b = as_numeric<int64_t>(interpreter, interpreter->pop());
-        auto a = as_numeric<int64_t>(interpreter, interpreter->pop());
+        auto b = interpreter->pop_as_integer();
+        auto a = interpreter->pop_as_integer();
 
         interpreter->push(a % b);
     }
@@ -1844,7 +1809,7 @@ namespace sorth
 
     void word_logic_not(InterpreterPtr& interpreter)
     {
-        auto value = as_numeric<bool>(interpreter, interpreter->pop());
+        auto value = interpreter->pop_as_bool();
 
         interpreter->push(!value);
     }
@@ -1870,8 +1835,7 @@ namespace sorth
 
     void word_bit_not(InterpreterPtr& interpreter)
     {
-        auto top = interpreter->pop();
-        auto value = as_numeric<int64_t>(interpreter, top);
+        auto value = interpreter->pop_as_integer();
 
         value = ~value;
 
@@ -1992,7 +1956,7 @@ namespace sorth
 
     void word_pick(InterpreterPtr& interpreter)
     {
-        auto index = as_numeric<int64_t>(interpreter, interpreter->pop());
+        auto index = interpreter->pop_as_integer();
 
         interpreter->push(interpreter->pick(index));
     }
@@ -2000,7 +1964,7 @@ namespace sorth
 
     void word_push_to(InterpreterPtr& interpreter)
     {
-        auto index = as_numeric<int64_t>(interpreter, interpreter->pop());
+        auto index = interpreter->pop_as_integer();
         interpreter->push_to(index);
     }
 
@@ -2057,9 +2021,9 @@ namespace sorth
 
         std::stringstream stream;
 
-        if (is_string(value))
+        if (value.is_string())
         {
-            auto string_value = as_string(interpreter, value);
+            auto string_value = value.as_string(interpreter);
 
             for (auto next : string_value)
             {
@@ -2068,7 +2032,7 @@ namespace sorth
         }
         else
         {
-            auto int_value = as_numeric<int64_t>(interpreter, value);
+            auto int_value = value.as_integer(interpreter);
             stream << std::hex << int_value << std::dec << " ";
         }
 
@@ -2102,13 +2066,13 @@ namespace sorth
 
     void word_show_bytecode(InterpreterPtr& interpreter)
     {
-        interpreter->showing_bytecode() = as_numeric<bool>(interpreter, interpreter->pop());
+        interpreter->showing_bytecode() = interpreter->pop_as_bool();
     }
 
 
     void word_show_run_code(InterpreterPtr& interpreter)
     {
-        interpreter->showing_run_code() = as_numeric<bool>(interpreter, interpreter->pop());
+        interpreter->showing_run_code() = interpreter->pop_as_bool();
     }
 
 
@@ -2117,13 +2081,13 @@ namespace sorth
         std::string name;
         auto value = interpreter->pop();
 
-        if (is_string(value))
+        if (value.is_string())
         {
-            name = as_string(interpreter, value);
+            name = value.as_string(interpreter);
         }
-        else if (is_numeric(value))
+        else if (value.is_numeric())
         {
-            auto index = as_numeric<int64_t>(interpreter, value);
+            auto index = value.as_integer(interpreter);
             auto info = interpreter->get_handler_info(index);
 
             name = info.name;
@@ -2160,13 +2124,13 @@ namespace sorth
         std::string name;
         auto value = interpreter->pop();
 
-        if (is_string(value))
+        if (value.is_string())
         {
-            name = as_string(interpreter, value);
+            name = value.as_string(interpreter);
         }
-        else if (is_numeric(value))
+        else if (value.is_numeric())
         {
-            auto index = as_numeric<int64_t>(interpreter, value);
+            auto index = value.as_integer(interpreter);
             auto info = interpreter->get_handler_info(index);
 
             name = info.name;
@@ -2203,13 +2167,13 @@ namespace sorth
         std::string name;
         auto value = interpreter->pop();
 
-        if (is_string(value))
+        if (value.is_string())
         {
-            name = as_string(interpreter, value);
+            name = value.as_string(interpreter);
         }
-        else if (is_numeric(value))
+        else if (value.is_numeric())
         {
-            auto index = as_numeric<int64_t>(interpreter, value);
+            auto index = value.as_integer(interpreter);
             auto info = interpreter->get_handler_info(index);
 
             name = info.name;
@@ -2513,6 +2477,10 @@ namespace sorth
 
         ADD_NATIVE_WORD(interpreter, "value.is-string?", word_value_is_string,
             "Is the value a string?",
+            "value -- bool");
+
+        ADD_NATIVE_WORD(interpreter, "value.is-thread-id?", word_value_is_thread_id,
+            "Is the value a thread id?",
             "value -- bool");
 
         ADD_NATIVE_WORD(interpreter, "value.is-structure?", word_value_is_structure,
