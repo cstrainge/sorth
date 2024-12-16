@@ -86,7 +86,7 @@
 #include "code_constructor.h"
 #include "blocking_value_queue.h"
 #include "interpreter.h"
-#include "builtin_words.h"
+#include "core-words.h"
 #include "terminal_words.h"
 #include "sorth_ffi.h"
 #include "jit.h"
