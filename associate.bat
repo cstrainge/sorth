@@ -7,7 +7,7 @@ REM This script needs to be run as administrator to register the file type.
 
 
 echo "Registering %1 as the Strange Forth Interpreter..."
-echo "THis script needs to be run as an administrator to register the file type."
+echo "This script needs to be run as an administrator to register the file type."
 
 
 REM Register .f files as an executable extension.  That way you don't need to specify the extension
