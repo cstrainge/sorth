@@ -17,6 +17,25 @@ namespace sorth
     };
 
 
+    namespace internal
+    {
+
+
+        struct CallItem
+        {
+            Location word_location;
+            std::string word_name;
+        };
+
+
+        using CallStack = std::list<CallItem>;
+
+
+        std::ostream& operator <<(std::ostream& stream, const CallStack& call_stack);
+
+
+    }
+
 
     // Data structure that keeps track of interpreter sub-threads.
     struct SubThreadInfo

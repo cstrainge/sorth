@@ -6,7 +6,7 @@ namespace sorth::internal
 {
 
 
-    struct OperationCode
+    struct Instruction
     {
         enum class Id : unsigned char
         {
@@ -38,25 +38,16 @@ namespace sorth::internal
     };
 
 
-    std::ostream& operator <<(std::ostream& stream, const OperationCode::Id id);
-    std::ostream& operator <<(std::ostream& stream, const OperationCode& op);
+    using ByteCode = std::vector<Instruction>;
+
+
+    std::ostream& operator <<(std::ostream& stream, const Instruction::Id id);
+    std::ostream& operator <<(std::ostream& stream, const Instruction& op);
     std::ostream& operator <<(std::ostream& stream, const ByteCode& code);
 
 
-    struct CallItem
-    {
-        Location word_location;
-        std::string word_name;
-    };
+    bool operator ==(const Instruction& rhs, const Instruction& lhs);
 
-
-    using CallStack = std::list<CallItem>;
-
-
-    std::ostream& operator <<(std::ostream& stream, const CallStack& call_stack);
-
-
-    bool operator ==(const OperationCode& rhs, const OperationCode& lhs);
     bool operator ==(const ByteCode& rhs, const ByteCode& lhs);
 
 

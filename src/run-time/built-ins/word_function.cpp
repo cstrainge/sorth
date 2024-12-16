@@ -17,7 +17,7 @@ namespace sorth::internal
         {
             stream << std::setw(6) << i << "  ";
 
-            if (   (code[i].id == OperationCode::Id::execute)
+            if (   (code[i].id == Instruction::Id::execute)
                 && (is_numeric(code[i].value)))
             {
                 auto index = as_numeric<int64_t>(interpreter, code[i].value);
@@ -35,18 +35,18 @@ namespace sorth::internal
 
                 stream << std::endl;
             }
-            else if (   (code[i].id == OperationCode::Id::push_constant_value)
+            else if (   (code[i].id == Instruction::Id::push_constant_value)
                         && (is_string(code[i].value)))
             {
                 auto string = as_string(interpreter, code[i].value);
 
                 stream << code[i].id << "  " << stringify(string) << std::endl;
             }
-            else if (  (   (code[i].id == OperationCode::Id::mark_loop_exit)
-                        || (code[i].id == OperationCode::Id::mark_catch)
-                        || (code[i].id == OperationCode::Id::jump)
-                        || (code[i].id == OperationCode::Id::jump_if_zero)
-                        || (code[i].id == OperationCode::Id::jump_if_not_zero))
+            else if (  (   (code[i].id == Instruction::Id::mark_loop_exit)
+                        || (code[i].id == Instruction::Id::mark_catch)
+                        || (code[i].id == Instruction::Id::jump)
+                        || (code[i].id == Instruction::Id::jump_if_zero)
+                        || (code[i].id == Instruction::Id::jump_if_not_zero))
                         && (is_numeric(code[i].value)))
             {
                 auto offset = as_numeric<int64_t>(interpreter, code[i].value);

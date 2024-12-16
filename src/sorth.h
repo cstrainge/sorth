@@ -78,7 +78,7 @@
 #include "value.h"
 #include "word_function.h"
 #include "dictionary.h"
-#include "operation_code.h"
+#include "instruction.h"
 #include "array.h"
 #include "byte_buffer.h"
 #include "data_object.h"

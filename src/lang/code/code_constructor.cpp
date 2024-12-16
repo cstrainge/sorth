@@ -25,7 +25,7 @@ namespace sorth::internal
             else
             {
                 stack.top().code.push_back({
-                        .id = OperationCode::Id::execute,
+                        .id = Instruction::Id::execute,
                         .value = (int64_t)word.handler_index,
                         .location = token.location
                     });
@@ -58,7 +58,7 @@ namespace sorth::internal
                         }
 
                         stack.top().code.push_back({
-                                .id = OperationCode::Id::push_constant_value,
+                                .id = Instruction::Id::push_constant_value,
                                 .value = value
                             });
                     }
@@ -66,7 +66,7 @@ namespace sorth::internal
 
                 case Token::Type::string:
                     stack.top().code.push_back({
-                            .id = OperationCode::Id::push_constant_value,
+                            .id = Instruction::Id::push_constant_value,
                             .value = token.text
                         });
                     break;
@@ -75,7 +75,7 @@ namespace sorth::internal
                     {
                         // This word wasn't found, so leave it for resolution at run time.
                         stack.top().code.push_back({
-                                .id = OperationCode::Id::execute,
+                                .id = Instruction::Id::execute,
                                 .value = token.text,
                                 .location = token.location
                             });

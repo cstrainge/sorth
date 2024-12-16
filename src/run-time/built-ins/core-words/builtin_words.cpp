@@ -454,7 +454,7 @@ namespace sorth
     }
 
 
-    void insert_user_instruction(InterpreterPtr& interpreter, const OperationCode& op)
+    void insert_user_instruction(InterpreterPtr& interpreter, const Instruction& op)
     {
         auto& constructor = interpreter->constructor();
         auto& code = constructor.stack.top().code;
@@ -481,7 +481,7 @@ namespace sorth
 
         insert_user_instruction(interpreter,
             {
-                .id = OperationCode::Id::def_variable,
+                .id = Instruction::Id::def_variable,
                 .value = value
             });
     }
@@ -498,7 +498,7 @@ namespace sorth
 
         insert_user_instruction(interpreter,
             {
-                .id = OperationCode::Id::def_constant,
+                .id = Instruction::Id::def_constant,
                 .value = value
             });
     }
@@ -508,7 +508,7 @@ namespace sorth
     {
         insert_user_instruction(interpreter,
             {
-                .id = OperationCode::Id::read_variable,
+                .id = Instruction::Id::read_variable,
                 .value = (int64_t)0
             });
     }
@@ -518,7 +518,7 @@ namespace sorth
     {
         insert_user_instruction(interpreter,
             {
-                .id = OperationCode::Id::write_variable,
+                .id = Instruction::Id::write_variable,
                 .value = (int64_t)0
             });
     }
@@ -535,7 +535,7 @@ namespace sorth
 
         insert_user_instruction(interpreter,
             {
-                .id = OperationCode::Id::execute,
+                .id = Instruction::Id::execute,
                 .value = value
             });
     }
@@ -545,7 +545,7 @@ namespace sorth
     {
         insert_user_instruction(interpreter,
             {
-                .id = OperationCode::Id::push_constant_value,
+                .id = Instruction::Id::push_constant_value,
                 .value = interpreter->pop()
             });
     }
@@ -555,7 +555,7 @@ namespace sorth
     {
         insert_user_instruction(interpreter,
             {
-                .id = OperationCode::Id::mark_loop_exit,
+                .id = Instruction::Id::mark_loop_exit,
                 .value = interpreter->pop()
             });
     }
@@ -565,7 +565,7 @@ namespace sorth
     {
         insert_user_instruction(interpreter,
             {
-                .id = OperationCode::Id::unmark_loop_exit,
+                .id = Instruction::Id::unmark_loop_exit,
                 .value = (int64_t)0
             });
     }
@@ -575,7 +575,7 @@ namespace sorth
     {
         insert_user_instruction(interpreter,
             {
-                .id = OperationCode::Id::mark_catch,
+                .id = Instruction::Id::mark_catch,
                 .value = interpreter->pop()
             });
     }
@@ -585,7 +585,7 @@ namespace sorth
     {
         insert_user_instruction(interpreter,
             {
-                .id = OperationCode::Id::unmark_catch,
+                .id = Instruction::Id::unmark_catch,
                 .value = (int64_t)0
             });
     }
@@ -595,7 +595,7 @@ namespace sorth
     {
         insert_user_instruction(interpreter,
             {
-                .id = OperationCode::Id::mark_context,
+                .id = Instruction::Id::mark_context,
                 .value = (int64_t)0
             });
     }
@@ -605,7 +605,7 @@ namespace sorth
     {
         insert_user_instruction(interpreter,
             {
-                .id = OperationCode::Id::release_context,
+                .id = Instruction::Id::release_context,
                 .value = (int64_t)0
             });
     }
@@ -615,7 +615,7 @@ namespace sorth
     {
         insert_user_instruction(interpreter,
             {
-                .id = OperationCode::Id::jump,
+                .id = Instruction::Id::jump,
                 .value = interpreter->pop()
             });
     }
@@ -625,7 +625,7 @@ namespace sorth
     {
         insert_user_instruction(interpreter,
             {
-                .id = OperationCode::Id::jump_if_zero,
+                .id = Instruction::Id::jump_if_zero,
                 .value = interpreter->pop()
             });
     }
@@ -635,7 +635,7 @@ namespace sorth
     {
         insert_user_instruction(interpreter,
             {
-                .id = OperationCode::Id::jump_if_not_zero,
+                .id = Instruction::Id::jump_if_not_zero,
                 .value = interpreter->pop()
             });
     }
@@ -645,7 +645,7 @@ namespace sorth
     {
         insert_user_instruction(interpreter,
             {
-                .id = OperationCode::Id::jump_loop_start,
+                .id = Instruction::Id::jump_loop_start,
                 .value = (int64_t)0
             });
     }
@@ -655,7 +655,7 @@ namespace sorth
     {
         insert_user_instruction(interpreter,
             {
-                .id = OperationCode::Id::jump_loop_exit,
+                .id = Instruction::Id::jump_loop_exit,
                 .value = (int64_t)0
             });
     }
@@ -665,7 +665,7 @@ namespace sorth
     {
         insert_user_instruction(interpreter,
             {
-                .id = OperationCode::Id::jump_target,
+                .id = Instruction::Id::jump_target,
                 .value = interpreter->pop()
             });
     }
@@ -728,13 +728,13 @@ namespace sorth
 
     void word_code_resolve_jumps(InterpreterPtr& interpreter)
     {
-        auto is_jump = [](const OperationCode& code) -> bool
+        auto is_jump = [](const Instruction& code) -> bool
             {
-                return    (code.id == OperationCode::Id::jump)
-                       || (code.id == OperationCode::Id::jump_if_not_zero)
-                       || (code.id == OperationCode::Id::jump_if_zero)
-                       || (code.id == OperationCode::Id::mark_loop_exit)
-                       || (code.id == OperationCode::Id::mark_catch);
+                return    (code.id == Instruction::Id::jump)
+                       || (code.id == Instruction::Id::jump_if_not_zero)
+                       || (code.id == Instruction::Id::jump_if_zero)
+                       || (code.id == Instruction::Id::mark_loop_exit)
+                       || (code.id == Instruction::Id::mark_catch);
             };
         auto& top_code = interpreter->constructor().stack.top().code;
 
@@ -747,7 +747,7 @@ namespace sorth
             {
                 jump_indicies.push_back(i);
             }
-            else if (top_code[i].id == OperationCode::Id::jump_target)
+            else if (top_code[i].id == Instruction::Id::jump_target)
             {
                 jump_targets.insert({ as_string(interpreter, top_code[i].value), i });
                 top_code[i].value = (int64_t)0;
@@ -925,14 +925,14 @@ namespace sorth
         if (found)
         {
             interpreter->constructor().stack.top().code.push_back({
-                    .id = OperationCode::Id::push_constant_value,
+                    .id = Instruction::Id::push_constant_value,
                     .value = (int64_t)word.handler_index
                 });
         }
         else
         {
             interpreter->constructor().stack.top().code.push_back({
-                    .id = OperationCode::Id::word_index,
+                    .id = Instruction::Id::word_index,
                     .value = name
                 });
         }
@@ -972,7 +972,7 @@ namespace sorth
         auto name = input_tokens[current_token].text;
 
         interpreter->constructor().stack.top().code.push_back({
-                .id = OperationCode::Id::word_exists,
+                .id = Instruction::Id::word_exists,
                 .value = name
             });
     }

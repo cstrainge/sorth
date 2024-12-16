@@ -8,8 +8,8 @@ namespace sorth
 
     namespace internal
     {
-        struct OperationCode;
-        using ByteCode = std::vector<OperationCode>;
+        struct Instruction;
+        using ByteCode = std::vector<Instruction>;
     }
 
     class Interpreter;

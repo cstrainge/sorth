@@ -2,8 +2,29 @@
 #include "sorth.h"
 
 
+
 namespace sorth
 {
+
+
+    namespace internal
+    {
+
+
+        std::ostream& operator <<(std::ostream& stream, const CallStack& call_stack)
+        {
+            stream << std::endl;
+
+            for (const auto& item : call_stack)
+            {
+                stream << "    " << item.word_location << " -- " << item.word_name << std::endl;
+            }
+
+            return stream;
+        }
+
+
+    }
 
 
     using namespace internal;
@@ -617,7 +638,7 @@ namespace sorth
             {
                 try
                 {
-                    const OperationCode& operation = code[pc];
+                    const Instruction& operation = code[pc];
 
                     if (is_interpreter_quitting)
                     {
@@ -639,14 +660,14 @@ namespace sorth
 
                     switch (operation.id)
                     {
-                        case OperationCode::Id::def_variable:
+                        case Instruction::Id::def_variable:
                             {
                                 auto name = as_string(shared_from_this(), operation.value);
                                 define_variable(name);
                             }
                             break;
 
-                        case OperationCode::Id::def_constant:
+                        case Instruction::Id::def_constant:
                             {
                                 auto name = as_string(shared_from_this(), operation.value);
                                 auto value = pop();
@@ -655,14 +676,14 @@ namespace sorth
                             }
                             break;
 
-                        case OperationCode::Id::read_variable:
+                        case Instruction::Id::read_variable:
                             {
                                 auto index = as_numeric<int64_t>(shared_from_this(), pop());
                                 push(read_variable(index));
                             }
                             break;
 
-                        case OperationCode::Id::write_variable:
+                        case Instruction::Id::write_variable:
                             {
                                 auto index = as_numeric<int64_t>(shared_from_this(), pop());
                                 auto value = pop();
@@ -671,7 +692,7 @@ namespace sorth
                             }
                             break;
 
-                        case OperationCode::Id::execute:
+                        case Instruction::Id::execute:
                             {
                                 if (is_string(operation.value))
                                 {
@@ -729,7 +750,7 @@ namespace sorth
                             }
                             break;
 
-                        case OperationCode::Id::word_index:
+                        case Instruction::Id::word_index:
                             {
                                 auto name = as_string(shared_from_this(), operation.value);
                                 auto [ found, word ] = dictionary.find(name);
@@ -743,7 +764,7 @@ namespace sorth
                             }
                             break;
 
-                        case OperationCode::Id::word_exists:
+                        case Instruction::Id::word_exists:
                             {
                                 auto name = as_string(shared_from_this(), operation.value);
                                 auto [ found, word ] = dictionary.find(name);
@@ -752,11 +773,11 @@ namespace sorth
                             }
                             break;
 
-                        case OperationCode::Id::push_constant_value:
+                        case Instruction::Id::push_constant_value:
                             push(operation.value);
                             break;
 
-                        case OperationCode::Id::mark_loop_exit:
+                        case Instruction::Id::mark_loop_exit:
                             {
                                 int64_t relative_jump = as_numeric<int64_t>(shared_from_this(),
                                                                             operation.value);
@@ -766,14 +787,14 @@ namespace sorth
                             }
                             break;
 
-                        case OperationCode::Id::unmark_loop_exit:
+                        case Instruction::Id::unmark_loop_exit:
                             throw_error_if(loop_locations.empty(), shared_from_this(),
                                            "Clearing a loop exit without an enclosing loop.");
 
                             loop_locations.pop_back();
                             break;
 
-                        case OperationCode::Id::mark_catch:
+                        case Instruction::Id::mark_catch:
                             {
                                 int64_t relative_jump = as_numeric<int64_t>(shared_from_this(),
                                                                             operation.value);
@@ -783,18 +804,18 @@ namespace sorth
                             }
                             break;
 
-                        case OperationCode::Id::unmark_catch:
+                        case Instruction::Id::unmark_catch:
                             throw_error_if(catch_locations.empty(), shared_from_this(),
                                            "Clearing a catch exit without an enclosing try/catch.");
                             catch_locations.pop_back();
                             break;
 
-                        case OperationCode::Id::mark_context:
+                        case Instruction::Id::mark_context:
                             mark_context();
                             ++contexts;
                             break;
 
-                        case OperationCode::Id::release_context:
+                        case Instruction::Id::release_context:
                             if (contexts == 0)
                             {
                                 throw_error(shared_from_this(), "Unbalanced context release detected.");
@@ -804,11 +825,11 @@ namespace sorth
                             --contexts;
                             break;
 
-                        case OperationCode::Id::jump:
+                        case Instruction::Id::jump:
                             pc += as_numeric<int64_t>(shared_from_this(), operation.value) - 1;
                             break;
 
-                        case OperationCode::Id::jump_if_zero:
+                        case Instruction::Id::jump_if_zero:
                             {
                                 auto top = pop();
                                 auto value = as_numeric<bool>(shared_from_this(), top);
@@ -820,7 +841,7 @@ namespace sorth
                             }
                             break;
 
-                        case OperationCode::Id::jump_if_not_zero:
+                        case Instruction::Id::jump_if_not_zero:
                             {
                                 auto top = pop();
                                 auto value = as_numeric<bool>(shared_from_this(), top);
@@ -832,14 +853,14 @@ namespace sorth
                             }
                             break;
 
-                        case OperationCode::Id::jump_loop_start:
+                        case Instruction::Id::jump_loop_start:
                             if (!loop_locations.empty())
                             {
                                 pc = loop_locations.back().first - 1;
                             }
                             break;
 
-                        case OperationCode::Id::jump_loop_exit:
+                        case Instruction::Id::jump_loop_exit:
                             if (!loop_locations.empty())
                             {
                                 pc = loop_locations.back().second - 1;
@@ -847,7 +868,7 @@ namespace sorth
                             }
                             break;
 
-                        case OperationCode::Id::jump_target:
+                        case Instruction::Id::jump_target:
                             // Nothing to do here.  This instruction just acts as a landing pad for
                             // the jump instructions.
                             break;

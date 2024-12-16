@@ -1,4 +1,8 @@
 
+#include "sorth.h"
+
+
+
 // Make sure we found llvm.
 #ifndef SORTH_JIT_DISABLED
 
@@ -28,15 +32,15 @@
 #include <llvm/Transforms/Scalar/GVN.h>
 #include <llvm/Transforms/Utils.h>
 
-#include "sorth.h"
-
 
 
 namespace sorth::internal
 {
 
+
     namespace
     {
+
 
         // We override the default memory manager for the JIT engine so that we can track the size
         // of the functions that are JITed.  This is so that we can later disassemble the JITed
@@ -157,6 +161,7 @@ namespace sorth::internal
                 }
         };
 
+
         // Keep track of the size of the functions that are JITed.
         std::unordered_map<std::string, std::tuple<uint64_t, size_t>>
                                                                TrackingMemoryManager::FunctionSizes;
@@ -268,6 +273,7 @@ namespace sorth::internal
                 jit = std::move(*jit_result);
                 register_jit_helper_ptrs();
             }
+
 
             // Map the helper function pointers to their symbols in the JIT engine.
             void register_jit_helper_ptrs()
@@ -403,6 +409,7 @@ namespace sorth::internal
                     throw_error(error_message);
                 }
             }
+
 
             // Register the helper functions and their signatures that will be called from the JITed
             // code.
@@ -574,6 +581,7 @@ namespace sorth::internal
                                                                     module.get());
             }
 
+
             // JIT compile the given byte-code block into a native function handler.
             WordFunction jit_bytecode(InterpreterPtr& interpreter, const Construction& construction)
             {
@@ -603,6 +611,7 @@ namespace sorth::internal
                                             std::move(constants),
                                             CodeGenType::word);
             }
+
 
             // JIT compile the given byte-code block into the script's top level function handler.
             // As well as all of the script's non-immediate words that have been cached during the
@@ -682,6 +691,7 @@ namespace sorth::internal
                                             std::move(constants),
                                             CodeGenType::script_body);
             }
+
 
             std::string disassemble(uint64_t address, size_t size)
             {
@@ -793,6 +803,7 @@ namespace sorth::internal
                 return disassembly;
             }
 
+
             // Create the LLVM module, context, and builder for JITing code.
             std::tuple<std::unique_ptr<llvm::Module>,
                        std::unique_ptr<llvm::LLVMContext>>
@@ -807,6 +818,7 @@ namespace sorth::internal
 
                 return { std::move(module), std::move(context) };
             }
+
 
             std::unordered_map<std::string,
                                std::string>
@@ -887,6 +899,7 @@ namespace sorth::internal
                 return ir_map;
             }
 
+
             // Create a function handler for the JITed code.
             WordFunction create_word_function(const std::string& name,
                                               std::string&& function_ir,
@@ -966,6 +979,7 @@ namespace sorth::internal
                 return handler;
             }
 
+
             // JIT compile the given byte-code block into a native function handler.
             std::tuple<std::vector<Location>,
                        std::vector<Value>> jit_compile(InterpreterPtr& interpreter,
@@ -1014,6 +1028,7 @@ namespace sorth::internal
                 return { std::move(locations), std::move(constants) };
             }
 
+
             // Generate the body of the JITed function.  We do this by walking the byte-code block
             // and generating the appropriate llvm instructions for each operation.
             void generate_function_body(InterpreterPtr& interpreter,
@@ -1054,20 +1069,19 @@ namespace sorth::internal
                 // Keep track of any jump targets that are the target of a catch block.
                 std::set<size_t> catch_target_markers;
 
-
                 // Take a first pass through the code to create the blocks that we'll need.
                 auto block_index = 1;
 
                 for (size_t i = 0; i < code.size(); ++i)
                 {
-                    if (   (code[i].id == OperationCode::Id::execute)
-                        || (code[i].id == OperationCode::Id::jump_target)
-                        || (code[i].id == OperationCode::Id::def_variable)
-                        || (code[i].id == OperationCode::Id::def_constant)
-                        || (code[i].id == OperationCode::Id::read_variable)
-                        || (code[i].id == OperationCode::Id::write_variable)
-                        || (code[i].id == OperationCode::Id::jump_loop_start)
-                        || (code[i].id == OperationCode::Id::jump_loop_exit))
+                    if (   (code[i].id == Instruction::Id::execute)
+                        || (code[i].id == Instruction::Id::jump_target)
+                        || (code[i].id == Instruction::Id::def_variable)
+                        || (code[i].id == Instruction::Id::def_constant)
+                        || (code[i].id == Instruction::Id::read_variable)
+                        || (code[i].id == Instruction::Id::write_variable)
+                        || (code[i].id == Instruction::Id::jump_loop_start)
+                        || (code[i].id == Instruction::Id::jump_loop_exit))
                     {
                         // These instructions are the ones that can start a new block.  In the case
                         // of a jump target it is an explicit start of a block.  The jump
@@ -1083,8 +1097,8 @@ namespace sorth::internal
 
                         blocks[i] = llvm::BasicBlock::Create(*context, stream.str(), function);
                     }
-                    else if (   (code[i].id == OperationCode::Id::jump_if_zero)
-                             || (code[i].id == OperationCode::Id::jump_if_not_zero))
+                    else if (   (code[i].id == Instruction::Id::jump_if_zero)
+                             || (code[i].id == Instruction::Id::jump_if_not_zero))
                     {
                         // These instructions have two jumps.  One jump for the pop error check and
                         // one for the actual jump.  So we create two blocks for each of these jump
@@ -1130,7 +1144,7 @@ namespace sorth::internal
 
                     switch (code[i].id)
                     {
-                        case OperationCode::Id::def_variable:
+                        case Instruction::Id::def_variable:
                             {
                                 // Get the variable name and create a string constant in the module
                                 // for it.
@@ -1158,7 +1172,7 @@ namespace sorth::internal
                             }
                             break;
 
-                        case OperationCode::Id::def_constant:
+                        case Instruction::Id::def_constant:
                             {
                                 // Get the constant name and create a string constant in the module
                                 // for it.
@@ -1186,7 +1200,7 @@ namespace sorth::internal
                             }
                             break;
 
-                        case OperationCode::Id::read_variable:
+                        case Instruction::Id::read_variable:
                             {
                                 // Call the handle_read_variable function to read the variable from
                                 // the interpreter.
@@ -1206,7 +1220,7 @@ namespace sorth::internal
                             }
                             break;
 
-                        case OperationCode::Id::write_variable:
+                        case Instruction::Id::write_variable:
                             {
                                 // Call the handle_write_variable function to write the variable to
                                 // the interpreter.
@@ -1226,7 +1240,7 @@ namespace sorth::internal
                             }
                             break;
 
-                        case OperationCode::Id::execute:
+                        case Instruction::Id::execute:
                             {
                                 // Get the name or index of the word to execute.
                                 auto& value = code[i].value;
@@ -1280,7 +1294,7 @@ namespace sorth::internal
                             }
                             break;
 
-                        case OperationCode::Id::word_index:
+                        case Instruction::Id::word_index:
                             {
                                 // Make sure we have a name for lookup.
                                 if (!is_string(code[i].value))
@@ -1313,7 +1327,7 @@ namespace sorth::internal
                             }
                             break;
 
-                        case OperationCode::Id::word_exists:
+                        case Instruction::Id::word_exists:
                             {
                                 // Make sure we have a name for lookup.
                                 if (!is_string(code[i].value))
@@ -1346,7 +1360,7 @@ namespace sorth::internal
                             }
                             break;
 
-                        case OperationCode::Id::push_constant_value:
+                        case Instruction::Id::push_constant_value:
                             {
                                 // Get the value to push from the instruction.
                                 auto& value = code[i].value;
@@ -1403,7 +1417,7 @@ namespace sorth::internal
                             }
                             break;
 
-                        case OperationCode::Id::mark_loop_exit:
+                        case Instruction::Id::mark_loop_exit:
                             {
                                 // Capture the start and end indexes of the loop for later use.
                                 auto start_index = i + 1;
@@ -1414,14 +1428,14 @@ namespace sorth::internal
                             }
                             break;
 
-                        case OperationCode::Id::unmark_loop_exit:
+                        case Instruction::Id::unmark_loop_exit:
                             {
                                 // Clear the current loop markers.
                                 loop_markers.pop_back();
                             }
                             break;
 
-                        case OperationCode::Id::mark_catch:
+                        case Instruction::Id::mark_catch:
                             {
                                 // Capture the index of the catch block for later use.
                                 auto target_index = i + as_numeric<int64_t>(interpreter,
@@ -1431,7 +1445,7 @@ namespace sorth::internal
                             }
                             break;
 
-                        case OperationCode::Id::unmark_catch:
+                        case Instruction::Id::unmark_catch:
                             {
                                 // Clear the current catch markers so that we don't jump to then.
                                 // Note that we leave the catch_target_markers set alone so that we
@@ -1441,7 +1455,7 @@ namespace sorth::internal
                             }
                             break;
 
-                        case OperationCode::Id::mark_context:
+                        case Instruction::Id::mark_context:
                             {
                                 // Call the handle_manage_context function to mark the context in
                                 // the interpreter.
@@ -1451,7 +1465,7 @@ namespace sorth::internal
                             }
                             break;
 
-                        case OperationCode::Id::release_context:
+                        case Instruction::Id::release_context:
                             {
                                 // Call the handle_manage_context function to release the context in
                                 // the interpreter.
@@ -1461,7 +1475,7 @@ namespace sorth::internal
                             }
                             break;
 
-                        case OperationCode::Id::jump:
+                        case Instruction::Id::jump:
                             {
                                 // Jump to the target block.
                                 auto index = i + as_numeric<int64_t>(interpreter, code[i].value);
@@ -1469,7 +1483,7 @@ namespace sorth::internal
                             }
                             break;
 
-                        case OperationCode::Id::jump_if_zero:
+                        case Instruction::Id::jump_if_zero:
                             {
                                 // Convert the relative index to an absolute index.
                                 auto index = i + as_numeric<int64_t>(interpreter, code[i].value);
@@ -1505,7 +1519,7 @@ namespace sorth::internal
                             }
                             break;
 
-                        case OperationCode::Id::jump_if_not_zero:
+                        case Instruction::Id::jump_if_not_zero:
                             {
                                 // Convert the relative index to an absolute index.
                                 auto index = i + as_numeric<int64_t>(interpreter, code[i].value);
@@ -1540,7 +1554,7 @@ namespace sorth::internal
                             }
                             break;
 
-                        case OperationCode::Id::jump_loop_start:
+                        case Instruction::Id::jump_loop_start:
                             {
                                 // Jump to the start block of the loop.
                                 auto start_index = loop_markers.back().first;
@@ -1550,7 +1564,7 @@ namespace sorth::internal
                             }
                             break;
 
-                        case OperationCode::Id::jump_loop_exit:
+                        case Instruction::Id::jump_loop_exit:
                             {
                                 // Jump to the end block of the loop.
                                 auto end_index = loop_markers.back().second;
@@ -1560,7 +1574,7 @@ namespace sorth::internal
                             }
                             break;
 
-                        case OperationCode::Id::jump_target:
+                        case Instruction::Id::jump_target:
                             {
                                 // Make sure that the current block has a terminator instruction, if
                                 // not, add one to jump to the next block.  This is because this
@@ -1607,11 +1621,13 @@ namespace sorth::internal
                 last_exception = error;
             }
 
+
             // Clear the last exception that occurred.
             static void clear_last_exception()
             {
                 last_exception.reset();
             }
+
 
             // Handle popping a boolean value from the interpreter stack for the JITed code.
             static int64_t handle_pop_bool(void* interpreter_ptr, bool* value)
@@ -1632,6 +1648,7 @@ namespace sorth::internal
 
                 return result;
             }
+
 
             // Filter word names to be acceptable for use as llvm function names.
             std::string filter_word_name(const std::string& name)
@@ -1664,6 +1681,7 @@ namespace sorth::internal
                 return stream.str();
             }
 
+
             // Define a string constant in the llvm module for accessing from the JITed code.
             llvm::Value* define_string_constant(const std::string& text,
                                                 llvm::IRBuilder<>& builder,
@@ -1692,6 +1710,7 @@ namespace sorth::internal
                 return string_ptr;
             }
 
+
             // Handle setting the current source location in the interpreter for the JITed code.
             static void handle_set_location(void* interpreter_ptr,
                                             void* location_array_ptr,
@@ -1703,6 +1722,7 @@ namespace sorth::internal
 
                 interpreter->set_location(location);
             }
+
 
             // Handle the context management for the JITed code.  If passed a true value, mark the
             // context, otherwise release it.
@@ -1721,6 +1741,7 @@ namespace sorth::internal
                     interpreter->release_context();
                 }
             }
+
 
             // Handle defining a new variable in the interpreter for the JITed code.
             static int64_t handle_define_variable(void* interpreter_ptr, const char* name)
@@ -1741,6 +1762,7 @@ namespace sorth::internal
 
                 return result;
             }
+
 
             // Handle defining a new constant in the interpreter for the JITed code.
             static int64_t handle_define_constant(void* interpreter_ptr, const char* name)
@@ -1763,6 +1785,7 @@ namespace sorth::internal
                 return result;
             }
 
+
             // Handle a variable read operation for the JITed code.
             static int64_t handle_read_variable(void* interpreter_ptr)
             {
@@ -1783,6 +1806,7 @@ namespace sorth::internal
 
                 return result;
             }
+
 
             // Handle a variable write operation for the JITed code.
             static int64_t handle_write_variable(void* interpreter_ptr)
@@ -1824,6 +1848,7 @@ namespace sorth::internal
                 }
             }
 
+
             // Handle pushing a boolean value onto the interpreter stack for the JITed code.
             static void handle_push_bool(void* interpreter_ptr, bool value)
             {
@@ -1831,6 +1856,7 @@ namespace sorth::internal
 
                 interpreter->push(value);
             }
+
 
             // Handle pushing an integer value onto the interpreter stack for the JITed code.
             static void handle_push_int(void* interpreter_ptr, int64_t value)
@@ -1840,6 +1866,7 @@ namespace sorth::internal
                 interpreter->push(value);
             }
 
+
             // Handle pushing a double value onto the interpreter stack for the JITed code.
             static void handle_push_double(void* interpreter_ptr, double value)
             {
@@ -1847,6 +1874,7 @@ namespace sorth::internal
 
                 interpreter->push(value);
             }
+
 
             // Handle pushing a string value onto the interpreter stack for the JITed code.
             static void handle_push_string(void* interpreter_ptr, const char* value)
@@ -1856,6 +1884,7 @@ namespace sorth::internal
                 interpreter->push(std::string(value));
             }
 
+
             static void handle_push_value(void* interpreter_ptr, void* array_ptr, int64_t index)
             {
                 auto& interpreter = *static_cast<InterpreterPtr*>(interpreter_ptr);
@@ -1864,6 +1893,7 @@ namespace sorth::internal
 
                 interpreter->push(deep_copy_value(interpreter, value));
             }
+
 
             // Handle executing a word by name for the JITed code.
             static int64_t handle_word_execute_name(void* interpreter_ptr, const char* name)
@@ -1890,6 +1920,7 @@ namespace sorth::internal
                 return result;
             }
 
+
             // Handle executing a word by index for the JITed code.
             static int64_t handle_word_execute_index(void* interpreter_ptr, int64_t index)
             {
@@ -1915,9 +1946,9 @@ namespace sorth::internal
                 return result;
             }
 
+
             // Handle looking up a word index by name for the JITed code.
-            static int64_t handle_word_index_name(void* interpreter_ptr,
-                                                  const char* name)
+            static int64_t handle_word_index_name(void* interpreter_ptr, const char* name)
             {
                 int64_t result = 0;
 
@@ -1942,6 +1973,7 @@ namespace sorth::internal
                 return result;
             }
 
+
             // Handle looking up a word index by name for the JITed code.
             static int64_t handle_word_exists_name(void* interpreter_ptr, const char* name)
             {
@@ -1963,6 +1995,7 @@ namespace sorth::internal
                 return result;
             }
 
+
             // Simple handler that does nothing, used in the case we're given an empty byte-code
             // block.
             static void null_handler(InterpreterPtr&)
@@ -1975,11 +2008,14 @@ namespace sorth::internal
         // The storage for the last exception that occurred in the JITed code.
         thread_local std::optional<std::runtime_error> JitEngine::last_exception;
 
+
         // Only one thread can be JIT compiling at a time.
         std::mutex jit_lock;
 
         // The one instance of the jit engine.
         JitEngine jit_engine;
+
+
     }
 
 
@@ -2011,5 +2047,6 @@ namespace sorth::internal
     }
 
 }
+
 
 #endif
