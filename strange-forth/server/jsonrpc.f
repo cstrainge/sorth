@@ -161,7 +161,7 @@
 : jsonrpc.send_message_response  ( id response_value response_key -- )
     variable! response_key
     {}.to_json variable! response_value
-    to_string variable! id
+    value.to-string variable! id
 
     "{ \"jsonrpc\": \"2.0\", "
 

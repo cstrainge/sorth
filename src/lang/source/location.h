@@ -50,6 +50,11 @@ namespace sorth::internal
     };
 
 
+    #define LOCATION_HERE() \
+        sorth::internal::Location(shared_path(__FILE__), __LINE__, 0)
+
+
+
     std::ostream& operator <<(std::ostream& stream, Location location);
 
     bool operator ==(const Location& rhs, const Location& lhs);

@@ -59,7 +59,7 @@
                     dup value.is-boolean?
                     ||
                     if
-                        to_string
+                        value.to-string
                     else
                         drop
                         "Unsupported json value type." throw
@@ -104,7 +104,7 @@
         variable! value
         variable! name
 
-        "\"" name @ to_string + "\"" + ": " + value @ json.to_json_value + ", " +
+        "\"" name @ value.to-string + "\"" + ": " + value @ json.to_json_value + ", " +
         new_json @ swap + new_json !
     ;
 
@@ -129,7 +129,7 @@
         variable! value
         variable! key
 
-        "\"" key @ to_string + "\"" + ": " + value @ json.to_json_value + ", " +
+        "\"" key @ value.to-string + "\"" + ": " + value @ json.to_json_value + ", " +
         new_json @ swap + new_json !
     ;
 

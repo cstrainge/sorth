@@ -208,7 +208,7 @@ namespace sorth
                               DESCRIPTION, \
                               SIGNATURE)
 
-    #define ADD_IMMEDIATE_WORD(INTERPRETER, NAME, HANDLER, DESCRIPTION, SIGNATURE) \
+    #define ADD_NATIVE_IMMEDIATE_WORD(INTERPRETER, NAME, HANDLER, DESCRIPTION, SIGNATURE) \
         INTERPRETER->add_word(NAME, \
                               sorth::internal::WordFunction::Handler(HANDLER), \
                               __FILE__, \
