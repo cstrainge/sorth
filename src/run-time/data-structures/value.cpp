@@ -772,9 +772,9 @@ namespace sorth
     }
 
 
-    size_t Value::hash_combine(size_t seed, size_t value) noexcept
+    void Value::hash_combine(size_t& seed, size_t value) noexcept
     {
-        return seed ^ (value + 0x9e3779b9 + (seed << 6) + (seed >> 2));
+        seed ^= seed ^ (value + 0x9e3779b9 + (seed << 6) + (seed >> 2));
     }
 
 

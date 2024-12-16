@@ -138,8 +138,8 @@ namespace sorth
 
         for (const auto& [ key, value ] : items)
         {
-            hash_value ^= Value::hash_combine(hash_value, key.hash());
-            hash_value ^= Value::hash_combine(hash_value, value.hash());
+            Value::hash_combine(hash_value, key.hash());
+            Value::hash_combine(hash_value, value.hash());
         }
 
         return hash_value;

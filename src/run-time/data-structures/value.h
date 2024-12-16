@@ -156,7 +156,7 @@ namespace sorth
 
         public:
             size_t hash() const noexcept;
-            static size_t hash_combine(size_t seed, size_t value) noexcept;
+            static void hash_combine(size_t& seed, size_t value) noexcept;
 
         private:
             friend std::ostream& operator <<(std::ostream& stream, const Value& value) noexcept;

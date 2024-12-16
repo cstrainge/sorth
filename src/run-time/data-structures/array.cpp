@@ -114,7 +114,7 @@ namespace sorth
 
         for (const auto& value : items)
         {
-            hash_value ^= Value::hash_combine(hash_value, value.hash());
+            Value::hash_combine(hash_value, value.hash());
         }
 
         return hash_value;

@@ -262,7 +262,7 @@ namespace sorth
 
         for (const auto& value : fields)
         {
-            hash_value ^= Value::hash_combine(hash_value, value.hash());
+            Value::hash_combine(hash_value, value.hash());
         }
 
         return hash_value;

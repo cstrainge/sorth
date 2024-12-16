@@ -44,7 +44,7 @@ namespace sorth
 
                 for (size_t i = 0; i < size(); ++i)
                 {
-                    hash_value ^= Value::hash_combine(hash_value, std::hash<char>()(buffer[i]));
+                    Value::hash_combine(hash_value, std::hash<char>()(buffer[i]));
                 }
 
                 return hash_value;
