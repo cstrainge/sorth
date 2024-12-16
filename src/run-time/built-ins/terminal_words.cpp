@@ -147,7 +147,7 @@ namespace sorth
                 HANDLE std_out_handle = GetStdHandle(STD_OUTPUT_HANDLE);
                 HANDLE std_in_handle = GetStdHandle(STD_INPUT_HANDLE);
 
-                auto requested_on = as_numeric<bool>(interpreter, interpreter->pop());
+                auto requested_on = interpreter->pop_as_bool();
 
                 BOOL result = FALSE;
 

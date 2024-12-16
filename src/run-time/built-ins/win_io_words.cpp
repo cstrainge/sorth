@@ -96,7 +96,7 @@ namespace sorth
         void word_file_open(InterpreterPtr& interpreter)
         {
             DWORD flags = (DWORD)interpreter->pop_as_integer();
-            auto path = as_string(interpreter, interpreter->pop());
+            auto path = interpreter->pop_as_string();
 
             interpreter->push((int64_t)handle_open(interpreter, path, flags, OPEN_ALWAYS));
         }
@@ -136,7 +136,7 @@ namespace sorth
         void word_file_create(InterpreterPtr& interpreter)
         {
             DWORD flags = (DWORD)interpreter->pop_as_integer();
-            auto path = as_string(interpreter, interpreter->pop());
+            auto path = interpreter->pop_as_string();
 
             interpreter->push((int64_t)handle_open(interpreter, path, flags, CREATE_ALWAYS));
         }
@@ -159,7 +159,7 @@ namespace sorth
 
         void word_file_delete(InterpreterPtr& interpreter)
         {
-            auto path = as_string(interpreter, interpreter->pop());
+            auto path = interpreter->pop_as_string();
             auto result = DeleteFileA(path.c_str());
 
             if (result == FALSE)
@@ -174,7 +174,7 @@ namespace sorth
 
         void word_socket_connect(InterpreterPtr& interpreter)
         {
-            auto pipe_path = as_string(interpreter, interpreter->pop());
+            auto pipe_path = interpreter->pop_as_string();
             HANDLE pipe;
 
             do
@@ -223,7 +223,7 @@ namespace sorth
 
         void word_file_exists(InterpreterPtr& interpreter)
         {
-            auto file_path = as_string(interpreter, interpreter->pop());
+            auto file_path = interpreter->pop_as_string();
             auto attrib = GetFileAttributesA(file_path.c_str());
 
             bool result =    (attrib != INVALID_FILE_ATTRIBUTES)
@@ -355,7 +355,7 @@ namespace sorth
             auto handle = (HANDLE)interpreter->pop_as_integer();
             auto value = interpreter->pop();
 
-            if (value->is_byte_buffer())
+            if (value.is_byte_buffer())
             {
                 auto buffer = value.as_byte_buffer(interpreter);
 
@@ -402,7 +402,7 @@ namespace sorth
         void word_file_line_write(InterpreterPtr& interpreter)
         {
             auto handle = (HANDLE)interpreter->pop_as_integer();
-            auto line = as_string(interpreter, interpreter->pop());
+            auto line = interpreter->pop_as_string();
 
             if (line[line.size() - 1] != '\n')
             {
