@@ -14,8 +14,8 @@ namespace sorth::internal
 
         void word_word(InterpreterPtr& interpreter)
         {
-            auto& current_token = interpreter->constructor().current_token;
-            auto& input_tokens = interpreter->constructor().input_tokens;
+            auto& current_token = interpreter->compile_context().current_token;
+            auto& input_tokens = interpreter->compile_context().input_tokens;
 
             throw_error_if(current_token >= input_tokens.size(), interpreter,
                         "word trying to read past the end of the token list.");
@@ -43,8 +43,8 @@ namespace sorth::internal
 
         void word_word_index(InterpreterPtr& interpreter)
         {
-            auto& current_token = interpreter->constructor().current_token;
-            auto& input_tokens = interpreter->constructor().input_tokens;
+            auto& current_token = interpreter->compile_context().current_token;
+            auto& input_tokens = interpreter->compile_context().input_tokens;
 
             ++current_token;
             auto name = input_tokens[current_token].text;
@@ -53,14 +53,14 @@ namespace sorth::internal
 
             if (found)
             {
-                interpreter->constructor().stack.top().code.push_back({
+                interpreter->compile_context().stack.top().code.push_back({
                         .id = Instruction::Id::push_constant_value,
                         .value = (int64_t)word.handler_index
                     });
             }
             else
             {
-                interpreter->constructor().stack.top().code.push_back({
+                interpreter->compile_context().stack.top().code.push_back({
                         .id = Instruction::Id::word_index,
                         .value = name
                     });
@@ -94,13 +94,13 @@ namespace sorth::internal
 
         void word_is_defined(InterpreterPtr& interpreter)
         {
-            auto& current_token = interpreter->constructor().current_token;
-            auto& input_tokens = interpreter->constructor().input_tokens;
+            auto& current_token = interpreter->compile_context().current_token;
+            auto& input_tokens = interpreter->compile_context().input_tokens;
 
             ++current_token;
             auto name = input_tokens[current_token].text;
 
-            interpreter->constructor().stack.top().code.push_back({
+            interpreter->compile_context().stack.top().code.push_back({
                     .id = Instruction::Id::word_exists,
                     .value = name
                 });
@@ -109,8 +109,8 @@ namespace sorth::internal
 
         void word_is_defined_im(InterpreterPtr& interpreter)
         {
-            auto& current_token = interpreter->constructor().current_token;
-            auto& input_tokens = interpreter->constructor().input_tokens;
+            auto& current_token = interpreter->compile_context().current_token;
+            auto& input_tokens = interpreter->compile_context().input_tokens;
 
             ++current_token;
             auto name = input_tokens[current_token].text;

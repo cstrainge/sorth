@@ -13,10 +13,10 @@ namespace sorth::internal
 
         void insert_user_instruction(InterpreterPtr& interpreter, const Instruction& op)
         {
-            auto& constructor = interpreter->constructor();
-            auto& code = constructor.stack.top().code;
+            auto& context = interpreter->compile_context();
+            auto& code = context.stack.top().code;
 
-            if (!constructor.user_is_inserting_at_beginning)
+            if (!context.user_is_inserting_at_beginning)
             {
                 code.push_back(op);
             }
@@ -230,26 +230,26 @@ namespace sorth::internal
 
         void word_code_new_block(InterpreterPtr& interpreter)
         {
-            interpreter->constructor().stack.push({});
+            interpreter->compile_context().stack.push({});
         }
 
 
         void word_code_drop_stack_block(InterpreterPtr& interpreter)
         {
-            interpreter->constructor().stack.pop();
+            interpreter->compile_context().stack.pop();
         }
 
 
         void word_code_execute_stack_block(InterpreterPtr& interpreter)
         {
             auto name = interpreter->pop_as_string();
-            interpreter->execute_code(name, interpreter->constructor().stack.top().code);
+            interpreter->execute_code(name, interpreter->compile_context().stack.top().code);
         }
 
 
         void word_code_merge_stack_block(InterpreterPtr& interpreter)
         {
-            auto& stack = interpreter->constructor().stack;
+            auto& stack = interpreter->compile_context().stack;
             auto top_code = stack.top().code;
 
             stack.pop();
@@ -260,8 +260,8 @@ namespace sorth::internal
 
         void word_code_pop_stack_block(InterpreterPtr& interpreter)
         {
-            interpreter->push(interpreter->constructor().stack.top().code);
-            interpreter->constructor().stack.pop();
+            interpreter->push(interpreter->compile_context().stack.top().code);
+            interpreter->compile_context().stack.pop();
         }
 
 
@@ -271,13 +271,13 @@ namespace sorth::internal
 
             throw_error_if(!top.is_byte_code(), interpreter, "Expected a byte code block.");
 
-            interpreter->constructor().stack.push({ .code = top.as_byte_code(interpreter) });
+            interpreter->compile_context().stack.push({ .code = top.as_byte_code(interpreter) });
         }
 
 
         void word_code_stack_block_size(InterpreterPtr& interpreter)
         {
-            interpreter->push((int64_t)interpreter->constructor().stack.top().code.size());
+            interpreter->push((int64_t)interpreter->compile_context().stack.top().code.size());
         }
 
 
@@ -291,7 +291,7 @@ namespace sorth::internal
                         || (code.id == Instruction::Id::mark_loop_exit)
                         || (code.id == Instruction::Id::mark_catch);
                 };
-            auto& top_code = interpreter->constructor().stack.top().code;
+            auto& top_code = interpreter->compile_context().stack.top().code;
 
             std::list<size_t> jump_indicies;
             std::unordered_map<std::string, size_t> jump_targets;
@@ -350,8 +350,8 @@ namespace sorth::internal
                     return { false, "" };
                 };
 
-            auto& current_token = interpreter->constructor().current_token;
-            auto& input_tokens = interpreter->constructor().input_tokens;
+            auto& current_token = interpreter->compile_context().current_token;
+            auto& input_tokens = interpreter->compile_context().input_tokens;
 
             auto start_location = input_tokens[current_token].location;
 
@@ -366,7 +366,7 @@ namespace sorth::internal
                     return;
                 }
 
-                interpreter->constructor().compile_token(token);
+                interpreter->compile_context().compile_token(token);
             }
 
             std::string message;
@@ -397,7 +397,7 @@ namespace sorth::internal
 
         void word_code_insert_at_front(InterpreterPtr& interpreter)
         {
-            interpreter->constructor().user_is_inserting_at_beginning = interpreter->pop_as_bool();
+            interpreter->compile_context().user_is_inserting_at_beginning = interpreter->pop_as_bool();
         }
 
 

@@ -73,7 +73,7 @@ namespace sorth
                 ThreadMap thread_map;
                 std::mutex sub_thread_lock;
 
-                ConstructorStack code_constructors;
+                CompileContextStack compile_contexts;
 
             public:
                 InterpreterImpl(ExecutionMode mode);
@@ -97,7 +97,7 @@ namespace sorth
                 virtual int get_exit_code() const override;
                 virtual void set_exit_code(int new_exit_code) override;
 
-                virtual CodeConstructor& constructor() override;
+                virtual CompileContext& compile_context() override;
 
             public:
                 virtual Location get_current_location() const override;
@@ -275,21 +275,21 @@ namespace sorth
             auto this_ptr = shared_from_this();
 
             // Create a new code construction context for the script we about to process.
-            code_constructors.push({});
+            compile_contexts.push({});
 
             try
             {
                 // Now byte-code compile the script.  If we are also JITing the script, then we
                 // will cache the non-immediate words for JIT compilation later as a whole module to
                 // allow for greater optimization.
-                code_constructors.top().interpreter = this_ptr;
-                code_constructors.top().stack.push({});
-                code_constructors.top().input_tokens = tokenize(buffer);
-                code_constructors.top().compile_token_list();
+                compile_contexts.top().interpreter = this_ptr;
+                compile_contexts.top().stack.push({});
+                compile_contexts.top().input_tokens = tokenize(buffer);
+                compile_contexts.top().compile_token_list();
 
                 // Now that the script has been compiled, get the byte-code for the script's top
                 // level code.
-                auto code = code_constructors.top().stack.top().code;
+                auto code = compile_contexts.top().stack.top().code;
 
                 // Get the name of the script we are processing.
                 auto name = buffer.current_location().get_path();
@@ -310,7 +310,7 @@ namespace sorth
                         auto handler = jit_module(this_ptr,
                                                   name,
                                                   code,
-                                                  code_constructors.top().word_jit_cache);
+                                                  compile_contexts.top().word_jit_cache);
 
                         // Now that the script has been JITed, we can execute it.  We don't need to
                         // save the handler as this is a one time deal.
@@ -327,12 +327,12 @@ namespace sorth
                 #endif
 
                 // We are done with this code construction context, so pop it from the stack.
-                code_constructors.pop();
+                compile_contexts.pop();
             }
             catch (...)
             {
                 // If we have an exception, then we need to clean up the code construction context.
-                code_constructors.pop();
+                compile_contexts.pop();
                 throw;
             }
         }
@@ -385,12 +385,12 @@ namespace sorth
         }
 
 
-        CodeConstructor& InterpreterImpl::constructor()
+        CompileContext& InterpreterImpl::compile_context()
         {
-            throw_error_if(code_constructors.size() == 0,
+            throw_error_if(compile_contexts.size() == 0,
                            shared_from_this(),
-                           "Code constructor is unavailable.");
-            return code_constructors.top();
+                           "The compiler context is unavailable.");
+            return compile_contexts.top();
         }
 
 

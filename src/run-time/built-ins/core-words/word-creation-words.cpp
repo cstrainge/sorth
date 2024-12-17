@@ -75,14 +75,14 @@ namespace sorth::internal
 
         void word_start_word(InterpreterPtr& interpreter)
         {
-            auto& current_token = interpreter->constructor().current_token;
-            auto& input_tokens = interpreter->constructor().input_tokens;
+            auto& current_token = interpreter->compile_context().current_token;
+            auto& input_tokens = interpreter->compile_context().input_tokens;
 
             ++current_token;
             auto& name = input_tokens[current_token].text;
             auto& location = input_tokens[current_token].location;
 
-            interpreter->constructor().stack.push({
+            interpreter->compile_context().stack.push({
                     .is_immediate = false,
                     .is_hidden = false,
                     .is_context_managed = true,
@@ -96,8 +96,8 @@ namespace sorth::internal
         void word_end_word(InterpreterPtr& interpreter)
         {
             // Pop the current construction off of the stack.
-            auto construction = interpreter->constructor().stack.top();
-            interpreter->constructor().stack.pop();
+            auto construction = interpreter->compile_context().stack.top();
+            interpreter->compile_context().stack.pop();
 
             // The word handler we will be registering with the interpreter.  It will be either a
             // byte-code handler or a JITed handler based on support and the mode we're in.
@@ -117,7 +117,7 @@ namespace sorth::internal
                 if (!construction.is_immediate)
                 {
                     // Add the construction to the JIT cache.
-                    interpreter->constructor().word_jit_cache[construction.name] = construction;
+                    interpreter->compile_context().word_jit_cache[construction.name] = construction;
 
                     // Create a script word handler for the word for now.  This will be replaced with
                     // the JITed handler when the script is compiled.
@@ -173,26 +173,26 @@ namespace sorth::internal
 
         void word_immediate(InterpreterPtr& interpreter)
         {
-            interpreter->constructor().stack.top().is_immediate = true;
+            interpreter->compile_context().stack.top().is_immediate = true;
         }
 
 
         void word_hidden(InterpreterPtr& interpreter)
         {
-            interpreter->constructor().stack.top().is_hidden = true;
+            interpreter->compile_context().stack.top().is_hidden = true;
         }
 
 
         void word_contextless(InterpreterPtr& interpreter)
         {
-            interpreter->constructor().stack.top().is_context_managed = false;
+            interpreter->compile_context().stack.top().is_context_managed = false;
         }
 
 
         void word_description(InterpreterPtr& interpreter)
         {
-            auto& current_token = interpreter->constructor().current_token;
-            auto& input_tokens = interpreter->constructor().input_tokens;
+            auto& current_token = interpreter->compile_context().current_token;
+            auto& input_tokens = interpreter->compile_context().input_tokens;
 
             ++current_token;
 
@@ -205,14 +205,14 @@ namespace sorth::internal
                         interpreter,
                         "Expected the description to be a string.");
 
-            interpreter->constructor().stack.top().description = token.text;
+            interpreter->compile_context().stack.top().description = token.text;
         }
 
 
         void word_signature(InterpreterPtr& interpreter)
         {
-            auto& current_token = interpreter->constructor().current_token;
-            auto& input_tokens = interpreter->constructor().input_tokens;
+            auto& current_token = interpreter->compile_context().current_token;
+            auto& input_tokens = interpreter->compile_context().input_tokens;
 
             ++current_token;
 
@@ -225,7 +225,7 @@ namespace sorth::internal
                         interpreter,
                         "Expected the signature to be a string.");
 
-            interpreter->constructor().stack.top().signature = token.text;
+            interpreter->compile_context().stack.top().signature = token.text;
         }
 
 

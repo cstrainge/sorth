@@ -13,8 +13,8 @@ namespace sorth::internal
 
         Token& get_next_token(InterpreterPtr& interpreter)
         {
-            auto& current_token = interpreter->constructor().current_token;
-            auto& input_tokens = interpreter->constructor().input_tokens;
+            auto& current_token = interpreter->compile_context().current_token;
+            auto& input_tokens = interpreter->compile_context().input_tokens;
 
             if ((current_token + 1) >= input_tokens.size())
             {
@@ -86,7 +86,7 @@ namespace sorth::internal
 
                     while (!is_one_of(token.text, words))
                     {
-                        interpreter->constructor().compile_token(token);
+                        interpreter->compile_context().compile_token(token);
                         token = get_next_token(interpreter);
                     }
 

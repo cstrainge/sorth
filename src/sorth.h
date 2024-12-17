@@ -83,7 +83,7 @@
 #include "byte_buffer.h"
 #include "data_object.h"
 #include "hash_table.h"
-#include "code_constructor.h"
+#include "compile-context.h"
 #include "blocking_value_queue.h"
 #include "interpreter.h"
 #include "core-words.h"

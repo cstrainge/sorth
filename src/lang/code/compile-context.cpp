@@ -7,7 +7,7 @@ namespace sorth::internal
 {
 
 
-    void CodeConstructor::compile_token(const Token& token)
+    void CompileContext::compile_token(const Token& token)
     {
         // In Forth anything can be a word, so first we see if it's defined in the dictionary.  If
         // it is, we either compile or execute the word depending on if it's an immediate.
@@ -86,7 +86,7 @@ namespace sorth::internal
     }
 
 
-    void CodeConstructor::compile_token_list()
+    void CompileContext::compile_token_list()
     {
         for (current_token = 0; current_token < input_tokens.size(); ++current_token)
         {

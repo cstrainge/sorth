@@ -24,7 +24,7 @@ namespace sorth::internal
     using ConstructionList = std::vector<Construction>;
 
 
-    struct CodeConstructor
+    struct CompileContext
     {
         #if !defined(SORTH_JIT_DISABLED)
             std::map<std::string, Construction> word_jit_cache;
@@ -44,7 +44,7 @@ namespace sorth::internal
 
 
 
-    using ConstructorStack = std::stack<CodeConstructor>;
+    using CompileContextStack = std::stack<CompileContext>;
 
 
 }
