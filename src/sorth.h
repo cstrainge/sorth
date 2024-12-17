@@ -72,36 +72,33 @@
 
 #include "location.h"
 #include "error.h"
-#include "source_buffer.h"
+#include "source-buffer.h"
 #include "tokenize.h"
-#include "contextual_list.h"
+#include "contextual-list.h"
 #include "value.h"
-#include "word_function.h"
+#include "word-function.h"
 #include "dictionary.h"
 #include "instruction.h"
 #include "array.h"
-#include "byte_buffer.h"
-#include "data_object.h"
-#include "hash_table.h"
+#include "byte-buffer.h"
+#include "data-object.h"
+#include "hash-table.h"
 #include "compile-context.h"
-#include "blocking_value_queue.h"
+#include "blocking-value-queue.h"
 #include "interpreter.h"
 #include "core-words.h"
-#include "terminal_words.h"
-#include "sorth_ffi.h"
+#include "terminal-words.h"
+#include "ffi-words.h"
+#include "user-words.h"
 #include "jit.h"
 
 
+#if (IS_UNIX == 1)
 
-#if defined(IS_UNIX)
+	#include "io-words-posix.h"
 
-	#include "posix_io_words.h"
+#elif (IS_WINDOWS == 1)
 
-#elif defined(IS_WINDOWS)
-
-    #include "win_io_words.h"
+    #include "io-words-windows.h"
 
 #endif
-
-
-#include "user_words.h"

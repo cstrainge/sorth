@@ -1812,16 +1812,18 @@
     user.os  "Linux"  =
 ;
 
+
+
+( If we have the user environment available, include some more useful words that make use of it. )
 [defined?] user.env@
 [if]
     [is-windows?]
     [if]
-        [include] std/win_user.f
+        [include] std/win-user.f
     [else]
         [include] std/user.f
     [then]
 [then]
-
 
 
 
@@ -1833,7 +1835,7 @@
 [if]
     [include] std/repl.f
 [else]
-    [include] std/simple_repl.f
+    [include] std/simple-repl.f
 [then]
 
 
