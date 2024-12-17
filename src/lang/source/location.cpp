@@ -11,9 +11,9 @@ namespace sorth::internal
     {
         auto& path = location.get_path();
 
-        if (path)
+        if (path.empty() == false)
         {
-            stream << path->string() << ":";
+            stream << path << ":";
         }
 
         stream << location.get_line() << ":" << location.get_column();
@@ -50,7 +50,7 @@ namespace sorth::internal
     }
 
 
-    Location::Location(const PathPtr& path)
+    Location::Location(const std::string& path)
     : source_path(path),
       line(1),
       column(1)
@@ -58,7 +58,7 @@ namespace sorth::internal
     }
 
 
-    Location::Location(const PathPtr& path, size_t new_line, size_t new_column)
+    Location::Location(const std::string& path, size_t new_line, size_t new_column)
     : source_path(path),
       line(new_line),
       column(new_column)
@@ -66,7 +66,7 @@ namespace sorth::internal
     }
 
 
-    const PathPtr& Location::get_path() const
+    const std::string& Location::get_path() const
     {
         return source_path;
     }

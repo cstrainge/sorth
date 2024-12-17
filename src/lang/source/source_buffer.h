@@ -19,7 +19,7 @@ namespace sorth::internal
 
         public:
             SourceBuffer();
-            SourceBuffer(std::string const& new_source);
+            SourceBuffer(const std::string& name, const std::string& new_source);
             SourceBuffer(const std::filesystem::path& path);
 
         public:
@@ -33,6 +33,9 @@ namespace sorth::internal
 
         private:
             void increment_position(char next);
+
+        private:
+            std::string load_source(const std::filesystem::path& path);
     };
 
 

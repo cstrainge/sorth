@@ -403,8 +403,10 @@ namespace sorth::internal
 
         void word_code_execute_source(InterpreterPtr& interpreter)
         {
+            auto name = interpreter->pop_as_string();
             auto code = interpreter->pop_as_string();
-            interpreter->process_source(code);
+
+            interpreter->process_source(name, code);
         }
 
 

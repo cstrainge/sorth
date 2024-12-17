@@ -53,7 +53,7 @@ namespace sorth::internal
                                             Word& word)
     {
         auto new_location = make_data_object(location_definition);
-        new_location->fields[0] = word.location.get_path()->string();
+        new_location->fields[0] = word.location.get_path();
         new_location->fields[1] = (int64_t)word.location.get_line();
         new_location->fields[2] = (int64_t)word.location.get_column();
 

@@ -81,7 +81,8 @@ namespace sorth
 
         public:
             virtual void process_source(const std::filesystem::path& path) = 0;
-            virtual void process_source(const std::string& source_text) = 0;
+            virtual void process_source(const std::string& name,
+                                        const std::string& source_text) = 0;
 
             virtual int get_exit_code() const = 0;
             virtual void set_exit_code(int exit_code) = 0;

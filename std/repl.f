@@ -1248,8 +1248,7 @@ false variable! repl.is_quitting?
     while
         try
             ( Read and attempt to execute the user command. )
-            repl.history.state repl.readline@@
-            code.execute_source
+            repl.history.state repl.readline@@  "<repl>"  code.execute_source
 
             ( If we get here, everything ran ok. )
             "ok" .cr cr

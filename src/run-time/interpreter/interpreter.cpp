@@ -91,7 +91,8 @@ namespace sorth
                 void process_source(SourceBuffer& buffer);
 
                 virtual void process_source(const std::filesystem::path& path) override;
-                virtual void process_source(const std::string& source_text) override;
+                virtual void process_source(const std::string& name,
+                                            const std::string& source_text) override;
 
                 virtual int get_exit_code() const override;
                 virtual void set_exit_code(int new_exit_code) override;
@@ -291,7 +292,7 @@ namespace sorth
                 auto code = code_constructors.top().stack.top().code;
 
                 // Get the name of the script we are processing.
-                auto name = buffer.current_location().get_path()->filename().string();
+                auto name = buffer.current_location().get_path();
 
                 // Pretty print the bytecode if we are in debug mode.
                 if (is_showing_bytecode)
@@ -364,9 +365,10 @@ namespace sorth
         }
 
 
-        void InterpreterImpl::process_source(const std::string& source_text)
+        void InterpreterImpl::process_source(const std::string& name,
+                                             const std::string& source_text)
         {
-            SourceBuffer source(source_text);
+            SourceBuffer source(name, source_text);
             process_source(source);
         }
 
@@ -1258,7 +1260,7 @@ namespace sorth
         {
             add_word(word,
                      handler,
-                     Location(std::make_shared<std::filesystem::path>(path), line, column),
+                     Location(path.string(), line, column),
                      is_immediate,
                      false,
                      false,

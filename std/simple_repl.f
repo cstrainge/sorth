@@ -59,8 +59,7 @@ false variable! repl.is_quitting?
 
             ( Get the text from the user and execute it.  We are just using a really simple )
             ( implementation of readline for now. )
-            term.readline
-            code.execute_source
+            term.readline "<repl>" code.execute_source
 
             ( If we got here, everything is fine. )
             "ok" .cr

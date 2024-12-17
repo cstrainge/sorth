@@ -10,28 +10,22 @@ namespace sorth::internal
     SourceBuffer::SourceBuffer()
     : source(),
       position(0),
-      source_location(shared_path("<repl>"))
+      source_location("<unknown>")
     {
     }
 
-    SourceBuffer::SourceBuffer(std::string const& new_source)
+    SourceBuffer::SourceBuffer(const std::string& name, std::string const& new_source)
     : source(new_source),
       position(0),
-      source_location(shared_path("<repl>"))
+      source_location(name)
     {
     }
 
     SourceBuffer::SourceBuffer(const std::filesystem::path& path)
-    : source(),
+    : source(load_source(path)),
       position(0),
-      source_location(shared_path(path))
+      source_location(path.string())
     {
-        std::ifstream source_file(*source_location.get_path());
-
-        auto begin = std::istreambuf_iterator<char>(source_file);
-        auto end = std::istreambuf_iterator<char>();
-
-        source = std::string(begin, end);
     }
 
 
@@ -81,6 +75,17 @@ namespace sorth::internal
         {
             source_location.next();
         }
+    }
+
+
+    std::string SourceBuffer::load_source(const std::filesystem::path& path)
+    {
+        std::ifstream source_file(path.c_str());
+
+        auto begin = std::istreambuf_iterator<char>(source_file);
+        auto end = std::istreambuf_iterator<char>();
+
+        return std::string(begin, end);
     }
 
 
