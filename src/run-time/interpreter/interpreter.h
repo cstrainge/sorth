@@ -21,6 +21,7 @@ namespace sorth
     {
 
 
+        // The name and location of an item on the call stack.
         struct CallItem
         {
             Location word_location;
@@ -28,12 +29,14 @@ namespace sorth
         };
 
 
+        // Keep track of the stack of called words.
         using CallStack = std::list<CallItem>;
 
 
         std::ostream& operator <<(std::ostream& stream, const CallStack& call_stack);
 
 
+        // The list of variables that are currently in scope in the interpreter.
         using VariableList = ContextualList<Value>;
 
 
@@ -218,7 +221,6 @@ namespace sorth
                               true, \
                               DESCRIPTION, \
                               SIGNATURE)
-
 
 
 }

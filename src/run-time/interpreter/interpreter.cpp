@@ -271,99 +271,145 @@ namespace sorth
 
         void InterpreterImpl::process_source(SourceBuffer& buffer)
         {
-            // Get a shared pointer to ourselves.
-            auto this_ptr = shared_from_this();
-
-            try
+            // Make sure that the compiler context is properly created and freed.
+            class CompileContextManager
             {
-                // Now byte-code compile the script.  If we are also JITing the script, then we
-                // will cache the non-immediate words for JIT compilation later as a whole module to
-                // allow for greater optimization.
-                compile_contexts.push(CompileContext(this_ptr, std::move(tokenize(buffer))));
+                private:
+                    InterpreterImpl& interpreter;
 
-                compile_contexts.top().compile_token_list();
+                public:
+                    CompileContextManager(InterpreterImpl& interpreter, TokenList&& tokens)
+                    : interpreter(interpreter)
+                    {
+                        InterpreterPtr shared_this = interpreter.shared_from_this();
 
-                // Now that the script has been compiled, get the byte-code for the script's top
-                // level code.
-                auto code = std::move(compile_contexts.top().construction().code);
+                        interpreter.compile_contexts.push(CompileContext(shared_this,
+                                                                         std::move(tokens)));
+                    }
 
-                // Get the name of the script we are processing.
-                auto name = buffer.current_location().get_path();
+                    ~CompileContextManager()
+                    {
+                        interpreter.compile_contexts.pop();
+                    }
+            };
 
-                // Pretty print the bytecode if we are in debug mode.
-                if (is_showing_bytecode)
+            // Make sure that the call stack is properly managed.
+            class CallStackManager
+            {
+                private:
+                    InterpreterImpl& interpreter;
+
+                public:
+                    CallStackManager(InterpreterImpl& interpreter, const std::string& name)
+                    : interpreter(interpreter)
+                    {
+                        interpreter.call_stack_push(name, Location(name, 1, 1));
+                    }
+
+                    ~CallStackManager()
+                    {
+                        interpreter.call_stack_pop();
+                    }
+            };
+
+
+            // Now byte-code compile the script.  If we are also JITing the script, then we will
+            // cache the non-immediate words for JIT compilation later as a whole module to allow
+            // for greater optimization.
+            CompileContextManager compile_context_manager(*this, std::move(tokenize(buffer)));
+
+            compile_contexts.top().compile_token_list();
+
+            // Now that the script has been compiled, get the byte-code for the script's top level
+            // code.
+            auto code = std::move(compile_contexts.top().construction().code);
+
+            // Get the name of the script we are processing.
+            auto name = buffer.current_location().get_path();
+
+            #ifndef SORTH_JIT_DISABLED
+                if (execution_mode == ExecutionMode::jit)
                 {
-                    std::cout << "--------[" << name << "]-------------" << std::endl
-                            << code << std::endl;
+                    // Get a shared pointer to ourselves.
+                    auto this_ptr = shared_from_this();
+
+                    // JIT compile the script's top level function handler and all of the script's
+                    // non-immediate words that have been cached during the byte-code compilation
+                    // phase.
+                    auto handler = jit_module(this_ptr,
+                                                name,
+                                                code,
+                                                compile_contexts.top().word_jit_cache);
+
+                    // Now that the script has been JITed, we can execute it.  We don't need to
+                    // save the handler as this is a one time deal.
+                    CallStackManager call_stack_manager(*this, name);
+
+                    handler(this_ptr);
                 }
-
-                #ifndef SORTH_JIT_DISABLED
-                    if (execution_mode == ExecutionMode::jit)
-                    {
-                        // JIT compile the script's top level function handler and all of the
-                        // script's non-immediate words that have been cached during the byte-code
-                        // compilation phase.
-                        auto handler = jit_module(this_ptr,
-                                                  name,
-                                                  code,
-                                                  compile_contexts.top().word_jit_cache);
-
-                        // Now that the script has been JITed, we can execute it.  We don't need to
-                        // save the handler as this is a one time deal.
-                        handler(this_ptr);
-                    }
-                    else
-                    {
-                        // Execute the byte-code generated for the script's top level code.
-                        execute_code(name, code);
-                    }
-                #else
+                else
+                {
                     // Execute the byte-code generated for the script's top level code.
-                    execute_code(name, code);
-                #endif
+                    CallStackManager call_stack_manager(*this, name);
 
-                // We are done with this code construction context, so pop it from the stack.
-                compile_contexts.pop();
-            }
-            catch (...)
-            {
-                // If we have an exception, then we need to clean up the code construction context.
-                compile_contexts.pop();
-                throw;
-            }
+                    execute_code(name, code);
+                }
+            #else
+                // Execute the byte-code generated for the script's top level code.
+                CallStackManager call_stack_manager(*this, name);
+
+                execute_code(name, code);
+            #endif
         }
 
 
         void InterpreterImpl::process_source(const std::filesystem::path& path)
         {
+            // Make sure that the search path is properly managed.  If this script happens to
+            // include other scripts, we want to make sure that it can find it's relative scripts.
+            //
+            // But once we are done processing the script, we want to remove the search path, as it
+            // only makes sense in context to the parent script.
+            class SearchPathManager
+            {
+                private:
+                    InterpreterImpl& interpreter;
+
+                public:
+                    SearchPathManager(InterpreterImpl& interpreter,
+                                      const std::filesystem::path& path)
+                    : interpreter(interpreter)
+                    {
+                        interpreter.add_search_path(path);
+                    }
+
+                    ~SearchPathManager()
+                    {
+                        interpreter.pop_search_path();
+                    }
+            };
+
+
+            // Get the base directory of the script we're loading so that we can use it as a search
+            // path for any relative scripts that may be included from this one..
             auto full_source_path = path;
 
             auto base_path = full_source_path;
             base_path.remove_filename();
 
+            // Load the script and update the search paths.
             SourceBuffer source(full_source_path);
+            SearchPathManager search_path_manager(*this, base_path);
 
-            if (base_path != "")
-            {
-                add_search_path(base_path);
-            }
-
-            try
-            {
-                process_source(source);
-                pop_search_path();
-            }
-            catch (...)
-            {
-                pop_search_path();
-                throw;
-            }
+            // Now compile/execute the script.
+            process_source(source);
         }
 
 
         void InterpreterImpl::process_source(const std::string& name,
                                              const std::string& source_text)
         {
+            // Create a source buffer for this script and then compile/execute it.
             SourceBuffer source(name, source_text);
             process_source(source);
         }
