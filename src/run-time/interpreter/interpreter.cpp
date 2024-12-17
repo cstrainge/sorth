@@ -118,7 +118,6 @@ namespace sorth
 
                 virtual std::tuple<bool, Word> find_word(const std::string& word) override;
                 virtual WordHandlerInfo& get_handler_info(size_t index) override;
-                virtual std::vector<std::string> get_inverse_lookup_list() override;
 
             private:
                 void append_new_thread(const SubThreadInfo& info);
@@ -186,15 +185,15 @@ namespace sorth
                 virtual void add_word(const std::string& word,
                                       WordFunction handler,
                                       const Location& location,
-                                      bool is_immediate = false,
-                                      bool is_hidden = false,
-                                      bool is_scripted = false,
+                                      ExecutionContext context = ExecutionContext::run_time,
+                                      WordVisibility visibility = WordVisibility::visible,
+                                      WordType type = WordType::internal,
                                       const std::string& description = "",
                                       const std::string& signature = "") override;
 
                 virtual void add_word(const std::string& word, WordFunction handler,
                                       const std::filesystem::path& path, size_t line, size_t column,
-                                      bool is_immediate, const std::string& description,
+                                      ExecutionContext context, const std::string& description,
                                       const std::string& signature) override;
 
                 virtual void replace_word(const std::string& word, WordFunction handler) override;
@@ -488,12 +487,6 @@ namespace sorth
                            "Handler index is out of range.");
 
             return word_handlers[index];
-        }
-
-
-        std::vector<std::string> InterpreterImpl::get_inverse_lookup_list()
-        {
-            return inverse_lookup_list(dictionary, word_handlers);
         }
 
 
@@ -1257,32 +1250,18 @@ namespace sorth
         void InterpreterImpl::add_word(const std::string& word,
                                        WordFunction handler,
                                        const Location& location,
-                                       bool is_immediate,
-                                       bool is_hidden,
-                                       bool is_scripted,
+                                       ExecutionContext context,
+                                       WordVisibility visibility,
+                                       WordType type,
                                        const std::string& description,
                                        const std::string& signature)
         {
-            StringPtr shared_description;
-
-            if (description != "")
-            {
-                shared_description = std::make_shared<std::string>(description);
-            }
-
-            StringPtr shared_signature;
-
-            if (signature != "")
-            {
-                shared_signature = std::make_shared<std::string>(signature);
-            }
-
             dictionary.insert(word, {
-                    .is_immediate = is_immediate,
-                    .is_scripted = is_scripted,
-                    .is_hidden = is_hidden,
-                    .description = shared_description,
-                    .signature = shared_signature,
+                    .execution_context = context,
+                    .type = type,
+                    .visibility = visibility,
+                    .description = description,
+                    .signature = signature,
                     .location = location,
                     .handler_index = word_handlers.insert({
                             .name = word,
@@ -1296,16 +1275,16 @@ namespace sorth
         void InterpreterImpl::add_word(const std::string& word, WordFunction handler,
                                        const std::filesystem::path& path,
                                        size_t line, size_t column,
-                                       bool is_immediate,
+                                       ExecutionContext context,
                                        const std::string& description,
                                        const std::string& signature)
         {
             add_word(word,
                      handler,
                      Location(path.string(), line, column),
-                     is_immediate,
-                     false,
-                     false,
+                     context,
+                     WordVisibility::visible,
+                     WordType::internal,
                      description,
                      signature);
         }

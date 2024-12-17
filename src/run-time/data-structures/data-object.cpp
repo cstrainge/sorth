@@ -6,6 +6,9 @@ namespace sorth
 {
 
 
+    using namespace internal;
+
+
     std::ostream& operator <<(std::ostream& stream, const DataObjectPtr& data)
     {
         if (data)
@@ -81,7 +84,7 @@ namespace sorth
                                                    std::string name,
                                                    ArrayPtr fields,
                                                    ArrayPtr defaults,
-                                                   bool is_hidden)
+                                                   WordVisibility visibility)
     {
         DataObjectDefinitionPtr definition_ptr = std::make_shared<DataObjectDefinition>();
 
@@ -107,11 +110,8 @@ namespace sorth
     void create_data_definition_words(const internal::Location &location,
                                       InterpreterPtr &interpreter,
                                       DataObjectDefinitionPtr &definition_ptr,
-                                      bool is_hidden)
+                                      WordVisibility visibility)
     {
-        const bool is_immediate = false;
-        const bool is_scripted = false;
-
         interpreter->add_word(definition_ptr->name + ".new",
             internal::WordFunction::Handler([=](auto interpreter)
             {
@@ -119,9 +119,9 @@ namespace sorth
                 interpreter->push(new_object);
             }),
             location,
-            is_immediate,
-            is_hidden,
-            is_scripted,
+            ExecutionContext::run_time,
+            visibility,
+            WordType::internal,
             "Create a new instance of the structure " + definition_ptr->name + ".",
             " -- " + definition_ptr->name);
 
@@ -148,9 +148,9 @@ namespace sorth
                     interpreter->push(i);
                 }),
                 location,
-                is_immediate,
-                is_hidden,
-                is_scripted,
+                ExecutionContext::run_time,
+                visibility,
+                WordType::internal,
                 "Access the structure field " + definition_ptr->fieldNames[i] + ".",
                 " -- structure_field_index");
 
@@ -198,9 +198,9 @@ namespace sorth
                     definition_ptr->name + "." + definition_ptr->fieldNames[i] + "!",
                     internal::WordFunction::Handler(field_writer),
                     location,
-                    is_immediate,
-                    is_hidden,
-                    is_scripted,
+                    ExecutionContext::run_time,
+                    visibility,
+                    WordType::internal,
                     "Write to the structure field " + definition_ptr->fieldNames[i] + ".",
                     "new_value structure -- ");
 
@@ -208,9 +208,9 @@ namespace sorth
                     definition_ptr->name + "." + definition_ptr->fieldNames[i] + "@",
                     internal::WordFunction::Handler(field_reader),
                     location,
-                    is_immediate,
-                    is_hidden,
-                    is_scripted,
+                    ExecutionContext::run_time,
+                    visibility,
+                    WordType::internal,
                     "Read from structure field " + definition_ptr->fieldNames[i] + ".",
                     "structure -- value");
 
@@ -218,9 +218,9 @@ namespace sorth
                     definition_ptr->name + "." + definition_ptr->fieldNames[i] + "!!",
                     internal::WordFunction::Handler(var_field_writer),
                     location,
-                    is_immediate,
-                    is_hidden,
-                    is_scripted,
+                    ExecutionContext::run_time,
+                    visibility,
+                    WordType::internal,
                     "Write to the structure field " + definition_ptr->fieldNames[i] +
                         " in a variable.",
                     "new_value structure_var -- ");
@@ -229,9 +229,9 @@ namespace sorth
                     definition_ptr->name + "." + definition_ptr->fieldNames[i] + "@@",
                     internal::WordFunction::Handler(var_field_reader),
                     location,
-                    is_immediate,
-                    is_hidden,
-                    is_scripted,
+                    ExecutionContext::run_time,
+                    visibility,
+                    WordType::internal,
                     "Read from the structure field " + definition_ptr->fieldNames[i] +
                         " in a variable.",
                     "structure_var -- value");

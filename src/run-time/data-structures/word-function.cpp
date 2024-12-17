@@ -11,8 +11,6 @@ namespace sorth::internal
                                const ByteCode& code,
                                std::ostream& stream)
     {
-        auto inverse_list = interpreter->get_inverse_lookup_list();
-
         for (size_t i = 0; i < code.size(); ++i)
         {
             stream << std::setw(6) << i << "  ";
@@ -21,19 +19,11 @@ namespace sorth::internal
                 && (code[i].value.is_numeric()))
             {
                 auto index = code[i].value.as_integer(interpreter);
+                auto word = interpreter->get_handler_info(index);
 
-                stream << code[i].id << "  ";
-
-                if (inverse_list[index] != "")
-                {
-                    stream << inverse_list[index] << ", (" << index << ")";
-                }
-                else
-                {
-                    stream << index;
-                }
-
-                stream << std::endl;
+                stream << code[i].id << "  "
+                       << word.name << ", (" << index << ")"
+                       << std::endl;
             }
             else if (   (code[i].id == Instruction::Id::push_constant_value)
                         && (code[i].value.is_string()))

@@ -43,12 +43,12 @@ namespace sorth
                                                    std::string name,
                                                    ArrayPtr fields,
                                                    ArrayPtr defaults,
-                                                   bool is_hidden);
+                                                   internal::WordVisibility visibility);
 
     void create_data_definition_words(const internal::Location &location,
                                       InterpreterPtr &interpreter,
                                       DataObjectDefinitionPtr &definition_ptr,
-                                      bool is_hidden = false);
+                                      internal::WordVisibility visibility);
 
     // Create a new data object for the given definition.
     DataObjectPtr make_data_object(const DataObjectDefinitionPtr& definition_ptr);

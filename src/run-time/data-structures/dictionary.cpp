@@ -7,25 +7,6 @@ namespace sorth::internal
 {
 
 
-    std::vector<std::string> inverse_lookup_list(const Dictionary& dictionary,
-                                                 const WordList& word_handlers)
-    {
-        std::vector<std::string> name_list;
-
-        name_list.resize(word_handlers.size());
-
-        for (auto iter = dictionary.stack.begin(); iter != dictionary.stack.end(); ++iter)
-        {
-            for (auto word_iter = iter->begin(); word_iter != iter->end(); ++word_iter)
-            {
-                name_list[word_iter->second.handler_index] = word_iter->first;
-            }
-        }
-
-        return name_list;
-    }
-
-
     std::ostream& operator <<(std::ostream& stream, const Dictionary& dictionary)
     {
         // First merge all the sub-dictionaries into one sorted dictionary.  Note that words will
@@ -38,7 +19,7 @@ namespace sorth::internal
 
         for (const auto& word : new_dictionary)
         {
-            if (!word.second.is_hidden)
+            if (word.second.visibility == WordVisibility::visible)
             {
                 ++visible_count;
 
@@ -54,12 +35,12 @@ namespace sorth::internal
 
         for (const auto& word : new_dictionary)
         {
-            if (!word.second.is_hidden)
+            if (word.second.visibility == WordVisibility::visible)
             {
                 stream << std::left << std::setw(max) << word.first << "  "
                        << std::right << std::setw(6) << word.second.handler_index;
 
-                if (word.second.is_immediate)
+                if (word.second.execution_context == ExecutionContext::compile_time)
                 {
                     stream << "  immediate";
                 }
@@ -68,9 +49,9 @@ namespace sorth::internal
                     stream << "           ";
                 }
 
-                if (word.second.description)
+                if (!word.second.description.empty())
                 {
-                    stream << "  --  " << (*word.second.description);
+                    stream << "  --  " << (word.second.description);
                 }
 
                 stream << std::endl;

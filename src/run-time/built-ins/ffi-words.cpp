@@ -939,7 +939,8 @@ namespace sorth
                                                          name,
                                                          fields,
                                                          defaults,
-                                                         is_hidden);
+                                                         is_hidden ? WordVisibility::hidden
+                                                                   : WordVisibility::visible);
 
             // Gather conversions for the structure's fields.
             std::vector<ConversionInfo> field_conversions;
@@ -1130,7 +1131,11 @@ namespace sorth
 
             // Create the words to allow the script to access this definition.  The word
             // <definition_name>.new will always hold a base reference to our definition object.
-            create_data_definition_words(location, interpreter, definition_ptr, is_hidden);
+            create_data_definition_words(location,
+                                         interpreter,
+                                         definition_ptr,
+                                         is_hidden ? WordVisibility::hidden
+                                                   : WordVisibility::visible);
         }
 
 

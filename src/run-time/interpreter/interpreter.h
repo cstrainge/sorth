@@ -40,6 +40,16 @@ namespace sorth
         using VariableList = ContextualList<Value>;
 
 
+        struct WordHandlerInfo
+        {
+            std::string name;
+            WordFunction function;
+            Location definition_location;
+        };
+
+        using WordList = ContextualList<WordHandlerInfo>;
+
+
     }
 
 
@@ -111,7 +121,6 @@ namespace sorth
 
             virtual std::tuple<bool, internal::Word> find_word(const std::string& word) = 0;
             virtual internal::WordHandlerInfo& get_handler_info(size_t index) = 0;
-            virtual std::vector<std::string> get_inverse_lookup_list() = 0;
 
             virtual std::list<SubThreadInfo> sub_threads() = 0;
 
@@ -168,18 +177,23 @@ namespace sorth
             virtual Value read_variable(size_t index) = 0;
             virtual void write_variable(size_t index, Value value) = 0;
 
+            virtual void add_word(
+                          const std::string& word,
+                          internal::WordFunction handler,
+                          const internal::Location& location,
+                          internal::ExecutionContext context = internal::ExecutionContext::run_time,
+                          internal::WordVisibility visibility = internal::WordVisibility::visible,
+                          internal::WordType type = internal::WordType::internal,
+                          const std::string& description = "",
+                          const std::string& signature = "") = 0;
+
             virtual void add_word(const std::string& word,
                                   internal::WordFunction handler,
-                                  const internal::Location& location,
-                                  bool is_immediate = false,
-                                  bool is_hidden = false,
-                                  bool is_scripted = false,
+                                  const std::filesystem::path& path,
+                                  size_t line,
+                                  size_t column,
+                                  internal::ExecutionContext context,
                                   const std::string& description = "",
-                                  const std::string& signature = "") = 0;
-
-            virtual void add_word(const std::string& word, internal::WordFunction handler,
-                                  const std::filesystem::path& path, size_t line, size_t column,
-                                  bool is_immediate, const std::string& description = "",
                                   const std::string& signature = "") = 0;
 
             virtual void replace_word(const std::string& word, internal::WordFunction handler) = 0;
@@ -208,7 +222,7 @@ namespace sorth
                               __FILE__, \
                               __LINE__, \
                               1, \
-                              false, \
+                              sorth::internal::ExecutionContext::run_time, \
                               DESCRIPTION, \
                               SIGNATURE)
 
@@ -218,7 +232,7 @@ namespace sorth
                               __FILE__, \
                               __LINE__, \
                               1, \
-                              true, \
+                              sorth::internal::ExecutionContext::compile_time, \
                               DESCRIPTION, \
                               SIGNATURE)
 

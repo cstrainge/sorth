@@ -59,10 +59,10 @@ namespace sorth::internal
 
         auto new_word = make_data_object(word_info_definition);
         new_word->fields[0] = name;
-        new_word->fields[1] = word.is_immediate;
-        new_word->fields[2] = word.is_scripted;
-        new_word->fields[3] = word.description ? *word.description : "";
-        new_word->fields[4] = word.signature ? *word.signature : "";
+        new_word->fields[1] = word.execution_context == ExecutionContext::compile_time;
+        new_word->fields[2] = word.type == WordType::scripted;
+        new_word->fields[3] = word.description;
+        new_word->fields[4] = word.signature;
         new_word->fields[5] = (int64_t)word.handler_index;
         new_word->fields[6] = new_location;
 
@@ -72,8 +72,15 @@ namespace sorth::internal
 
     void register_word_info_struct(const Location& location, InterpreterPtr& interpreter)
     {
-        create_data_definition_words(location, interpreter, location_definition, true);
-        create_data_definition_words(location, interpreter, word_info_definition, true);
+        create_data_definition_words(location,
+                                     interpreter,
+                                     location_definition,
+                                     WordVisibility::hidden);
+
+        create_data_definition_words(location,
+                                     interpreter,
+                                     word_info_definition,
+                                     WordVisibility::hidden);
     }
 
 

@@ -14,14 +14,16 @@ namespace sorth::internal
     // However when it's a new word being defined, all of these fields are used.
     struct Construction
     {
-        bool is_immediate = false;
-        bool is_hidden = false;
-        bool is_context_managed = false;
+        ExecutionContext execution_context = ExecutionContext::run_time;
+        WordVisibility visibility = WordVisibility::visible;
+        WordContextManagement context_management = WordContextManagement::managed;
 
         std::string name;
         std::string description;
         std::string signature;
+
         Location location;
+
         ByteCode code;
     };
 

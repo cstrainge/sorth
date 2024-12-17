@@ -28,14 +28,19 @@ namespace sorth::internal
 
             // Create the definition object.
             auto definition_ptr = create_data_definition(interpreter,
-                                                        name,
-                                                        fields,
-                                                        defaults,
-                                                        is_hidden);
+                                                         name,
+                                                         fields,
+                                                         defaults,
+                                                         is_hidden ? WordVisibility::hidden
+                                                                   : WordVisibility::visible);
 
             // Create the words to allow the script to access this definition.  The word
             // <definition_name>.new will always hold a base reference to our definition object.
-            create_data_definition_words(location, interpreter, definition_ptr, is_hidden);
+            create_data_definition_words(location,
+                                         interpreter,
+                                         definition_ptr,
+                                         is_hidden ? WordVisibility::hidden
+                                                   : WordVisibility::visible);
         }
 
 

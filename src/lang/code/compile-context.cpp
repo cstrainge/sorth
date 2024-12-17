@@ -127,7 +127,7 @@ namespace sorth::internal
 
         if (found)
         {
-            if (word.is_immediate)
+            if (word.execution_context == ExecutionContext::compile_time)
             {
                 interpreter->execute_word(token.location, word);
             }

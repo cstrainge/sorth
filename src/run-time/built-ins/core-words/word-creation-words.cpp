@@ -37,24 +37,24 @@ namespace sorth::internal
 
             private:
                 std::string name;
-                bool is_context_managed;
+                WordContextManagement context;
                 ByteCode code;
 
             public:
                 ScriptWord(const std::string& new_name,
                            const ByteCode& new_code,
                            const Location& new_location,
-                           const bool new_is_context_managed)
+                           WordContextManagement new_context)
                 : name(new_name),
                   code(new_code),
-                  is_context_managed(new_is_context_managed)
+                  context(new_context)
                 {
                 }
 
             public:
                 void operator ()(InterpreterPtr& interpreter)
                 {
-                    if (is_context_managed)
+                    if (context == WordContextManagement::managed)
                     {
                         ContextManager manager(interpreter);
                         interpreter->execute_code(name, code);
@@ -92,9 +92,6 @@ namespace sorth::internal
             // byte-code handler or a JITed handler based on support and the mode we're in.
             WordFunction handler;
 
-            // The word is considered scripted, as it is word written in Forth.
-            const bool is_scripted = true;
-
 
             // Check to see if we are built for JIT compilation or not, and if so, check to see if we
             // are in JIT mode or not.
@@ -103,7 +100,7 @@ namespace sorth::internal
             {
                 // If the word is not immediate, then we can cache the construction to be JIT compiled
                 // when the whole script is compiled.
-                if (!construction.is_immediate)
+                if (construction.execution_context == ExecutionContext::run_time)
                 {
                     // Add the construction to the JIT cache.
                     interpreter->compile_context().word_jit_cache[construction.name] = construction;
@@ -115,7 +112,7 @@ namespace sorth::internal
                     auto script_word = ScriptWord(construction.name,
                                                   construction.code,
                                                   construction.location,
-                                                  construction.is_context_managed);
+                                                  construction.context_management);
                     handler = script_word;
                     handler.set_byte_code(std::move(construction.code));
                 }
@@ -132,9 +129,9 @@ namespace sorth::internal
                 // We are byte-code interpreting, so we need to create a script word handler.  In this
                 // case it doesn't matter if the word is immediate or not.
                 auto script_word = ScriptWord(construction.name,
-                                            construction.code,
-                                            construction.location,
-                                            construction.is_context_managed);
+                                              construction.code,
+                                              construction.location,
+                                              construction.context_management);
 
                 // Pretty print the bytecode if we are in debug mode.
                 if (interpreter->showing_bytecode())
@@ -150,31 +147,33 @@ namespace sorth::internal
 
             // Register the word either byte-code or JITed with the interpreter.
             interpreter->add_word(construction.name,
-                                handler,
-                                construction.location,
-                                construction.is_immediate,
-                                construction.is_hidden,
-                                is_scripted,
-                                construction.description,
-                                construction.signature);
+                                  handler,
+                                  construction.location,
+                                  construction.execution_context,
+                                  construction.visibility,
+                                  WordType::scripted,
+                                  construction.description,
+                                  construction.signature);
         }
 
 
         void word_immediate(InterpreterPtr& interpreter)
         {
-            interpreter->compile_context().construction().is_immediate = true;
+            interpreter->compile_context().construction().execution_context =
+                                                                     ExecutionContext::compile_time;
         }
 
 
         void word_hidden(InterpreterPtr& interpreter)
         {
-            interpreter->compile_context().construction().is_hidden = true;
+            interpreter->compile_context().construction().visibility = WordVisibility::hidden;
         }
 
 
         void word_contextless(InterpreterPtr& interpreter)
         {
-            interpreter->compile_context().construction().is_context_managed = false;
+            interpreter->compile_context().construction().context_management =
+                                                                   WordContextManagement::unmanaged;
         }
 
 
