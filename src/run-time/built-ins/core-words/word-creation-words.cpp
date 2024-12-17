@@ -75,29 +75,18 @@ namespace sorth::internal
 
         void word_start_word(InterpreterPtr& interpreter)
         {
-            auto& current_token = interpreter->compile_context().current_token;
-            auto& input_tokens = interpreter->compile_context().input_tokens;
+            const auto& token = interpreter->compile_context().get_next_token();
+            auto& name = token.text;
+            auto& location = token.location;
 
-            ++current_token;
-            auto& name = input_tokens[current_token].text;
-            auto& location = input_tokens[current_token].location;
-
-            interpreter->compile_context().stack.push({
-                    .is_immediate = false,
-                    .is_hidden = false,
-                    .is_context_managed = true,
-                    .name = name,
-                    .description = "",
-                    .location = location
-                });
+            interpreter->compile_context().new_construction(name, location);
         }
 
 
         void word_end_word(InterpreterPtr& interpreter)
         {
             // Pop the current construction off of the stack.
-            auto construction = interpreter->compile_context().stack.top();
-            interpreter->compile_context().stack.pop();
+            auto construction = interpreter->compile_context().drop_construction();
 
             // The word handler we will be registering with the interpreter.  It will be either a
             // byte-code handler or a JITed handler based on support and the mode we're in.
@@ -173,59 +162,43 @@ namespace sorth::internal
 
         void word_immediate(InterpreterPtr& interpreter)
         {
-            interpreter->compile_context().stack.top().is_immediate = true;
+            interpreter->compile_context().construction().is_immediate = true;
         }
 
 
         void word_hidden(InterpreterPtr& interpreter)
         {
-            interpreter->compile_context().stack.top().is_hidden = true;
+            interpreter->compile_context().construction().is_hidden = true;
         }
 
 
         void word_contextless(InterpreterPtr& interpreter)
         {
-            interpreter->compile_context().stack.top().is_context_managed = false;
+            interpreter->compile_context().construction().is_context_managed = false;
         }
 
 
         void word_description(InterpreterPtr& interpreter)
         {
-            auto& current_token = interpreter->compile_context().current_token;
-            auto& input_tokens = interpreter->compile_context().input_tokens;
-
-            ++current_token;
-
-            throw_error_if(current_token >= input_tokens.size(), interpreter,
-                "Unexpected end to token stream.");
-
-            auto& token = input_tokens[current_token];
+            const auto& token = interpreter->compile_context().get_next_token();
 
             throw_error_if(token.type != Token::Type::string,
                         interpreter,
                         "Expected the description to be a string.");
 
-            interpreter->compile_context().stack.top().description = token.text;
+            interpreter->compile_context().construction().description = token.text;
         }
 
 
         void word_signature(InterpreterPtr& interpreter)
         {
-            auto& current_token = interpreter->compile_context().current_token;
-            auto& input_tokens = interpreter->compile_context().input_tokens;
-
-            ++current_token;
-
-            throw_error_if(current_token >= input_tokens.size(), interpreter,
-                        "Unexpected end to token stream.");
-
-            auto& token = input_tokens[current_token];
+            const auto& token = interpreter->compile_context().get_next_token();
 
             throw_error_if(token.type != Token::Type::string,
                         interpreter,
                         "Expected the signature to be a string.");
 
-            interpreter->compile_context().stack.top().signature = token.text;
+            interpreter->compile_context().construction().signature = token.text;
         }
 
 

@@ -11,22 +11,6 @@ namespace sorth::internal
     {
 
 
-        void insert_user_instruction(InterpreterPtr& interpreter, const Instruction& op)
-        {
-            auto& context = interpreter->compile_context();
-            auto& code = context.stack.top().code;
-
-            if (!context.user_is_inserting_at_beginning)
-            {
-                code.push_back(op);
-            }
-            else
-            {
-                code.insert(code.begin(), op);
-            }
-        }
-
-
         void word_op_def_variable(InterpreterPtr& interpreter)
         {
             auto value = interpreter->pop();
@@ -36,7 +20,7 @@ namespace sorth::internal
                 value = value.as_token(interpreter).text;
             }
 
-            insert_user_instruction(interpreter,
+            interpreter->compile_context().insert_instruction(
                 {
                     .id = Instruction::Id::def_variable,
                     .value = value
@@ -53,7 +37,7 @@ namespace sorth::internal
                 value = value.as_token(interpreter).text;
             }
 
-            insert_user_instruction(interpreter,
+            interpreter->compile_context().insert_instruction(
                 {
                     .id = Instruction::Id::def_constant,
                     .value = value
@@ -63,20 +47,18 @@ namespace sorth::internal
 
         void word_op_read_variable(InterpreterPtr& interpreter)
         {
-            insert_user_instruction(interpreter,
+            interpreter->compile_context().insert_instruction(
                 {
-                    .id = Instruction::Id::read_variable,
-                    .value = (int64_t)0
+                    .id = Instruction::Id::read_variable
                 });
         }
 
 
         void word_op_write_variable(InterpreterPtr& interpreter)
         {
-            insert_user_instruction(interpreter,
+            interpreter->compile_context().insert_instruction(
                 {
-                    .id = Instruction::Id::write_variable,
-                    .value = (int64_t)0
+                    .id = Instruction::Id::write_variable
                 });
         }
 
@@ -90,7 +72,7 @@ namespace sorth::internal
                 value = value.as_token(interpreter).text;
             }
 
-            insert_user_instruction(interpreter,
+            interpreter->compile_context().insert_instruction(
                 {
                     .id = Instruction::Id::execute,
                     .value = value
@@ -100,7 +82,7 @@ namespace sorth::internal
 
         void word_op_push_constant_value(InterpreterPtr& interpreter)
         {
-            insert_user_instruction(interpreter,
+            interpreter->compile_context().insert_instruction(
                 {
                     .id = Instruction::Id::push_constant_value,
                     .value = interpreter->pop()
@@ -110,7 +92,7 @@ namespace sorth::internal
 
         void word_mark_loop_exit(InterpreterPtr& interpreter)
         {
-            insert_user_instruction(interpreter,
+            interpreter->compile_context().insert_instruction(
                 {
                     .id = Instruction::Id::mark_loop_exit,
                     .value = interpreter->pop()
@@ -120,17 +102,16 @@ namespace sorth::internal
 
         void word_unmark_loop_exit(InterpreterPtr& interpreter)
         {
-            insert_user_instruction(interpreter,
+            interpreter->compile_context().insert_instruction(
                 {
-                    .id = Instruction::Id::unmark_loop_exit,
-                    .value = (int64_t)0
+                    .id = Instruction::Id::unmark_loop_exit
                 });
         }
 
 
         void word_op_mark_catch(InterpreterPtr& interpreter)
         {
-            insert_user_instruction(interpreter,
+            interpreter->compile_context().insert_instruction(
                 {
                     .id = Instruction::Id::mark_catch,
                     .value = interpreter->pop()
@@ -140,37 +121,34 @@ namespace sorth::internal
 
         void word_op_unmark_catch(InterpreterPtr& interpreter)
         {
-            insert_user_instruction(interpreter,
+            interpreter->compile_context().insert_instruction(
                 {
-                    .id = Instruction::Id::unmark_catch,
-                    .value = (int64_t)0
+                    .id = Instruction::Id::unmark_catch
                 });
         }
 
 
         void word_op_mark_context(InterpreterPtr& interpreter)
         {
-            insert_user_instruction(interpreter,
+            interpreter->compile_context().insert_instruction(
                 {
-                    .id = Instruction::Id::mark_context,
-                    .value = (int64_t)0
+                    .id = Instruction::Id::mark_context
                 });
         }
 
 
         void word_op_release_context(InterpreterPtr& interpreter)
         {
-            insert_user_instruction(interpreter,
+            interpreter->compile_context().insert_instruction(
                 {
-                    .id = Instruction::Id::release_context,
-                    .value = (int64_t)0
+                    .id = Instruction::Id::release_context
                 });
         }
 
 
         void word_op_jump(InterpreterPtr& interpreter)
         {
-            insert_user_instruction(interpreter,
+            interpreter->compile_context().insert_instruction(
                 {
                     .id = Instruction::Id::jump,
                     .value = interpreter->pop()
@@ -180,7 +158,7 @@ namespace sorth::internal
 
         void word_op_jump_if_zero(InterpreterPtr& interpreter)
         {
-            insert_user_instruction(interpreter,
+            interpreter->compile_context().insert_instruction(
                 {
                     .id = Instruction::Id::jump_if_zero,
                     .value = interpreter->pop()
@@ -190,7 +168,7 @@ namespace sorth::internal
 
         void word_op_jump_if_not_zero(InterpreterPtr& interpreter)
         {
-            insert_user_instruction(interpreter,
+            interpreter->compile_context().insert_instruction(
                 {
                     .id = Instruction::Id::jump_if_not_zero,
                     .value = interpreter->pop()
@@ -200,27 +178,25 @@ namespace sorth::internal
 
         void word_jump_loop_start(InterpreterPtr& interpreter)
         {
-            insert_user_instruction(interpreter,
+            interpreter->compile_context().insert_instruction(
                 {
-                    .id = Instruction::Id::jump_loop_start,
-                    .value = (int64_t)0
+                    .id = Instruction::Id::jump_loop_start
                 });
         }
 
 
         void word_jump_loop_exit(InterpreterPtr& interpreter)
         {
-            insert_user_instruction(interpreter,
+            interpreter->compile_context().insert_instruction(
                 {
-                    .id = Instruction::Id::jump_loop_exit,
-                    .value = (int64_t)0
+                    .id = Instruction::Id::jump_loop_exit
                 });
         }
 
 
         void word_op_jump_target(InterpreterPtr& interpreter)
         {
-            insert_user_instruction(interpreter,
+            interpreter->compile_context().insert_instruction(
                 {
                     .id = Instruction::Id::jump_target,
                     .value = interpreter->pop()
@@ -230,54 +206,48 @@ namespace sorth::internal
 
         void word_code_new_block(InterpreterPtr& interpreter)
         {
-            interpreter->compile_context().stack.push({});
+            interpreter->compile_context().new_construction();
         }
 
 
         void word_code_drop_stack_block(InterpreterPtr& interpreter)
         {
-            interpreter->compile_context().stack.pop();
+            interpreter->compile_context().drop_construction();
         }
 
 
         void word_code_execute_stack_block(InterpreterPtr& interpreter)
         {
             auto name = interpreter->pop_as_string();
-            interpreter->execute_code(name, interpreter->compile_context().stack.top().code);
+            interpreter->execute_code(name, interpreter->compile_context().construction().code);
         }
 
 
         void word_code_merge_stack_block(InterpreterPtr& interpreter)
         {
-            auto& stack = interpreter->compile_context().stack;
-            auto top_code = stack.top().code;
-
-            stack.pop();
-
-            stack.top().code.insert(stack.top().code.end(), top_code.begin(), top_code.end());
+            interpreter->compile_context().merge_construction();
         }
 
 
         void word_code_pop_stack_block(InterpreterPtr& interpreter)
         {
-            interpreter->push(interpreter->compile_context().stack.top().code);
-            interpreter->compile_context().stack.pop();
+            interpreter->push(interpreter->compile_context().drop_construction().code);
         }
 
 
         void word_code_push_stack_block(InterpreterPtr& interpreter)
         {
-            auto top = interpreter->pop();
+            auto top = interpreter->pop_as_byte_code();
 
-            throw_error_if(!top.is_byte_code(), interpreter, "Expected a byte code block.");
-
-            interpreter->compile_context().stack.push({ .code = top.as_byte_code(interpreter) });
+            interpreter->compile_context().new_construction(std::move(top));
         }
 
 
         void word_code_stack_block_size(InterpreterPtr& interpreter)
         {
-            interpreter->push((int64_t)interpreter->compile_context().stack.top().code.size());
+            size_t size = interpreter->compile_context().construction().code.size();
+
+            interpreter->push(static_cast<int64_t>(size));
         }
 
 
@@ -286,12 +256,13 @@ namespace sorth::internal
             auto is_jump = [](const Instruction& code) -> bool
                 {
                     return    (code.id == Instruction::Id::jump)
-                        || (code.id == Instruction::Id::jump_if_not_zero)
-                        || (code.id == Instruction::Id::jump_if_zero)
-                        || (code.id == Instruction::Id::mark_loop_exit)
-                        || (code.id == Instruction::Id::mark_catch);
+                           || (code.id == Instruction::Id::jump_if_not_zero)
+                           || (code.id == Instruction::Id::jump_if_zero)
+                           || (code.id == Instruction::Id::mark_loop_exit)
+                           || (code.id == Instruction::Id::mark_catch);
                 };
-            auto& top_code = interpreter->compile_context().stack.top().code;
+
+            auto& top_code = interpreter->compile_context().construction().code;
 
             std::list<size_t> jump_indicies;
             std::unordered_map<std::string, size_t> jump_targets;
@@ -337,67 +308,17 @@ namespace sorth::internal
                 word_list.push_back(interpreter->pop_as_string());
             }
 
-            auto is_one_of_words = [&](const std::string& match) -> std::tuple<bool, std::string>
-                {
-                    for (const auto& word : word_list)
-                    {
-                        if (word == match)
-                        {
-                            return { true, word };
-                        }
-                    }
+            auto found = interpreter->compile_context().compile_until_words(word_list);
 
-                    return { false, "" };
-                };
-
-            auto& current_token = interpreter->compile_context().current_token;
-            auto& input_tokens = interpreter->compile_context().input_tokens;
-
-            auto start_location = input_tokens[current_token].location;
-
-            for (++current_token; current_token < input_tokens.size(); ++current_token)
-            {
-                auto& token = input_tokens[current_token];
-                auto [found, word] = is_one_of_words(token.text);
-
-                if ((found) && (token.type == Token::Type::word))
-                {
-                    interpreter->push(word);
-                    return;
-                }
-
-                interpreter->compile_context().compile_token(token);
-            }
-
-            std::string message;
-
-            if (count == 1)
-            {
-                message = "Missing word " + word_list[0] + " in source.";
-            }
-            else
-            {
-                std::stringstream stream;
-
-                stream << "Missing matching word, expected one of [ ";
-
-                for (auto word : word_list)
-                {
-                    stream << word << " ";
-                }
-
-                stream << "]";
-
-                message = stream.str();
-            }
-
-            throw_error(start_location, message);
+            interpreter->push(found);
         }
 
 
         void word_code_insert_at_front(InterpreterPtr& interpreter)
         {
-            interpreter->compile_context().user_is_inserting_at_beginning = interpreter->pop_as_bool();
+            interpreter->compile_context().set_insertion(  interpreter->pop_as_bool()
+                                                         ? CodeInsertionPoint::beginning
+                                                         : CodeInsertionPoint::end);
         }
 
 

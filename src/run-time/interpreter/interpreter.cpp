@@ -274,22 +274,18 @@ namespace sorth
             // Get a shared pointer to ourselves.
             auto this_ptr = shared_from_this();
 
-            // Create a new code construction context for the script we about to process.
-            compile_contexts.push({});
-
             try
             {
                 // Now byte-code compile the script.  If we are also JITing the script, then we
                 // will cache the non-immediate words for JIT compilation later as a whole module to
                 // allow for greater optimization.
-                compile_contexts.top().interpreter = this_ptr;
-                compile_contexts.top().stack.push({});
-                compile_contexts.top().input_tokens = tokenize(buffer);
+                compile_contexts.push(CompileContext(this_ptr, std::move(tokenize(buffer))));
+
                 compile_contexts.top().compile_token_list();
 
                 // Now that the script has been compiled, get the byte-code for the script's top
                 // level code.
-                auto code = compile_contexts.top().stack.top().code;
+                auto code = std::move(compile_contexts.top().construction().code);
 
                 // Get the name of the script we are processing.
                 auto name = buffer.current_location().get_path();

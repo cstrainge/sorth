@@ -11,23 +11,6 @@ namespace sorth::internal
     {
 
 
-        Token& get_next_token(InterpreterPtr& interpreter)
-        {
-            auto& current_token = interpreter->compile_context().current_token;
-            auto& input_tokens = interpreter->compile_context().input_tokens;
-
-            if ((current_token + 1) >= input_tokens.size())
-            {
-                throw_error(interpreter, "Trying to read past end of token stream.");
-            }
-
-            ++current_token;
-            auto& token = input_tokens[current_token];
-
-            return token;
-        }
-
-
         void word_reset(InterpreterPtr& interpreter)
         {
             interpreter->release_context();
@@ -48,7 +31,7 @@ namespace sorth::internal
 
         void word_include_im(InterpreterPtr& interpreter)
         {
-            auto& token = get_next_token(interpreter);
+            auto& token = interpreter->compile_context().get_next_token();
             interpreter->process_source(interpreter->find_file(token.text));
         }
 
@@ -70,34 +53,26 @@ namespace sorth::internal
 
             auto skip_until = [&](std::vector<std::string> words) -> std::string
                 {
-                    auto token = get_next_token(interpreter);
+                    auto token = interpreter->compile_context().get_next_token();
 
                     while (!is_one_of(token.text, words))
                     {
-                        token = get_next_token(interpreter);
+                        token = interpreter->compile_context().get_next_token();
                     }
 
                     return token.text;
                 };
 
-            auto compile_until = [&](std::vector<std::string> words) -> std::string
-                {
-                    auto token = get_next_token(interpreter);
-
-                    while (!is_one_of(token.text, words))
-                    {
-                        interpreter->compile_context().compile_token(token);
-                        token = get_next_token(interpreter);
-                    }
-
-                    return token.text;
-                };
 
             auto result = interpreter->pop_as_bool();
 
             if (result)
             {
-                auto found = compile_until({ "[else]", "[then]" });
+                auto found = interpreter->compile_context().compile_until_words(
+                    {
+                        "[else]",
+                        "[then]"
+                    });
 
                 if (found == "[else]")
                 {
@@ -110,7 +85,7 @@ namespace sorth::internal
 
                 if (found == "[else]")
                 {
-                    compile_until({ "[then]" });
+                    interpreter->compile_context().compile_until_words({ "[then]" });
                 }
             }
         }

@@ -33,7 +33,7 @@ namespace sorth::internal
         };
 
         Id id;
-        Value value;
+        Value value = None();
         std::optional<Location> location;
     };
 
