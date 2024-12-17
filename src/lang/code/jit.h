@@ -3,7 +3,7 @@
 
 
 
-#ifndef SORTH_JIT_DISABLED
+#if (SORTH_LLVM_FOUND == 1)
 
 
 namespace sorth::internal

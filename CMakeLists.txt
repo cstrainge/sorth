@@ -35,14 +35,14 @@ else()
     find_package(LLVM CONFIG QUIET)
 endif()
 
-set(SORTH_JIT_DISABLED 1) # Default to disabled
+set(SORTH_LLVM_FOUND 0) # Default to disabled
 
 if (LLVM_FOUND)
     message(STATUS "  Checking LLVM version...")
 
     if(LLVM_VERSION_MAJOR EQUAL 19 OR LLVM_VERSION_MAJOR EQUAL 20)
         message(STATUS "  LLVM version ${LLVM_VERSION_MAJOR} detected, enabling JIT functionality.")
-        set(SORTH_JIT_DISABLED 0)
+        set(SORTH_LLVM_FOUND 1)
     else()
         message(STATUS "  LLVM version ${LLVM_VERSION_MAJOR} detected, not 19. JIT functionality will be disabled.")
     endif()
@@ -102,7 +102,7 @@ add_custom_target(create_dist_dir ALL
 get_filename_component(COMPILER_NAME ${CMAKE_CXX_COMPILER} NAME)
 string(REGEX REPLACE "\\.exe$" "" COMPILER_NAME_SIMPLE "${COMPILER_NAME}")
 
-set(CXXFLAGS "-DMESSAGE=\"${COMPILER_NAME_SIMPLE} ${CMAKE_CXX_COMPILER_VERSION}\"")
+set(CXXFLAGS "-DSORTH_COMPILER=\"${COMPILER_NAME_SIMPLE} ${CMAKE_CXX_COMPILER_VERSION}\"")
 
 
 
@@ -129,7 +129,7 @@ include_directories(${SRC_DIR})
 
 
 # Include the llvm directories and definitions if we found llvm.
-if (NOT SORTH_JIT_DISABLED)
+if (SORTH_LLVM_FOUND)
     include_directories(${LLVM_INCLUDE_DIRS})
     add_definitions(${LLVM_DEFINITIONS})
     set(LLVM_COMPONENTS
@@ -151,8 +151,9 @@ if (NOT SORTH_JIT_DISABLED)
         MCParser)
 
     llvm_map_components_to_libnames(LLVM_LIBS ${LLVM_COMPONENTS})
+    add_definitions(-DSORTH_LLVM_FOUND=1)
 else()
-    add_definitions(-DSORTH_JIT_DISABLED=1)
+    add_definitions(-DSORTH_LLVM_FOUND=0)
 endif()
 
 
@@ -182,7 +183,7 @@ endif()
 
 
 # Add the llvm libraries if we found llvm.
-if (NOT SORTH_JIT_DISABLED)
+if(SORTH_LLVM_FOUND)
     target_link_libraries(${PROJECT_NAME} PRIVATE ${LLVM_LIBS})
 endif()
 
@@ -225,12 +226,12 @@ endif()
 
 execute_process(COMMAND git rev-parse HEAD OUTPUT_VARIABLE COMMIT)
 string(SUBSTRING ${COMMIT} 0 8 COMMIT)
-set(VERSION "${TAG}-${COMMIT}-${DATE}")
+set(SORTH_VERSION "${TAG}-${COMMIT}-${DATE}")
 
 
 
 # Define preprocessor macro for version
-target_compile_definitions(${PROJECT_NAME} PRIVATE VERSION="${VERSION}")
+target_compile_definitions(${PROJECT_NAME} PRIVATE SORTH_VERSION="${SORTH_VERSION}")
 
 
 

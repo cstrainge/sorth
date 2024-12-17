@@ -327,7 +327,7 @@ namespace sorth
             // Get the name of the script we are processing.
             auto name = buffer.current_location().get_path();
 
-            #ifndef SORTH_JIT_DISABLED
+            #if (SORTH_LLVM_FOUND == 1)
                 if (execution_mode == ExecutionMode::jit)
                 {
                     // Get a shared pointer to ourselves.

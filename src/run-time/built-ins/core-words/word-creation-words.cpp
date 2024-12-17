@@ -98,7 +98,7 @@ namespace sorth::internal
 
             // Check to see if we are built for JIT compilation or not, and if so, check to see if we
             // are in JIT mode or not.
-            #if !defined(SORTH_JIT_DISABLED)
+            #if (SORTH_LLVM_FOUND == 1)
             if (interpreter->get_execution_mode() == ExecutionMode::jit)
             {
                 // If the word is not immediate, then we can cache the construction to be JIT compiled

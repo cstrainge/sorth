@@ -11,8 +11,9 @@
                 "_DEBUG",
                 "UNICODE",
                 "_UNICODE",
-                "VERSION=\"CURRENT_VERSION\"",
-                "MESSAGE=\"Compiler Version\""
+                "SORTH_VERSION=\"CURRENT_VERSION\"",
+                "SORTH_COMPILER=\"Compiler Version\"",
+                "SORTH_LLVM_FOUND = 1"
             ],
             "windowsSdkVersion": "10.0.19041.0",
             "compilerPath": "cl.exe",
@@ -27,8 +28,9 @@
                 "${workspaceFolder}/src/**"
             ],
             "defines": [
-                "VERSION=\"CURRENT_VERSION\"",
-                "MESSAGE=\"Compiler Version\""
+                "SORTH_VERSION=\"CURRENT_VERSION\"",
+                "SORTH_COMPILER=\"Compiler Version\"",
+                "SORTH_LLVM_FOUND = 1"
             ],
             "macFrameworkPath": [
                 "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks"
@@ -46,7 +48,8 @@
             ],
             "defines": [
                 "VERSION=\"CURRENT_VERSION\"",
-                "MESSAGE=\"Compiler Version\"",
+                "SORTH_COMPILER=\"Compiler Version\"",
+                "SORTH_LLVM_FOUND = 1",
                 "size_t=int64_t"
             ],
             "compilerPath": "/usr/bin/clang",

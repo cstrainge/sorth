@@ -56,7 +56,7 @@ namespace sorth::internal
             // is immediate, it's JIT compiled immediately.  If not, it's left as bytecode until
             // the entire script has been compiled, then all remaining words and the top level
             // of the script are JIT compiled.
-            #if !defined(SORTH_JIT_DISABLED)
+            #if (SORTH_LLVM_FOUND == 1)
                 std::map<std::string, Construction> word_jit_cache;
             #endif
 

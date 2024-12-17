@@ -130,7 +130,7 @@ namespace
     // variable to "jit".
     sorth::ExecutionMode get_execution_mode()
     {
-        #ifndef SORTH_JIT_DISABLED
+        #if (SORTH_LLVM_FOUND == 1)
             auto env_mode = std::getenv("SORTH_EXE_MODE");
 
             if (env_mode != nullptr)

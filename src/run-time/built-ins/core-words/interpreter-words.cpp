@@ -191,6 +191,14 @@ namespace sorth::internal
         }
 
 
+        void word_set_exit_code(InterpreterPtr& interpreter)
+        {
+            auto code = interpreter->pop_as_integer();
+
+            interpreter->set_exit_code(code);
+        }
+
+
         void word_none(InterpreterPtr& interpreter)
         {
             interpreter->push(None());
@@ -223,13 +231,13 @@ namespace sorth::internal
 
         void word_get_sorth_version(InterpreterPtr& interpreter)
         {
-            interpreter->push(std::string(VERSION));
+            interpreter->push(std::string(SORTH_VERSION));
         }
 
 
         void word_get_compiler_version(InterpreterPtr& interpreter)
         {
-            interpreter->push(std::string(MESSAGE));
+            interpreter->push(std::string(SORTH_COMPILER));
         }
 
 
@@ -455,6 +463,10 @@ namespace sorth::internal
         ADD_NATIVE_WORD(interpreter, "exit_failure", word_exit_failure,
             "Constant value for a process fail exit code.",
             " -- failure");
+
+        ADD_NATIVE_WORD(interpreter, "sorth.exit-code!", word_set_exit_code,
+            "Set the exit code for the interpreter.",
+            "exit-code -- ");
 
         ADD_NATIVE_WORD(interpreter, "none", word_none,
             "Push the value none onto the data stack.",

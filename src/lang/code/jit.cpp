@@ -4,7 +4,7 @@
 
 
 // Make sure we found llvm.
-#ifndef SORTH_JIT_DISABLED
+#if (SORTH_LLVM_FOUND == 1)
 
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/ExecutionEngine/Orc/ExecutionUtils.h>
