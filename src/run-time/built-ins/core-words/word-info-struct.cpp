@@ -49,8 +49,8 @@ namespace sorth::internal
 
 
     DataObjectPtr make_word_info_instance(InterpreterPtr& interpreter,
-                                            std::string& name,
-                                            Word& word)
+                                          std::string& name,
+                                          Word& word)
     {
         auto new_location = make_data_object(location_definition);
         new_location->fields[0] = word.location.get_path();
