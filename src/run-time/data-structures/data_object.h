@@ -59,29 +59,29 @@ namespace sorth
     std::ostream& operator <<(std::ostream& stream, const DataObjectPtr& data);
 
 
-    std::strong_ordering operator <=>(const DataObject& rhs, const DataObject& lhs);
+    std::strong_ordering operator <=>(const DataObject& lhs, const DataObject& rhs);
 
-    std::strong_ordering operator <=>(const DataObjectPtr& rhs, const DataObjectPtr& lhs);
+    std::strong_ordering operator <=>(const DataObjectPtr& lhs, const DataObjectPtr& rhs);
 
 
-    inline bool operator ==(const DataObject& rhs, const DataObject& lhs)
+    inline bool operator ==(const DataObject& lhs, const DataObject& rhs)
     {
-        return (rhs <=> lhs) == std::strong_ordering::equal;
+        return (lhs <=> rhs) == std::strong_ordering::equal;
     }
 
-    inline bool operator !=(const DataObject& rhs, const DataObject& lhs)
+    inline bool operator !=(const DataObject& lhs, const DataObject& rhs)
     {
-        return (rhs <=> lhs) != std::strong_ordering::equal;
+        return (lhs <=> rhs) != std::strong_ordering::equal;
     }
 
-    inline bool operator ==(const DataObjectPtr& rhs, const DataObjectPtr& lhs)
+    inline bool operator ==(const DataObjectPtr& lhs, const DataObjectPtr& rhs)
     {
-        return *rhs == *lhs;
+        return *lhs == *rhs;
     }
 
-    inline bool operator !=(const DataObjectPtr& rhs, const DataObjectPtr& lhs)
+    inline bool operator !=(const DataObjectPtr& lhs, const DataObjectPtr& rhs)
     {
-        return *rhs == *lhs;
+        return *lhs == *rhs;
     }
 
 

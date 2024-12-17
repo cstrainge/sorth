@@ -22,24 +22,19 @@ namespace sorth::internal
     }
 
 
-    bool operator ==(const Location& rhs, const Location& lhs)
+    std::strong_ordering operator <=>(const Location& lhs, const Location& rhs)
     {
-        if (rhs.get_line() != lhs.get_line())
+        if (lhs.get_path() != rhs.get_path())
         {
-            return false;
+            return lhs <=> rhs;
         }
 
-        if (rhs.get_column() != lhs.get_column())
+        if (lhs.get_line() != rhs.get_line())
         {
-            return false;
+            return lhs.get_line() <=> rhs.get_line();
         }
 
-        if (rhs.get_path() != lhs.get_path())
-        {
-            return false;
-        }
-
-        return true;
+        return lhs.get_column() <=> rhs.get_column();
     }
 
 

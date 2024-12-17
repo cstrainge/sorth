@@ -47,23 +47,23 @@ namespace sorth
     }
 
 
-    std::strong_ordering operator <=>(const DataObject& rhs, const DataObject& lhs)
+    std::strong_ordering operator <=>(const DataObject& lhs, const DataObject& rhs)
     {
-        if (rhs.definition->name != lhs.definition->name)
+        if (lhs.definition->name != rhs.definition->name)
         {
-            return rhs.definition->name <=> lhs.definition->name;
+            return lhs.definition->name <=> rhs.definition->name;
         }
 
-        if (rhs.fields.size() != lhs.fields.size())
+        if (lhs.fields.size() != rhs.fields.size())
         {
-            return rhs.fields.size() <=> lhs.fields.size();
+            return lhs.fields.size() <=> rhs.fields.size();
         }
 
-        for (size_t i = 0; i < rhs.fields.size(); ++i)
+        for (size_t i = 0; i < lhs.fields.size(); ++i)
         {
-            if (rhs.fields[i] != lhs.fields[i])
+            if (lhs.fields[i] != rhs.fields[i])
             {
-                return rhs.fields[i] <=> lhs.fields[i];
+                return lhs.fields[i] <=> rhs.fields[i];
             }
         }
 
@@ -71,9 +71,9 @@ namespace sorth
     }
 
 
-    std::strong_ordering operator <=>(const DataObjectPtr& rhs, const DataObjectPtr& lhs)
+    std::strong_ordering operator <=>(const DataObjectPtr& lhs, const DataObjectPtr& rhs)
     {
-        return *rhs <=> *lhs;
+        return *lhs <=> *rhs;
     }
 
 

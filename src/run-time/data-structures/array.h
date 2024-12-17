@@ -33,36 +33,36 @@ namespace sorth
 
         private:
             friend std::ostream& operator <<(std::ostream& stream, const ArrayPtr& array);
-            friend std::strong_ordering operator <=>(const Array& rhs, const Array& lhs);
+            friend std::strong_ordering operator <=>(const Array& lhs, const Array& rhs);
     };
 
 
     std::ostream& operator <<(std::ostream& stream, const ArrayPtr& array);
 
 
-    std::strong_ordering operator <=>(const Array& rhs, const Array& lhs);
+    std::strong_ordering operator <=>(const Array& lhs, const Array& rhs);
 
-    std::strong_ordering operator <=>(const ArrayPtr& rhs, const ArrayPtr& lhs);
+    std::strong_ordering operator <=>(const ArrayPtr& lhs, const ArrayPtr& rhs);
 
 
-    inline bool operator ==(const Array& rhs, const Array& lhs)
+    inline bool operator ==(const Array& lhs, const Array& rhs)
     {
-        return (rhs <=> lhs) == std::strong_ordering::equal;
+        return (lhs <=> rhs) == std::strong_ordering::equal;
     }
 
-    inline bool operator !=(const Array& rhs, const Array& lhs)
+    inline bool operator !=(const Array& lhs, const Array& rhs)
     {
-        return (rhs <=> lhs) != std::strong_ordering::equal;
+        return (lhs <=> rhs) != std::strong_ordering::equal;
     }
 
-    inline bool operator ==(const ArrayPtr& rhs, const ArrayPtr& lhs)
+    inline bool operator ==(const ArrayPtr& lhs, const ArrayPtr& rhs)
     {
-        return *rhs == *lhs;
+        return *lhs == *rhs;
     }
 
-    inline bool operator !=(const ArrayPtr& rhs, const ArrayPtr& lhs)
+    inline bool operator !=(const ArrayPtr& lhs, const ArrayPtr& rhs)
     {
-        return *rhs != *lhs;
+        return *lhs != *rhs;
     }
 
 

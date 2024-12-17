@@ -61,18 +61,18 @@ namespace sorth
     }
 
 
-    std::strong_ordering operator <=>(const HashTable& rhs, const HashTable& lhs)
+    std::strong_ordering operator <=>(const HashTable& lhs, const HashTable& rhs)
     {
-        if (rhs.items.size() != lhs.items.size())
+        if (lhs.items.size() != rhs.items.size())
         {
-            return rhs.items.size() <=> lhs.items.size();
+            return lhs.items.size() <=> rhs.items.size();
         }
 
-        for (const auto& [ key, value ] : rhs.items)
+        for (const auto& [ key, value ] : lhs.items)
         {
-            auto iterator = lhs.items.find(key);
+            auto iterator = rhs.items.find(key);
 
-            if (iterator == lhs.items.end())
+            if (iterator == rhs.items.end())
             {
                 return std::strong_ordering::greater;
             }
@@ -87,9 +87,9 @@ namespace sorth
     }
 
 
-    std::strong_ordering operator <=>(const HashTablePtr& rhs, const HashTablePtr& lhs)
+    std::strong_ordering operator <=>(const HashTablePtr& lhs, const HashTablePtr& rhs)
     {
-        return *rhs <=> *lhs;
+        return *lhs <=> *rhs;
     }
 
 

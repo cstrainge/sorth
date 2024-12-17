@@ -37,7 +37,20 @@ namespace sorth::internal
 
     std::ostream& operator <<(std::ostream& stream, Location location);
 
-    bool operator ==(const Location& rhs, const Location& lhs);
+
+    std::strong_ordering operator <=>(const Location& lhs, const Location& rhs);
+
+
+    inline bool operator ==(const Location& lhs, const Location& rhs)
+    {
+        return (lhs <=> rhs) == std::strong_ordering::equal;
+    }
+
+
+    inline bool operator !=(const Location& lhs, const Location& rhs)
+    {
+        return (lhs <=> rhs) != std::strong_ordering::equal;
+    }
 
 
 }

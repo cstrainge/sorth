@@ -26,15 +26,15 @@ namespace sorth
     }
 
 
-    std::strong_ordering operator <=>(const Array& rhs, const Array& lhs)
+    std::strong_ordering operator <=>(const Array& lhs, const Array& rhs)
     {
-        return rhs.items <=> lhs.items;
+        return lhs.items <=> rhs.items;
     }
 
 
-    std::strong_ordering operator <=>(const ArrayPtr& rhs, const ArrayPtr& lhs)
+    std::strong_ordering operator <=>(const ArrayPtr& lhs, const ArrayPtr& rhs)
     {
-        return *rhs <=> *lhs;
+        return *lhs <=> *rhs;
     }
 
 

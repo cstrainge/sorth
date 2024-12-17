@@ -105,24 +105,24 @@ namespace sorth
     }
 
 
-    std::strong_ordering operator <=>(const Value& rhs, const Value& lhs) noexcept
+    std::strong_ordering operator <=>(const Value& lhs, const Value& rhs) noexcept
     {
-        if (rhs.value.index() != lhs.value.index())
+        if (lhs.value.index() != rhs.value.index())
         {
-            return rhs.value.index() <=> lhs.value.index();
+            return lhs.value.index() <=> rhs.value.index();
         }
 
-        if (std::holds_alternative<None>(rhs.value))
+        if (std::holds_alternative<None>(lhs.value))
         {
             return std::strong_ordering::equal;
         }
 
-        if (std::holds_alternative<int64_t>(rhs.value))
+        if (std::holds_alternative<int64_t>(lhs.value))
         {
-            return std::get<int64_t>(rhs.value) <=> std::get<int64_t>(lhs.value);
+            return std::get<int64_t>(lhs.value) <=> std::get<int64_t>(rhs.value);
         }
 
-        if (std::holds_alternative<double>(rhs.value))
+        if (std::holds_alternative<double>(lhs.value))
         {
             auto lhs_value = std::get<double>(lhs.value);
             auto rhs_value = std::get<double>(rhs.value);
@@ -139,32 +139,32 @@ namespace sorth
             return std::strong_ordering::equal;
         }
 
-        if (std::holds_alternative<bool>(rhs.value))
+        if (std::holds_alternative<bool>(lhs.value))
         {
-            return std::get<bool>(rhs.value) <=> std::get<bool>(lhs.value);
+            return std::get<bool>(lhs.value) <=> std::get<bool>(rhs.value);
         }
 
-        if (std::holds_alternative<std::string>(rhs.value))
+        if (std::holds_alternative<std::string>(lhs.value))
         {
-            return std::get<std::string>(rhs.value) <=> std::get<std::string>(lhs.value);
+            return std::get<std::string>(lhs.value) <=> std::get<std::string>(rhs.value);
         }
 
-        if (std::holds_alternative<DataObjectPtr>(rhs.value))
+        if (std::holds_alternative<DataObjectPtr>(lhs.value))
         {
-            return std::get<DataObjectPtr>(rhs.value) <=> std::get<DataObjectPtr>(lhs.value);
+            return std::get<DataObjectPtr>(lhs.value) <=> std::get<DataObjectPtr>(rhs.value);
         }
 
-        if (std::holds_alternative<ArrayPtr>(rhs.value))
+        if (std::holds_alternative<ArrayPtr>(lhs.value))
         {
-            return std::get<ArrayPtr>(rhs.value) <=> std::get<ArrayPtr>(lhs.value);
+            return std::get<ArrayPtr>(lhs.value) <=> std::get<ArrayPtr>(rhs.value);
         }
 
-        if (std::holds_alternative<HashTablePtr>(rhs.value))
+        if (std::holds_alternative<HashTablePtr>(lhs.value))
         {
-            return std::get<HashTablePtr>(rhs.value) <=> std::get<HashTablePtr>(lhs.value);
+            return std::get<HashTablePtr>(lhs.value) <=> std::get<HashTablePtr>(rhs.value);
         }
 
-        return std::get<ByteBufferPtr>(rhs.value) <=> std::get<ByteBufferPtr>(lhs.value);
+        return std::get<ByteBufferPtr>(lhs.value) <=> std::get<ByteBufferPtr>(rhs.value);
     }
 
 

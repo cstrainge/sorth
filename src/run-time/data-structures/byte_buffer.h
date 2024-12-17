@@ -106,29 +106,29 @@ namespace sorth
     };
 
 
-    std::strong_ordering operator <=>(const ByteBuffer& rhs, const ByteBuffer& lhs);
+    std::strong_ordering operator <=>(const ByteBuffer& lhs, const ByteBuffer& rhs);
 
-    std::strong_ordering operator <=>(const ByteBufferPtr& rhs, const ByteBufferPtr& lhs);
+    std::strong_ordering operator <=>(const ByteBufferPtr& lhs, const ByteBufferPtr& rhs);
 
 
-    inline bool operator ==(const ByteBuffer& rhs, const ByteBuffer& lhs)
+    inline bool operator ==(const ByteBuffer& lhs, const ByteBuffer& rhs)
     {
-        return (rhs <=> lhs) == std::strong_ordering::equal;
+        return (lhs <=> rhs) == std::strong_ordering::equal;
     }
 
-    inline bool operator !=(const ByteBuffer& rhs, const ByteBuffer& lhs)
+    inline bool operator !=(const ByteBuffer& lhs, const ByteBuffer& rhs)
     {
-        return (rhs <=> lhs) != std::strong_ordering::equal;
+        return (lhs <=> rhs) != std::strong_ordering::equal;
     }
 
-    inline bool operator ==(const ByteBufferPtr& rhs, const ByteBufferPtr& lhs)
+    inline bool operator ==(const ByteBufferPtr& lhs, const ByteBufferPtr& rhs)
     {
-        return *rhs == *lhs;
+        return *lhs == *rhs;
     }
 
-    inline bool operator !=(const ByteBufferPtr& rhs, const ByteBufferPtr& lhs)
+    inline bool operator !=(const ByteBufferPtr& lhs, const ByteBufferPtr& rhs)
     {
-        return *rhs == *lhs;
+        return *lhs == *rhs;
     }
 
 
@@ -175,7 +175,7 @@ namespace sorth
     std::ostream& operator <<(std::ostream& stream, const ByteBufferPtr& buffer_ptr);
 
 
-    bool operator ==(const ByteBufferPtr& rhs, const ByteBufferPtr& lhs);
+    bool operator ==(const ByteBufferPtr& lhs, const ByteBufferPtr& rhs);
 
 
 }

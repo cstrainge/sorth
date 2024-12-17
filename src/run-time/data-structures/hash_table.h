@@ -30,39 +30,39 @@ namespace sorth
 
         private:
             friend std::ostream& operator <<(std::ostream& stream, const ArrayPtr& table);
-            friend std::strong_ordering operator <=>(const HashTable& rhs, const HashTable& lhs);
+            friend std::strong_ordering operator <=>(const HashTable& lhs, const HashTable& rhs);
     };
 
 
     std::ostream& operator <<(std::ostream& stream, const HashTablePtr& table);
 
 
-    std::strong_ordering operator <=>(const HashTable& rhs, const HashTable& lhs);
+    std::strong_ordering operator <=>(const HashTable& lhs, const HashTable& rhs);
 
-    std::strong_ordering operator <=>(const HashTablePtr& rhs, const HashTablePtr& lhs);
+    std::strong_ordering operator <=>(const HashTablePtr& lhs, const HashTablePtr& rhs);
 
 
-    inline bool operator ==(const HashTable& rhs, const HashTable& lhs)
+    inline bool operator ==(const HashTable& lhs, const HashTable& rhs)
     {
-        return (rhs <=> lhs) == std::strong_ordering::equal;
+        return (lhs <=> rhs) == std::strong_ordering::equal;
     }
 
 
-    inline bool operator !=(const HashTable& rhs, const HashTable& lhs)
+    inline bool operator !=(const HashTable& lhs, const HashTable& rhs)
     {
-        return (rhs <=> lhs) != std::strong_ordering::equal;
+        return (lhs <=> rhs) != std::strong_ordering::equal;
     }
 
 
-    inline bool operator ==(const HashTablePtr& rhs, const HashTablePtr& lhs)
+    inline bool operator ==(const HashTablePtr& lhs, const HashTablePtr& rhs)
     {
-        return *rhs == *lhs;
+        return *lhs == *rhs;
     }
 
 
-    inline bool operator !=(const HashTablePtr& rhs, const HashTablePtr& lhs)
+    inline bool operator !=(const HashTablePtr& lhs, const HashTablePtr& rhs)
     {
-        return *rhs == *lhs;
+        return *lhs == *rhs;
     }
 
 

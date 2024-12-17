@@ -86,20 +86,20 @@ namespace sorth
     }
 
 
-    std::strong_ordering operator <=>(const ByteBuffer& rhs, const ByteBuffer& lhs)
+    std::strong_ordering operator <=>(const ByteBuffer& lhs, const ByteBuffer& rhs)
     {
-        if (rhs.size() != lhs.size())
+        if (lhs.size() != rhs.size())
         {
-            return rhs.size() <=> lhs.size();
+            return lhs.size() <=> rhs.size();
         }
 
-        return std::memcmp(rhs.data_ptr(), lhs.data_ptr(), rhs.size()) <=> 0;
+        return std::memcmp(lhs.data_ptr(), rhs.data_ptr(), lhs.size()) <=> 0;
     }
 
 
-    std::strong_ordering operator <=>(const ByteBufferPtr& rhs, const ByteBufferPtr& lhs)
+    std::strong_ordering operator <=>(const ByteBufferPtr& lhs, const ByteBufferPtr& rhs)
     {
-        return *rhs <=> *lhs;
+        return *lhs <=> *rhs;
     }
 
 

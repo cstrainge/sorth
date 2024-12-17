@@ -32,7 +32,7 @@ namespace sorth::internal
 
     std::ostream& operator <<(std::ostream& stream, Token token);
 
-    bool operator ==(const Token& rhs, const Token& lhs);
+    bool operator ==(const Token& lhs, const Token& rhs);
 
 
     TokenList tokenize(SourceBuffer& source_code);

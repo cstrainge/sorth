@@ -160,7 +160,7 @@ namespace sorth
 
         private:
             friend std::ostream& operator <<(std::ostream& stream, const Value& value) noexcept;
-            friend std::strong_ordering operator <=>(const Value& rhs, const Value& lhs) noexcept;
+            friend std::strong_ordering operator <=>(const Value& lhs, const Value& rhs) noexcept;
     };
 
 
@@ -177,17 +177,17 @@ namespace sorth
     std::ostream& operator <<(std::ostream& stream, const Value& value) noexcept;
 
 
-    std::strong_ordering operator <=>(const Value& rhs, const Value& lhs) noexcept;
+    std::strong_ordering operator <=>(const Value& lhs, const Value& rhs) noexcept;
 
 
-    inline bool operator ==(const Value& rhs, const Value& lhs) noexcept
+    inline bool operator ==(const Value& lhs, const Value& rhs) noexcept
     {
-        return (rhs <=> lhs) == std::strong_ordering::equal;
+        return (lhs <=> rhs) == std::strong_ordering::equal;
     }
 
-    inline bool operator !=(const Value& rhs, const Value& lhs) noexcept
+    inline bool operator !=(const Value& lhs, const Value& rhs) noexcept
     {
-        return (rhs <=> lhs) != std::strong_ordering::equal;
+        return (lhs <=> rhs) != std::strong_ordering::equal;
     }
 
 

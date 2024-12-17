@@ -226,14 +226,14 @@ namespace sorth::internal
     }
 
 
-    bool operator ==(const Token& rhs, const Token& lhs)
+    bool operator ==(const Token& lhs, const Token& rhs)
     {
         if (lhs.type != rhs.type)
         {
             return false;
         }
 
-        if (rhs.text != lhs.text)
+        if (lhs.text != rhs.text)
         {
             return false;
         }
