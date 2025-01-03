@@ -52,7 +52,7 @@ That indicates that all user functions are JIT compiled, including code you ente
 
 ## Experimental Implementations
 
-There are two experimental versions of the language being worked on.
+There are three experimental versions of the language being worked on.
 
  - [C# Version](https://github.com/cstrainge/sorth.net)  There is a version written in C# that jit
    compiles the code using .net's IL code generation facilities.  One future experiment would be to
@@ -65,6 +65,12 @@ There are two experimental versions of the language being worked on.
    Crates.io for potential embedding within other programs.  How to properly distribute the standard
    library in this case so that it's useable by client programs is TBD.  Perhaps as a feature that
    includes the code in the binary?
+ - [AOT Compiler Version](https://github.com/cstrainge/sorthc/tree/main)  A full ahead of time
+   compiler for the language.  It's still catching up in terms of how much of the language it can
+   compile, but it's compiling a lot of code and the standard library.  It has basically 2
+   run-times, one that lives inside the compiler itself that's more limited than the run-time that
+   executes the compiled code.  All immediate words run within the compiler's run-time and all other
+   words execute in the compiled run-time.
 
 Neither version is up to full feature parity with the C++ version.  It's also being decided if the
 Rust version will eventually replace the C++ version.
