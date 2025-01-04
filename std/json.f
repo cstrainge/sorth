@@ -159,7 +159,7 @@
 
     "\n" =
     if
-        ( We're incrementing lines, so reset colum and increment the line. )
+        ( We're incrementing lines, so reset column and increment the line. )
         1 location json.location.column!!
         location json.location.line@@ ++ location json.location.line!!
     else
@@ -171,7 +171,7 @@
 
 
 ( String structure used for parsing json.  We use it to keep track of where we are in the string )
-( during parsing.  For in a logical line/colum way and directly as in the index into the string )
+( during parsing.  For in a logical line/column way and directly as in the index into the string )
 ( variable. )
 # json.string hidden
     location -> json.location.new ,

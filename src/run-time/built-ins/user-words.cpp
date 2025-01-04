@@ -75,7 +75,7 @@ namespace sorth
                         " -- os_name");
 
         ADD_NATIVE_WORD(interpreter, "user.cwd", word_user_cwd,
-            "Get the process's current working direcory.",
+            "Get the process's current working directory.",
             " -- directory_path");
     }
 

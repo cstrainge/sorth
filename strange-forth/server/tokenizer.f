@@ -29,7 +29,7 @@
 
     "\n" =
     if
-        ( We're incrementing lines, so reset colum and increment the line. )
+        ( We're incrementing lines, so reset column and increment the line. )
         0 location tk.location.character!!
         location tk.location.line@@ ++ location tk.location.line!!
     else

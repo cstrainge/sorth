@@ -111,8 +111,8 @@ namespace sorth::internal
             // Extract the *.
             source_code.next();
 
-            // Extract first whitespace until we get to first real text, and record the colum we are
-            // at now.
+            // Extract first whitespace until we get to first real text, and record the column we
+            // are at now.
             skip_whitespace(source_code);
 
             auto target_column = source_code.current_location().get_column();
