@@ -148,7 +148,7 @@
                     continue
                 endof
 
-            "{" of
+            "(" of
                     "(" execute
                     continue
                 endof

@@ -336,9 +336,9 @@ namespace sorth
                     // non-immediate words that have been cached during the byte-code compilation
                     // phase.
                     auto handler = jit_module(this_ptr,
-                                                name,
-                                                code,
-                                                compile_contexts.top().word_jit_cache);
+                                              name,
+                                              code,
+                                              compile_contexts.top().word_jit_cache);
 
                     // Now that the script has been JITed, we can execute it.  We don't need to
                     // save the handler as this is a one time deal.
