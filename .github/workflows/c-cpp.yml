@@ -109,6 +109,22 @@ jobs:
           $env:Path += ";C:\ProgramData\chocolatey\bin"
         shell: pwsh
 
+      # Install LLVM libraries
+      - name: Install LLVM libraries (Linux)
+        if: ${{ runner.os == 'Linux' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y llvm clang libclang-dev
+
+      - name: Install LLVM libraries (macOS)
+        if: ${{ runner.os == 'macOS' }}
+        run: brew install llvm
+
+      - name: Install LLVM libraries (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        run: choco install llvm
+        shell: cmd
+
       # targets and version debug
       - name: targets and version debug
         run: clang++ -print-targets && clang++ --version
