@@ -122,7 +122,7 @@ jobs:
 
       - name: Install LLVM libraries (Windows)
         if: ${{ runner.os == 'Windows' }}
-        run: choco install llvm
+        run: choco install llvm --installargs ADD_CMAKE_TO_PATH=1 -y
         shell: cmd
 
       - name: Add LLVM to PATH (Windows)
