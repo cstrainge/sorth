@@ -139,7 +139,8 @@ jobs:
           dir "C:\Program Files\LLVM\bin"
           dir "C:\Program Files\LLVM\lib\cmake\llvm"
           dir "C:\Program Files\"
-          dir "C:\ProgramData\chocolatey\lib\"
+          dir "C:\ProgramData\chocolatey\lib\llvm\bin"
+          dir "C:\ProgramData\chocolatey\lib\llvm\lib\cmake\llvm"
 
       # targets and version debug
       - name: targets and version debug
