@@ -114,6 +114,8 @@ set(CXXFLAGS "-DSORTH_COMPILER=\"${COMPILER_NAME_SIMPLE} ${CMAKE_CXX_COMPILER_VE
 if(WIN32)
     #
 elseif(APPLE)
+    set(LINKFLAGS "-ldl -lffi -lm")
+else()
     set(LINKFLAGS "-fuse-ld=lld -ldl -lffi -lm")
 
     if(CXXTARGET STREQUAL "x86_64-unknown-linux-gnu")
@@ -121,8 +123,6 @@ elseif(APPLE)
     elseif(CXXTARGET STREQUAL "arm-unknown-linux-gnu")
         set(LINKFLAGS "${LINKFLAGS} -latomic -mfloat-abi=soft")
     endif()
-else()
-    #
 endif()
 
 
