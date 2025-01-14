@@ -125,6 +125,14 @@ jobs:
         run: choco install llvm
         shell: cmd
 
+      - name: Check for LLVM libraries (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        run: |
+          dir "C:\Program Files\LLVM\bin"
+          dir "C:\Program Files\LLVM\lib\cmake\llvm"
+          echo "LLVM dir: " $env:LLVM_DIR
+          llvm-config --version
+
       # targets and version debug
       - name: targets and version debug
         run: clang++ -print-targets && clang++ --version
