@@ -173,7 +173,7 @@ add_executable(${PROJECT_NAME} "${SRC_DIR}/sorth.cpp")
 target_link_libraries(${PROJECT_NAME} PRIVATE ${LIB_PROJECT_NAME} ${LINKFLAGS})
 
 
-target_compile_definitions(${LIB_PROJECT_NAME} PRIVATE SORTH_EXPORT="1")
+target_compile_definitions(${LIB_PROJECT_NAME} PRIVATE SORTH_EXPORT=1)
 
 
 # Add a precompiled header to the target.

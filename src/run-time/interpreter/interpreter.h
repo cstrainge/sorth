@@ -140,7 +140,14 @@ namespace sorth
             virtual void clear_stack() = 0;
 
             virtual int64_t depth() const = 0;
+
             virtual void push(const Value& value) = 0;
+            virtual void push_integer(int64_t value) = 0;
+            virtual void push_size(size_t value) = 0;
+            virtual void push_float(double value) = 0;
+            virtual void push_bool(bool value) = 0;
+            virtual void push_string(const std::string& value) = 0;
+            virtual void push_thread_id(const std::thread::id& value) = 0;
 
             virtual Value pop() = 0;
             virtual int64_t pop_as_integer() = 0;

@@ -141,7 +141,14 @@ namespace sorth
                 virtual void clear_stack() override;
 
                 virtual int64_t depth() const override;
+
                 virtual void push(const Value& value) override;
+                virtual void push_integer(int64_t value) override;
+                virtual void push_size(size_t value) override;
+                virtual void push_float(double value) override;
+                virtual void push_bool(bool value) override;
+                virtual void push_string(const std::string& value) override;
+                virtual void push_thread_id(const std::thread::id& value) override;
 
                 virtual Value pop() override;
                 virtual int64_t pop_as_integer() override;
@@ -1013,6 +1020,42 @@ namespace sorth
         void InterpreterImpl::push(const Value& value)
         {
             stack.push_front(value);
+        }
+
+
+        void InterpreterImpl::push_integer(int64_t value)
+        {
+            push(value);
+        }
+
+
+        void InterpreterImpl::push_size(size_t value)
+        {
+            push(static_cast<int64_t>(value));
+        }
+
+
+        void InterpreterImpl::push_float(double value)
+        {
+            push(value);
+        }
+
+
+        void InterpreterImpl::push_bool(bool value)
+        {
+            push(value);
+        }
+
+
+        void InterpreterImpl::push_string(const std::string& value)
+        {
+            push(value);
+        }
+
+
+        void InterpreterImpl::push_thread_id(const std::thread::id& value)
+        {
+            push(value);
         }
 
 
