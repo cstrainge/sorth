@@ -138,6 +138,8 @@ jobs:
         run: |
           dir "C:\Program Files\LLVM\bin"
           dir "C:\Program Files\LLVM\lib\cmake\llvm"
+          dir "C:\Program Files (x86)\LLVM\bin"
+          dir "C:\Program Files (x86)\LLVM\lib\cmake\llvm"
 
       # targets and version debug
       - name: targets and version debug
