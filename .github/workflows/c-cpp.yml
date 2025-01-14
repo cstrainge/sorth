@@ -125,12 +125,18 @@ jobs:
         run: choco install llvm
         shell: cmd
 
+      - name: Add LLVM to PATH (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        run: |
+          $env:Path += ";C:\Program Files\LLVM\bin"
+        shell: pwsh
+
       - name: Check for LLVM libraries (Windows)
         if: ${{ runner.os == 'Windows' }}
         run: |
           dir "C:\Program Files\LLVM\bin"
           dir "C:\Program Files\LLVM\lib\cmake\llvm"
-          C:\Program Files\LLVM\bin\llvm-config --version
+          llvm-config --version
 
       # targets and version debug
       - name: targets and version debug
