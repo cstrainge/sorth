@@ -123,6 +123,19 @@ include_directories(${SRC_DIR})
 
 
 
+if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm|aarch64)")
+    message(STATUS "Target architecture is ARM or ARM64.")
+    set(ARCH_LLVM_COMPONENTS AArch64 AArch64AsmParser AArch64TargetMCA AArch64CodeGen)
+elseif (CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "^(arm|aarch64)")
+    message(STATUS "Host architecture is ARM or ARM64.")
+    set(ARCH_LLVM_COMPONENTS AArch64 AArch64AsmParser AArch64TargetMCA AArch64CodeGen)
+else()
+    message(STATUS "Target architecture is not ARM.")
+    set(ARCH_LLVM_COMPONENTS X86 X86AsmParser X86TargetMCA X86CodeGen)
+endif()
+
+
+
 # Include the llvm directories and definitions if we found llvm.
 if (SORTH_LLVM_FOUND)
     include_directories(${LLVM_INCLUDE_DIRS})
@@ -130,17 +143,12 @@ if (SORTH_LLVM_FOUND)
     set(LLVM_COMPONENTS
         Target
         TargetParser
-        X86TargetMCA
-        X86CodeGen
-        X86AsmParser
+        ${ARCH_LLVM_COMPONENTS}
         OrcJIT
         ExecutionEngine
         Support
         Passes
         Core
-        X86
-        X86AsmParser
-        X86CodeGen
         Analysis
         MC
         MCParser)
