@@ -78,15 +78,6 @@ file(GLOB LIB_SRCS "${SRC_DIR}/error.cpp"
 
 # Include the source directories for the .h files.
 include_directories("${SRC_DIR}")
-include_directories("${SRC_DIR}/lang")
-include_directories("${SRC_DIR}/lang/code")
-include_directories("${SRC_DIR}/lang/source")
-include_directories("${SRC_DIR}/run-time")
-include_directories("${SRC_DIR}/run-time/built-ins")
-include_directories("${SRC_DIR}/run-time/data-structures")
-include_directories("${SRC_DIR}/run-time/interpreter")
-include_directories("${SRC_DIR}/run-time/built-ins")
-include_directories("${SRC_DIR}/run-time/built-ins/core-words")
 
 
 

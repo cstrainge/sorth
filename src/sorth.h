@@ -99,35 +99,35 @@
 
 
 
-#include "location.h"
+#include "lang/source/location.h"
 #include "error.h"
-#include "source-buffer.h"
-#include "tokenize.h"
-#include "contextual-list.h"
-#include "value.h"
-#include "word-function.h"
-#include "dictionary.h"
-#include "instruction.h"
-#include "array.h"
-#include "byte-buffer.h"
-#include "data-object.h"
-#include "hash-table.h"
-#include "compile-context.h"
-#include "blocking-value-queue.h"
-#include "interpreter.h"
-#include "core-words.h"
-#include "terminal-words.h"
-#include "ffi-words.h"
-#include "user-words.h"
-#include "jit.h"
+#include "lang/source/source-buffer.h"
+#include "lang/source/tokenize.h"
+#include "run-time/data-structures/contextual-list.h"
+#include "run-time/data-structures/value.h"
+#include "run-time/data-structures/word-function.h"
+#include "run-time/data-structures/dictionary.h"
+#include "lang/code/instruction.h"
+#include "run-time/data-structures/array.h"
+#include "run-time/data-structures/byte-buffer.h"
+#include "run-time/data-structures/data-object.h"
+#include "run-time/data-structures/hash-table.h"
+#include "lang/code/compile-context.h"
+#include "run-time/data-structures/blocking-value-queue.h"
+#include "run-time/interpreter/interpreter.h"
+#include "run-time/built-ins/core-words/core-words.h"
+#include "run-time/built-ins/terminal-words.h"
+#include "run-time/built-ins/ffi-words.h"
+#include "run-time/built-ins/user-words.h"
+#include "lang/code/jit.h"
 
 
 #if (IS_UNIX == 1)
 
-	#include "io-words-posix.h"
+	#include "run-time/built-ins/io-words-posix.h"
 
 #elif (IS_WINDOWS == 1)
 
-    #include "io-words-windows.h"
+    #include "run-time/built-ins/io-words-windows.h"
 
 #endif
