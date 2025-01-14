@@ -5,6 +5,10 @@ project(sorth)
 
 
 
+set(LIB_PROJECT_NAME "${PROJECT_NAME}-interpreter")
+
+
+
 # Find lib ffi.
 if(WIN32)
     find_package(unofficial-libffi CONFIG REQUIRED)
@@ -59,16 +63,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
 # Define source files and directories.
-set(SRC_DIR "src")
-file(GLOB SRCS "${SRC_DIR}/*.cpp"
-               "${SRC_DIR}/lang/*.cpp"
-               "${SRC_DIR}/lang/code/*.cpp"
-               "${SRC_DIR}/lang/source/*.cpp"
-               "${SRC_DIR}/run-time/*.cpp"
-               "${SRC_DIR}/run-time/data-structures/*.cpp"
-               "${SRC_DIR}/run-time/interpreter/*.cpp"
-               "${SRC_DIR}/run-time/built-ins/*.cpp"
-               "${SRC_DIR}/run-time/built-ins/core-words/*.cpp")
+set(SRC_DIR "${CMAKE_SOURCE_DIR}/src")
+file(GLOB LIB_SRCS "${SRC_DIR}/error.cpp"
+                   "${SRC_DIR}/lang/*.cpp"
+                   "${SRC_DIR}/lang/code/*.cpp"
+                   "${SRC_DIR}/lang/source/*.cpp"
+                   "${SRC_DIR}/run-time/*.cpp"
+                   "${SRC_DIR}/run-time/data-structures/*.cpp"
+                   "${SRC_DIR}/run-time/interpreter/*.cpp"
+                   "${SRC_DIR}/run-time/built-ins/*.cpp"
+                   "${SRC_DIR}/run-time/built-ins/core-words/*.cpp")
 
 
 
@@ -159,8 +163,14 @@ endif()
 
 
 # Define target.
-add_executable(${PROJECT_NAME} ${SRCS})
 
+add_library(${LIB_PROJECT_NAME} SHARED ${LIB_SRCS})
+
+
+add_executable(${PROJECT_NAME} "${SRC_DIR}/sorth.cpp")
+
+
+target_link_libraries(${PROJECT_NAME} PRIVATE ${LIB_PROJECT_NAME} ${LINKFLAGS})
 
 
 # Add a precompiled header to the target.
@@ -169,28 +179,34 @@ target_precompile_headers(${PROJECT_NAME} PRIVATE "${SRC_DIR}/sorth.h")
 
 
 # Set compiler flags.
+target_compile_options(${LIB_PROJECT_NAME} PRIVATE ${CXXFLAGS})
+
 target_compile_options(${PROJECT_NAME} PRIVATE ${CXXFLAGS})
 
 
 # Add lib ffi and llvm to the target.
 if(WIN32)
-    target_link_libraries(${PROJECT_NAME} PRIVATE unofficial::libffi::libffi)
+    target_link_libraries(${LIB_PROJECT_NAME} PRIVATE unofficial::libffi::libffi)
 else()
-    target_include_directories(${PROJECT_NAME} PRIVATE ${FFI_INCLUDE_DIRS})
-    target_link_libraries(${PROJECT_NAME} PRIVATE ${FFI_LIBRARIES})
+    target_include_directories(${LIB_PROJECT_NAME} PRIVATE ${FFI_INCLUDE_DIRS})
+    target_link_libraries(${LIB_PROJECT_NAME} PRIVATE ${FFI_LIBRARIES})
 endif()
 
 
 
 # Add the llvm libraries if we found llvm.
 if(SORTH_LLVM_FOUND)
-    target_link_libraries(${PROJECT_NAME} PRIVATE ${LLVM_LIBS})
+    target_link_libraries(${LIB_PROJECT_NAME} PRIVATE ${LLVM_LIBS})
 endif()
 
 
 
 # Output directory.
 set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${DIST_DIR})
+
+set_target_properties(${LIB_PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${DIST_DIR}
+                                                     LIBRARY_OUTPUT_DIRECTORY ${DIST_DIR}
+                                                     ARCHIVE_OUTPUT_DIRECTORY ${DIST_DIR})
 
 
 
@@ -231,6 +247,7 @@ set(SORTH_VERSION "${TAG}-${COMMIT}-${DATE}")
 
 
 # Define preprocessor macro for version
+target_compile_definitions(${LIB_PROJECT_NAME} PRIVATE SORTH_VERSION="${SORTH_VERSION}")
 target_compile_definitions(${PROJECT_NAME} PRIVATE SORTH_VERSION="${SORTH_VERSION}")
 
 
