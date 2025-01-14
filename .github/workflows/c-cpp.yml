@@ -17,53 +17,31 @@ jobs:
           - aarch64-apple-darwin
           - x86_64-apple-darwin
           - x86_64-pc-windows-msvc
-          - arm64-pc-windows-msvc
         os:
           - ubuntu-latest
           - macos-latest
           - windows-latest
-          - windows-arm64
         exclude:
           - target: aarch64-apple-darwin
             os: windows-latest
-          - target: aarch64-apple-darwin
-            os: windows-arm64
           - target: x86_64-apple-darwin
             os: windows-latest
-          - target: x86_64-apple-darwin
-            os: windows-arm64
           - target: arm-unknown-linux-gnu
             os: windows-latest
-          - target: arm-unknown-linux-gnu
-            os: windows-arm64
           - target: x86_64-unknown-linux-gnu
             os: windows-latest
-          - target: x86_64-unknown-linux-gnu
-            os: windows-arm64
           - target: x86_64-pc-windows-msvc
             os: macos-latest
-          - target: x86_64-pc-windows-msvc
-            os: windows-arm64
           - target: arm-unknown-linux-gnu
             os: macos-latest
-          - target: arm-unknown-linux-gnu
-            os: windows-arm64
           - target: x86_64-unknown-linux-gnu
             os: macos-latest
-          - target: x86_64-unknown-linux-gnu
-            os: windows-arm64
           - target: x86_64-pc-windows-msvc
             os: ubuntu-latest
-          - target: x86_64-pc-windows-msvc
-            os: windows-arm64
           - target: aarch64-apple-darwin
             os: ubuntu-latest
-          - target: aarch64-apple-darwin
-            os: windows-arm64
           - target: x86_64-apple-darwin
             os: ubuntu-latest
-          - target: x86_64-apple-darwin
-            os: windows-arm64
 
     runs-on: ${{ matrix.os }}
     env:
@@ -75,7 +53,7 @@ jobs:
 
       # Install VCPKG on Windows
       - name: Install VCPKG (Windows)
-        if: ${{ matrix.os == 'windows-arm64' || matrix.os == 'windows-latest' }}
+        if: ${{ runner.os == 'Windows' }}
         run: |
           git clone https://github.com/microsoft/vcpkg.git
           ./vcpkg/bootstrap-vcpkg.bat
@@ -84,7 +62,7 @@ jobs:
 
       # Set VCPKG_ROOT environment variable (Windows)
       - name: Set VCPKG_ROOT (Windows)
-        if: ${{ matrix.os == 'windows-arm64' || matrix.os == 'windows-latest' }}
+        if: ${{ runner.os == 'Windows' }}
         run: echo "VCPKG_ROOT=${{ github.workspace }}\\vcpkg" >> $GITHUB_ENV
 
       # Install libffi for Linux and macOS
@@ -120,13 +98,13 @@ jobs:
           fi
 
       - name: Install Ninja (Windows)
-        if: ${{ matrix.os == 'windows-arm64' || matrix.os == 'windows-latest' }}
+        if: ${{ runner.os == 'Windows' }}
         run: choco install ninja
         shell: cmd
 
       # Ensure Ninja is available (Windows)
       - name: Add Ninja to PATH (Windows)
-        if: ${{ matrix.os == 'windows-arm64' || matrix.os == 'windows-latest' }}
+        if: ${{ runner.os == 'Windows' }}
         run: |
           $env:Path += ";C:\ProgramData\chocolatey\bin"
         shell: pwsh
@@ -141,7 +119,7 @@ jobs:
 
       # Configure CMake (Windows)
       - name: Configure CMake (Windows)
-        if: ${{ matrix.os == 'windows-arm64' || matrix.os == 'windows-latest' }}
+        if: ${{ runner.os == 'Windows' }}
         run: cmake -DCMAKE_MAKE_PROGRAM=C:\ProgramData\chocolatey\bin\ninja.exe -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ --preset=cibuild .. -G Ninja
         working-directory: build
 
