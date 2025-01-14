@@ -124,7 +124,7 @@ jobs:
         if: ${{ runner.os == 'Windows' }}
         run: |
           choco uninstall llvm -y
-          choco install llvm --installargs --version=19.1.5 ADD_CMAKE_TO_PATH=1 -y
+          choco install llvm --version=19.1.5 -y
         shell: cmd
 
       - name: Add LLVM to PATH (Windows)
