@@ -63,7 +63,7 @@ namespace sorth
     }
 
 
-    void register_user_words(InterpreterPtr& interpreter)
+    SORTH_API void register_user_words(InterpreterPtr& interpreter)
     {
         // User environment words.
         ADD_NATIVE_WORD(interpreter, "user.env@", word_user_env_read,

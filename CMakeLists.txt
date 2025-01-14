@@ -173,8 +173,11 @@ add_executable(${PROJECT_NAME} "${SRC_DIR}/sorth.cpp")
 target_link_libraries(${PROJECT_NAME} PRIVATE ${LIB_PROJECT_NAME} ${LINKFLAGS})
 
 
+target_compile_definitions(${LIB_PROJECT_NAME} PRIVATE SORTH_EXPORT="1")
+
+
 # Add a precompiled header to the target.
-target_precompile_headers(${PROJECT_NAME} PRIVATE "${SRC_DIR}/sorth.h")
+target_precompile_headers(${LIB_PROJECT_NAME} PRIVATE "${SRC_DIR}/sorth.h")
 
 
 
@@ -211,11 +214,11 @@ set_target_properties(${LIB_PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${
 
 
 # Build the library that the tests depend on.
-add_library(TestLib SHARED ${CMAKE_SOURCE_DIR}/tests/test_ffi_lib.cpp)
-
-set_target_properties(TestLib PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${DIST_DIR}
-                                         LIBRARY_OUTPUT_DIRECTORY ${DIST_DIR}
-                                         ARCHIVE_OUTPUT_DIRECTORY ${DIST_DIR})
+# add_library(TestLib SHARED ${CMAKE_SOURCE_DIR}/tests/test_ffi_lib.cpp)
+#
+# set_target_properties(TestLib PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${DIST_DIR}
+#                                          LIBRARY_OUTPUT_DIRECTORY ${DIST_DIR}
+#                                          ARCHIVE_OUTPUT_DIRECTORY ${DIST_DIR})
 
 
 
@@ -276,4 +279,4 @@ add_custom_target(copy_stdlib ALL
 
 # Ensure the dist dir exists and copy_stdlib runs before the main target.
 add_dependencies(copy_stdlib create_dist_dir)
-add_dependencies(${PROJECT_NAME} copy_stdlib TestLib)
+# add_dependencies(${PROJECT_NAME} copy_stdlib TestLib)

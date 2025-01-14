@@ -74,7 +74,7 @@ namespace sorth
     };
 
 
-    class Interpreter
+    class SORTH_API Interpreter
     {
         public:
             Interpreter()
@@ -212,8 +212,8 @@ namespace sorth
     using InterpreterPtr = std::shared_ptr<Interpreter>;
 
 
-    InterpreterPtr create_interpreter(ExecutionMode mode);
-    InterpreterPtr clone_interpreter(InterpreterPtr& interpreter);
+    SORTH_API InterpreterPtr create_interpreter(ExecutionMode mode);
+    SORTH_API InterpreterPtr clone_interpreter(InterpreterPtr& interpreter);
 
 
     #define ADD_NATIVE_WORD(INTERPRETER, NAME, HANDLER, DESCRIPTION, SIGNATURE) \

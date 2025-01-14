@@ -46,6 +46,35 @@
 #endif
 
 
+
+#ifdef SORTH_EXPORT
+
+    #if (IS_WINDOWS == 1)
+
+        #define SORTH_API __declspec(dllexport)
+
+    #else
+
+        #define SORTH_API __attribute__((visibility("default")))
+
+    #endif
+
+#else
+
+    #if (IS_WINDOWS == 1)
+
+        #define SORTH_API __declspec(dllimport)
+
+    #else
+
+        #define SORTH_API
+
+    #endif
+
+#endif
+
+
+
 #include <stddef.h>
 #include <iostream>
 #include <filesystem>

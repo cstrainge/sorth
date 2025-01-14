@@ -9,7 +9,7 @@ namespace sorth
 {
 
 
-    void register_io_words(InterpreterPtr& interpreter);
+    SORTH_API void register_io_words(InterpreterPtr& interpreter);
 
 
 }

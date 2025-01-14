@@ -1147,7 +1147,7 @@ namespace sorth
     }
 
 
-    void register_ffi_words(InterpreterPtr& interpreter)
+    SORTH_API void register_ffi_words(InterpreterPtr& interpreter)
     {
         ADD_NATIVE_WORD(interpreter, "ffi.load", word_ffi_open,
             "Load an binary library and register it with the ffi interface.",

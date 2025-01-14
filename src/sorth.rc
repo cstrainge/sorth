@@ -2,4 +2,4 @@
 #include "winuser.h"
 
 
-0  ICON  ".\sorth-logo.ico"
+IDI_ICON1  ICON  ".\sorth-logo.ico"

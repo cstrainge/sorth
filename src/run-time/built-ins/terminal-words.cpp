@@ -281,7 +281,7 @@ namespace sorth
     }
 
 
-    void register_terminal_words(InterpreterPtr& interpreter)
+    SORTH_API void register_terminal_words(InterpreterPtr& interpreter)
     {
         #if defined(_WIN64)
 

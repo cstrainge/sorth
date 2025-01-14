@@ -1419,13 +1419,13 @@ namespace sorth
     }
 
 
-    InterpreterPtr create_interpreter(ExecutionMode mode)
+    SORTH_API InterpreterPtr create_interpreter(ExecutionMode mode)
     {
         return std::make_shared<InterpreterImpl>(mode);
     }
 
 
-    InterpreterPtr clone_interpreter(InterpreterPtr& interpreter)
+    SORTH_API InterpreterPtr clone_interpreter(InterpreterPtr& interpreter)
     {
         InterpreterImpl* raw_ptr = reinterpret_cast<InterpreterImpl*>(&(interpreter));
         return std::make_shared<InterpreterImpl>(*raw_ptr);

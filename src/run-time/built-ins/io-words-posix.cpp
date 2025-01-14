@@ -376,7 +376,7 @@ namespace sorth
     }
 
 
-    void register_io_words(InterpreterPtr& interpreter)
+    SORTH_API void register_io_words(InterpreterPtr& interpreter)
     {
         ADD_NATIVE_WORD(interpreter, "file.open", word_file_open,
                         "Open an existing file and return a fd.",

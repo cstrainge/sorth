@@ -187,21 +187,7 @@ int main(int argc, char* argv[])
         {
             // Looks like we have a script to run.  Load up any remaining command line arguments
             // into an array and make them available to the script as the word sorth.args.
-            sorth::ArrayPtr array = std::make_shared<sorth::Array>(argc - 2);
-
-            for (int i = 0; i < argc - 2; ++i)
-            {
-                (*array)[i] = std::string(argv[i + 2]);
-            }
-
-            ADD_NATIVE_WORD(interpreter,
-                "sorth.args",
-                [array](auto interpreter)
-                {
-                    interpreter->push(array);
-                },
-                "List of command line arguments passed to the script.",
-                " -- arguments");
+            sorth::register_command_line_args(interpreter, argc, 2, argv);
 
             // Find the script file and run it.
             auto user_source_path = interpreter->find_file(argv[1]);

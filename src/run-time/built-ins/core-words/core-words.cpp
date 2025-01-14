@@ -29,7 +29,7 @@ namespace sorth
     using namespace internal;
 
 
-    void register_builtin_words(InterpreterPtr& interpreter)
+    SORTH_API void register_builtin_words(InterpreterPtr& interpreter)
     {
         register_array_words(interpreter);
         register_buffer_words(interpreter);
@@ -48,6 +48,28 @@ namespace sorth
         register_word_info_struct(LOCATION_HERE(), interpreter);
 
 
+    }
+
+
+    SORTH_API void register_command_line_args(InterpreterPtr& interpreter,
+                                              int argc,
+                                              int args,
+                                              char** argv)
+    {
+        sorth::ArrayPtr array = std::make_shared<sorth::Array>(argc - args);
+
+        for (int i = args; i < argc - args; ++i)
+        {
+            (*array)[i] = std::string(argv[i + 2]);
+        }
+
+        ADD_NATIVE_WORD(interpreter, "sorth.args",
+            [array](auto interpreter)
+            {
+                interpreter->push(array);
+            },
+            "List of command line arguments passed to the script.",
+            " -- arguments");
     }
 
 

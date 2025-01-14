@@ -6,7 +6,7 @@ namespace sorth
 {
 
 
-    void register_ffi_words(InterpreterPtr& interpreter);
+    SORTH_API void register_ffi_words(InterpreterPtr& interpreter);
 
     void reset_ffi();
 
