@@ -3,13 +3,13 @@
 
 
 
-#if   defined (__WIN32)  \
-   || defined (_WIN32)   \
-   || defined (WIN32)    \
-   || defined (_WIN64)   \
-   || defined (__WIN64)  \
-   || defined (WIN64)    \
-   || defined (__WINNT)
+#if    defined (__WIN32)  \
+    || defined (_WIN32)   \
+    || defined (WIN32)    \
+    || defined (_WIN64)   \
+    || defined (__WIN64)  \
+    || defined (WIN64)    \
+    || defined (__WINNT)
 
     #define IS_WINDOWS 1
 
@@ -34,7 +34,7 @@
 
 
 
-#ifdef IS_WINDOWS
+#if (IS_WINDOWS == 1)
 
 	#define _CRT_SECURE_NO_WARNINGS 1
 
@@ -47,7 +47,7 @@
 
 
 
-#ifdef SORTH_EXPORT
+#if (SORTH_EXPORT == 1)
 
     #if (IS_WINDOWS == 1)
 
