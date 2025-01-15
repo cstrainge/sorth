@@ -116,35 +116,31 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y llvm clang libclang-dev
 
-      - name: Install LLVM and Clang Windows
-        uses: KyleMayes/install-llvm-action@v2
+      - name: Download LLVM from Google Drive (Windows)
         if: ${{ runner.os == 'Windows' }}
-        with:
-          version: "18.1.8"
-          directory: ${{ runner.temp }}/llvm-18.1.8
+        run: |
+          curl -L -o llvm.7z "https://drive.google.com/uc?export=download&id=1DV6Wfw2KWhnEkQ9GRNqLpdrqU7WczjBE"
+
+      - name: Extract LLVM (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        run: |
+          mkdir llvm-dl
+          7z x llvm.7z -o"llvm-dl" -y
+
+      - name: Add LLVM to PATH (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        run: |
+          echo "LLVM_DIR=$(pwd)\llvm-dl\19.1.6-lto\lib\cmake\llvm" >> $GITHUB_ENV
+          echo "$(pwd)\llvm-dl\19.1.6-lto\bin" >> $GITHUB_PATH
 
       - name: Install LLVM libraries (macOS)
         if: ${{ runner.os == 'macOS' }}
         run: brew install llvm
 
-      #- name: Install LLVM libraries (Windows)
-      #  if: ${{ runner.os == 'Windows' }}
-      #  run: |
-      #    choco uninstall llvm -y
-      #    choco install llvm --version=19.1.5 -y
-      #  shell: cmd
-
-      - name: Add LLVM to PATH (Windows)
-        if: ${{ runner.os == 'Windows' }}
-        run: |
-          $env:Path += ";C:\Program Files\LLVM\bin"
-        shell: pwsh
-
       - name: Check for LLVM libraries (Windows)
         if: ${{ runner.os == 'Windows' }}
         run: |
-          dir "${{ runner.temp }}/llvm-18.1.8\bin"
-          dir "${{ runner.temp }}/llvm-18.1.8\lib\cmake\llvm"
+          tree "$(pwd)\llvm-dl"
 
       # targets and version debug
       - name: targets and version debug
@@ -157,7 +153,7 @@ jobs:
       # Configure CMake (Windows)
       - name: Configure CMake (Windows)
         if: ${{ runner.os == 'Windows' }}
-        run: cmake -DCMAKE_MAKE_PROGRAM=C:\ProgramData\chocolatey\bin\ninja.exe -DLLVM_DIR="C:/Program Files/LLVM/lib/cmake/llvm" -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ --preset=cibuild .. -G Ninja
+        run: cmake -DCMAKE_MAKE_PROGRAM=C:\ProgramData\chocolatey\bin\ninja.exe -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ --preset=cibuild .. -G Ninja
         working-directory: build
 
       # Configure CMake (Linux/macOS)
