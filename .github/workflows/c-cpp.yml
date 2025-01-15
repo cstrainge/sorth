@@ -116,16 +116,23 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y llvm clang libclang-dev
 
+      - name: Install LLVM and Clang Windows
+        uses: KyleMayes/install-llvm-action@v2
+        if: ${{ runner.os == 'Windows' }}
+        with:
+          version: "18.0"
+          directory: ${{ runner.temp }}/llvm-18
+
       - name: Install LLVM libraries (macOS)
         if: ${{ runner.os == 'macOS' }}
         run: brew install llvm
 
-      - name: Install LLVM libraries (Windows)
-        if: ${{ runner.os == 'Windows' }}
-        run: |
-          choco uninstall llvm -y
-          choco install llvm --version=19.1.5 -y
-        shell: cmd
+      #- name: Install LLVM libraries (Windows)
+      #  if: ${{ runner.os == 'Windows' }}
+      #  run: |
+      #    choco uninstall llvm -y
+      #    choco install llvm --version=19.1.5 -y
+      #  shell: cmd
 
       - name: Add LLVM to PATH (Windows)
         if: ${{ runner.os == 'Windows' }}
@@ -136,8 +143,8 @@ jobs:
       - name: Check for LLVM libraries (Windows)
         if: ${{ runner.os == 'Windows' }}
         run: |
-          dir "C:\Program Files\LLVM\bin"
-          dir "C:\Program Files\LLVM\lib\cmake\llvm"
+          dir "${{ runner.temp }}/llvm-18\bin"
+          dir "${{ runner.temp }}/llvm-18\lib\cmake\llvm"
 
       # targets and version debug
       - name: targets and version debug
