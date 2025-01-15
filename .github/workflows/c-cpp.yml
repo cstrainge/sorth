@@ -119,7 +119,7 @@ jobs:
       - name: Download LLVM from Google Drive (Windows)
         if: ${{ runner.os == 'Windows' }}
         run: |
-          curl -L -o llvm.7z "https://drive.google.com/uc?export=download&id=1DV6Wfw2KWhnEkQ9GRNqLpdrqU7WczjBE"
+          curl -L -o llvm.7z "'https://drive.usercontent.google.com/download?id=1DV6Wfw2KWhnEkQ9GRNqLpdrqU7WczjBE&export=download&authuser=1&confirm=t'"
 
       - name: Extract LLVM (Windows)
         if: ${{ runner.os == 'Windows' }}
