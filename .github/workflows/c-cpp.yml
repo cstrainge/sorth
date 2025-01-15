@@ -120,8 +120,8 @@ jobs:
         uses: KyleMayes/install-llvm-action@v2
         if: ${{ runner.os == 'Windows' }}
         with:
-          version: "18.0"
-          directory: ${{ runner.temp }}/llvm-18
+          version: "18.1.8"
+          directory: ${{ runner.temp }}/llvm-18.1.8
 
       - name: Install LLVM libraries (macOS)
         if: ${{ runner.os == 'macOS' }}
@@ -143,8 +143,8 @@ jobs:
       - name: Check for LLVM libraries (Windows)
         if: ${{ runner.os == 'Windows' }}
         run: |
-          dir "${{ runner.temp }}/llvm-18\bin"
-          dir "${{ runner.temp }}/llvm-18\lib\cmake\llvm"
+          dir "${{ runner.temp }}/llvm-18.1.8\bin"
+          dir "${{ runner.temp }}/llvm-18.1.8\lib\cmake\llvm"
 
       # targets and version debug
       - name: targets and version debug
