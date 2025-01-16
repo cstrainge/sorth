@@ -164,7 +164,7 @@ jobs:
         working-directory: build
 
       - name: Configure CMake (macOS)
-        if: ${{ runner.os == 'Linux' }}
+        if: ${{ runner.os == 'macOS' && runner.os != 'Linux' }}
         run: cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release .. -G Ninja
         working-directory: build
 
