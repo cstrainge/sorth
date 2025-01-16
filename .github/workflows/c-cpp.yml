@@ -160,7 +160,7 @@ jobs:
       # Configure CMake (Linux/macOS)
       - name: Configure CMake (Linux)
         if: ${{ runner.os == 'Linux' }}
-        run: cmake -DCMAKE_C_COMPILER=clang -DLLVM_DIR=/usr/lib/llvm-19/lib/cmake/llvm/ -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release .. -G Ninja
+        run: cmake -DLLVM_DIR=/usr/lib/llvm-18/lib/cmake/llvm -DCMAKE_C_COMPILER=clang-18  -DCMAKE_CXX_COMPILER=clang++-18 -DCMAKE_BUILD_TYPE=Release .. -G Ninja
         working-directory: build
 
       - name: Configure CMake (macOS)
