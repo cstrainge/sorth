@@ -44,7 +44,7 @@ set(SORTH_LLVM_FOUND 0) # Default to disabled
 if (LLVM_FOUND)
     message(STATUS "  Checking LLVM version...")
 
-    if(LLVM_VERSION_MAJOR EQUAL 19 OR LLVM_VERSION_MAJOR EQUAL 20)
+    if(LLVM_VERSION_MAJOR EQUAL 18 OR LLVM_VERSION_MAJOR EQUAL 19 OR LLVM_VERSION_MAJOR EQUAL 20)
         message(STATUS "  LLVM version ${LLVM_VERSION_MAJOR} detected, enabling JIT functionality.")
         set(SORTH_LLVM_FOUND 1)
     else()
