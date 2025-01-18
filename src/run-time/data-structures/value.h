@@ -27,7 +27,7 @@ namespace sorth
     class HashTable;
     using HashTablePtr = std::shared_ptr<HashTable>;
 
-    class DataObject;
+    struct DataObject;
     using DataObjectPtr = std::shared_ptr<DataObject>;
 
 
@@ -35,11 +35,11 @@ namespace sorth
     {
 
 
-        class Instruction;
+        struct Instruction;
         using ByteCode = std::vector<Instruction>;
 
 
-        class Token;
+        struct Token;
 
 
     }
