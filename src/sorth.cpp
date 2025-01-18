@@ -162,7 +162,7 @@ int main(int argc, char* argv[])
         // library.
         auto interpreter = sorth::create_interpreter(get_execution_mode());
 
-        interpreter->add_search_path(get_executable_directory());
+        interpreter->add_search_path(get_std_lib_directory());
 
         // Register all of the built-in words.
         sorth::register_builtin_words(interpreter);
