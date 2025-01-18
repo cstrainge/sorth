@@ -6,7 +6,7 @@ namespace sorth::internal
 {
 
 
-    class WordFunction
+    class SORTH_API WordFunction
     {
         public:
             using Handler = std::function<void(InterpreterPtr&)>;
