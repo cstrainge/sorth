@@ -127,11 +127,17 @@ jobs:
           mkdir llvm-dl
           7z x llvm.7z -o"llvm-dl" -y
 
+      - name: Add LLVM to Env (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        run: |
+          echo "LLVM_DIR=$(pwd)\llvm-dl\19.1.6-lto\bin" >> $GITHUB_ENV
+          echo "$(pwd)\llvm-dl\19.1.6-lto\bin" >> $GITHUB_PATH
+
       - name: Add LLVM to PATH (Windows)
         if: ${{ runner.os == 'Windows' }}
         run: |
-          echo "LLVM_DIR=$(pwd)\llvm-dl\19.1.6-lto\lib\cmake\llvm" >> $GITHUB_ENV
-          echo "$(pwd)\llvm-dl\19.1.6-lto\bin" >> $GITHUB_PATH
+          $env:Path = "$(pwd)\llvm-dl\19.1.6-lto\bin;" + $env:Path
+        shell: pwsh
 
       - name: Install LLVM libraries (macOS)
         if: ${{ runner.os == 'macOS' }}
