@@ -1,4 +1,3 @@
-
 cmake_minimum_required(VERSION 3.15)
 
 project(sorth)
@@ -107,7 +106,7 @@ if(WIN32)
 elseif(APPLE)
     set(LINKFLAGS "-ldl -lffi -lm")
 else()
-    set(LINKFLAGS "-fuse-ld=lld -ldl -lffi -lm")
+    set(LINKFLAGS "-ldl -lffi -lm")
 
     if(CXXTARGET STREQUAL "x86_64-unknown-linux-gnu")
         set(LINKFLAGS "${LINKFLAGS} -static -stdlib=libc++")
@@ -119,7 +118,7 @@ endif()
 
 
 # Include the source directory for the .h files.
-include_directories(${SRC_DIR})
+include_directories("${SRC_DIR}")
 
 
 
