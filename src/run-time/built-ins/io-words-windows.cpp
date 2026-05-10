@@ -1,5 +1,6 @@
 
 #include "sorth.h"
+#include "error.h"
 
 
 #if defined (IS_WINDOWS)

@@ -31,21 +31,18 @@ namespace sorth
                             const std::string& message);
 
 
-        #if defined(_WIN64)
 
+    #if defined(_WIN64) || defined(IS_WINDOWS)
+        [[noreturn]]
+        void throw_windows_error(const InterpreterPtr& interpreter,
+                    const std::string& message,
+                    DWORD code);
 
-            [[noreturn]]
-            void throw_windows_error(const InterpreterPtr& interpreter,
-                                    const std::string& message,
-                                    DWORD code);
-
-            void throw_windows_error_if(bool condition,
-                                        const InterpreterPtr& interpreter,
-                                        const std::string& message,
-                                        DWORD code);
-
-
-        #endif
+        void throw_windows_error_if(bool condition,
+                        const InterpreterPtr& interpreter,
+                        const std::string& message,
+                        DWORD code);
+    #endif
 
 
     }

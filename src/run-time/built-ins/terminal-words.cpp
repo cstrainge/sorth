@@ -22,8 +22,7 @@ namespace sorth
     using namespace internal;
 
 
-    namespace
-    {
+    // Removed unnamed namespace to give external linkage to terminal word functions
 
         #if defined(__APPLE__) || defined(__linux__)
 
@@ -278,42 +277,43 @@ namespace sorth
         }
 
 
-    }
 
 
-    SORTH_API void register_terminal_words(InterpreterPtr& interpreter)
+
+
+    void register_terminal_words(InterpreterPtr& interpreter)
     {
-        #if defined(_WIN64)
-
-            init_win_console();
-
-        #endif
-
-
+#if defined(__APPLE__) || defined(__linux__)
         ADD_NATIVE_WORD(interpreter, "term.raw_mode", word_term_raw_mode,
                         "Enter or leave the terminal's 'raw' mode.",
                         "bool -- ");
-
         ADD_NATIVE_WORD(interpreter, "term.size@", word_term_size,
                         "Return the number or characters in the rows and columns.",
                         " -- columns rows");
-
         ADD_NATIVE_WORD(interpreter, "term.key", word_term_key,
                         "Read a keypress from the terminal.",
                         " -- character");
-
+#elif defined(_WIN64)
+        init_win_console();
+        ADD_NATIVE_WORD(interpreter, "term.raw_mode", word_term_raw_mode,
+                        "Enter or leave the terminal's 'raw' mode.",
+                        "bool -- ");
+        ADD_NATIVE_WORD(interpreter, "term.size@", word_term_size,
+                        "Return the number or characters in the rows and columns.",
+                        " -- columns rows");
+        ADD_NATIVE_WORD(interpreter, "term.key", word_term_key,
+                        "Read a keypress from the terminal.",
+                        " -- character");
+#endif
         ADD_NATIVE_WORD(interpreter, "term.flush", word_term_flush,
                         "Flush the terminals buffers.",
                         " -- ");
-
         ADD_NATIVE_WORD(interpreter, "term.readline", word_term_read_line,
                         "Read a line of text from the terminal.",
                         " -- string");
-
         ADD_NATIVE_WORD(interpreter, "term.!", word_term_write,
                         "Write a value to the terminal.",
                         "value -- ");
-
         ADD_NATIVE_WORD(interpreter, "term.is_printable?", word_term_is_printable,
                         "Is the given character printable?",
                         "character -- bool");

@@ -65,7 +65,7 @@ namespace sorth::internal
 
 
 
-    #if defined(_WIN64)
+    #if defined(_WIN64) || defined(IS_WINDOWS)
 
 
         [[noreturn]]
