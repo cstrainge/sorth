@@ -126,6 +126,8 @@ namespace sorth
 
             virtual std::thread::id execute_word_threaded(const internal::Word& word) = 0;
 
+
+            virtual void execute_word(int64_t word_index) = 0;
             virtual void execute_word(const std::string& word) = 0;
             virtual void execute_word(const internal::Word& word) = 0;
             virtual void execute_word(const internal::Location& location,

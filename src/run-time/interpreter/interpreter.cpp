@@ -614,6 +614,30 @@ namespace sorth
         }
 
 
+        void InterpreterImpl::execute_word(int64_t word_index)
+        {
+            throw_error_if(word_index >= word_handlers.size() || word_index < 0,
+                           shared_from_this(),
+                           "Bad word handler index.");
+
+            auto& word_handler = word_handlers[word_index];
+            auto this_ptr = shared_from_this();
+
+            call_stack_push(word_handler);
+
+            try
+            {
+                word_handler.function(this_ptr);
+                call_stack_pop();
+            }
+            catch (...)
+            {
+                call_stack_pop();
+                throw;
+            }
+        }
+
+
         void InterpreterImpl::execute_word(const std::string& word)
         {
             auto [ found, word_entry ] = dictionary.find(word);
@@ -1470,8 +1494,14 @@ namespace sorth
 
     SORTH_API InterpreterPtr clone_interpreter(InterpreterPtr& interpreter)
     {
-        InterpreterImpl* raw_ptr = reinterpret_cast<InterpreterImpl*>(&(interpreter));
-        return std::make_shared<InterpreterImpl>(*raw_ptr);
+        auto impl = std::dynamic_pointer_cast<InterpreterImpl>(interpreter);
+
+        if (!impl)
+        {
+            throw std::runtime_error("clone_interpreter: Interpreter is not an InterpreterImpl.");
+        }
+
+        return std::make_shared<InterpreterImpl>(*impl);
     }
 
 
